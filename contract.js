@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Tue Feb 18 17:24:28 2020 (serrano)                */
+/*    Last change :  Tue Feb 18 17:35:50 2020 (serrano)                */
 /*    Copyright   :  2020 manuel serrano                               */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -28,8 +28,8 @@ class CT {
       this.wrapper = wrapper;
    }
    
-   wrap( value ) {
-      const { t: tval, f: fval } = this.wrapper( true, false );
+   wrap( value, locationt = true, locationf = false ) {
+      const { t: tval, f: fval } = this.wrapper( locationt, locationf );
       return tval.ctor( value );
    }
 }
@@ -230,21 +230,27 @@ function CTObject( fields ) {
 }
 
 /*---------------------------------------------------------------------*/
+/*    CTCoerce ...                                                     */
+/*---------------------------------------------------------------------*/
+function CTCoerce( obj ) {
+   if( typeof obj === "function" ) {
+      return CTCoerce( CTFlat( obj ) );
+   } else if( obj === true ) {
+      return CTCoerce( CTFlat( v => true ) );
+   } else {
+      if( obj instanceof CT ) {
+	 return obj;
+      } else {
+	 throw new TypeError( 
+	    "Not a contract `" + obj + "'" );
+      }
+   }
+}
+/*---------------------------------------------------------------------*/
 /*    CTapply ...                                                      */
 /*---------------------------------------------------------------------*/
 function CTapply( ctc, infot, infof ) {
-   if( typeof ctc === "function" ) {
-      return CTapply( CTFlat( ctc ), infot, infof );
-   } else if( ctc === true ) {
-      return CTapply( CTFlat( v => true ), infot, infof );
-   } else {
-      if( ctc instanceof CT ) {
-	 return ctc.wrapper( infot, infof );
-      } else {
-	 throw new TypeError( 
-	    "Not a contract `" + ctc + "': " + infot + "/" + infof );
-      }
-   }
+   return CTCoerce( ctc ).wrapper( infot, infof );
 }
 
 /*---------------------------------------------------------------------*/
@@ -253,6 +259,7 @@ function CTapply( ctc, infot, infof ) {
 function isObject( o ) { return (typeof o) === "object" }
 function isString( o ) { return (typeof o) === "string" }
 function isBoolean( o ) { return (typeof o) === "boolean" }
+function isNumber( o ) { return (typeof o) === "number" }
 function True( o ) { return true }
 
 /*---------------------------------------------------------------------*/
@@ -263,5 +270,17 @@ exports.CTFunction = CTFunction;
 exports.isObject = isObject;
 exports.isString = isString;
 exports.isBoolean = isBoolean;
+exports.isNumber = isNumber;
 exports.True = True;
 
+exports.CTexports = function( ctc, val, locationt ) {
+   return (locationf) => ctc.wrap( val, locationt, locationf );
+}
+
+exports.CTimports = function( obj, location ) {
+   let res = {};
+   for( let k in obj ) {
+      res[ k ] = obj[ k ]( location );
+   }
+   return res;
+}
