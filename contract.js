@@ -144,7 +144,7 @@ function CTRec( thunk ) {
    
    function mthunk() {
       if( !_thunkctc ) {
-	 _thunkctc = CTCoerce( thunk, "CTRec" );
+	  _thunkctc = CTCoerce( thunk() , "CTRec" );
       }
       
       return _thunkctc;

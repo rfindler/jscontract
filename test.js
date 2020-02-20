@@ -76,6 +76,10 @@ assert.throws( () => {
     o.r
 }, "ctobject.1");
 
+assert.throws( () => {
+    const t2 = CT.CTRec(() => CT.isString);
+    const o2 = t2.wrap(undefined);
+}, "ctrec.0");
 assert.ok( (() => {
     const tree =
 	  CT.CTOr( CT.isString,
