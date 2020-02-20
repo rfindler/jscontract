@@ -85,8 +85,8 @@ function CTFunction( domain, range ) {
       throw new TypeError( "Illegal domain: " + domain );
    } else {
       return new CT( function( infot, infof ) {
-	 const ri = CTapply( range, infot, infof );
-	 const dis = domain.map( d => CTapply( d, infot, infof ) );
+	  const ri = CTapply( range, infot, infof, "CTFunction" );
+	  const dis = domain.map( d => CTapply( d, infot, infof, "CTFunction" ) );
 	 
 	 function mkWrapper( info, ri, rik, dis, disk ) {
 	    const handler = {
@@ -133,7 +133,7 @@ function CTRec( thunk ) {
 	var ei;
 	function mkWrapper( info, kt ) {
       	    return new CTWrapper( function( value ) {
-		if (!ei) ei = CTapply( thunk(), infot, infof );
+		if (!ei) ei = CTapply( thunk(), infot, infof, "CTRec" );
 		return ei[kt].ctor(value);
 	    })}
 	return { 
@@ -150,8 +150,8 @@ function CTRec( thunk ) {
 /*---------------------------------------------------------------------*/
 function CTOr( lchoose, left, rchoose, right ) {
     return new CT( function( infot, infof ) {
-	const ei_l = CTapply( left, infot, infof );
-	const ei_r = CTapply( right, infot, infof );
+	const ei_l = CTapply( left, infot, infof, "CTOr");
+	const ei_r = CTapply( right, infot, infof, "CTOr" );
 	function mkWrapper( info, kt ) {
       	    return new CTWrapper( function( value ) {
 		const is_l = lchoose(value);
@@ -180,7 +180,7 @@ function CTOr( lchoose, left, rchoose, right ) {
 /*---------------------------------------------------------------------*/
 function CTArray( element ) {
    return new CT( function( infot, infof ) {
-      const ei = CTapply( element, infot, infof );
+       const ei = CTapply( element, infot, infof, "CTArray" );
 
       function mkWrapper( info, ei, kt, kf ) {
       	 const handler = {
@@ -228,7 +228,7 @@ function CTObject( fields ) {
       for( let k in fields ) {
 	 const ctc = fields[ k ];
 
-	 ei[ k ] = CTapply( ctc, infot, infof );
+	  ei[ k ] = CTapply( ctc, infot, infof, "CTObject" );
       }
       
       function mkWrapper( info, ei, kt, kf ) {
@@ -282,25 +282,26 @@ function CTObject( fields ) {
 /*---------------------------------------------------------------------*/
 /*    CTCoerce ...                                                     */
 /*---------------------------------------------------------------------*/
-function CTCoerce( obj ) {
+function CTCoerce( obj, who ) {
    if( typeof obj === "function" ) {
-      return CTCoerce( CTFlat( obj ) );
+       return CTCoerce( CTFlat( obj ) , who);
    } else if( obj === true ) {
-      return CTCoerce( CTFlat( v => true ) );
+       return CTCoerce( CTFlat( v => true ) , who);
    } else {
       if( obj instanceof CT ) {
 	 return obj;
       } else {
 	 throw new TypeError( 
-	    "Not a contract `" + obj + "'" );
+	     (who ? (who + ": ") : "") +
+	     "not a contract `" + obj + "'" );
       }
    }
 }
 /*---------------------------------------------------------------------*/
 /*    CTapply ...                                                      */
 /*---------------------------------------------------------------------*/
-function CTapply( ctc, infot, infof ) {
-   return CTCoerce( ctc ).wrapper( infot, infof );
+function CTapply( ctc, infot, infof, who ) {
+    return CTCoerce( ctc, who ).wrapper( infot, infof );
 }
 
 /*---------------------------------------------------------------------*/
@@ -320,6 +321,7 @@ exports.CTObject = CTObject;
 exports.CTOr = CTOr;
 exports.CTRec = CTRec;
 exports.CTFunction = CTFunction;
+exports.CTArray = CTArray;
 exports.isObject = isObject;
 exports.isFunction = isFunction;
 exports.isString = isString;
@@ -328,7 +330,9 @@ exports.isNumber = isNumber;
 exports.True = True;
 
 exports.CTexports = function( ctc, val, locationt ) {
-   return (locationf) => ctc.wrap( val, locationt, locationf );
+    return (locationf) =>
+	CTCoerce(ctc, "CTExports " + locationt)
+	.wrap( val, locationt, locationf );
 }
 
 exports.CTimports = function( obj, location ) {
