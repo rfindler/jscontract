@@ -126,6 +126,56 @@ function CTFunction( domain, range ) {
 }
 
 /*---------------------------------------------------------------------*/
+/*    CTRec ...                                                         */
+/*---------------------------------------------------------------------*/
+function CTRec( thunk ) {
+    return new CT( function( infot, infof ) {
+	var ei;
+	function mkWrapper( info, kt ) {
+      	    return new CTWrapper( function( value ) {
+		if (!ei) ei = CTapply( thunk(), infot, infof );
+		return ei[kt].ctor(value);
+	    })}
+	return { 
+	    t: mkWrapper( infot, "t" ),
+	    f: mkWrapper( infof, "f" )
+	}
+    })
+}
+		 
+
+
+/*---------------------------------------------------------------------*/
+/*    CTOr ...                                                         */
+/*---------------------------------------------------------------------*/
+function CTOr( lchoose, left, rchoose, right ) {
+    return new CT( function( infot, infof ) {
+	const ei_l = CTapply( left, infot, infof );
+	const ei_r = CTapply( right, infot, infof );
+	function mkWrapper( info, kt ) {
+      	    return new CTWrapper( function( value ) {
+		const is_l = lchoose(value);
+		const is_r = rchoose(value);
+		var ei = undefined;
+		if (is_l && is_r) ei = ei_l; // this is first-or/c, do we want or/c?
+		if (is_l) ei = ei_l;
+		if (is_r) ei = ei_r;
+		if (!ei) {
+		    throw new TypeError( 
+	    	     	"CTOr neither applied: " + value 
+	    	     	    + ": " + info );
+		}
+		return ei[kt].ctor(value);
+	    })
+	}
+	return { 
+	    t: mkWrapper( infot, "t" ),
+	    f: mkWrapper( infof, "f" )
+	}
+    })
+}
+
+/*---------------------------------------------------------------------*/
 /*    CTArray ...                                                      */
 /*---------------------------------------------------------------------*/
 function CTArray( element ) {
@@ -257,6 +307,7 @@ function CTapply( ctc, infot, infof ) {
 /*    predicates ...                                                   */
 /*---------------------------------------------------------------------*/
 function isObject( o ) { return (typeof o) === "object" }
+function isFunction( o ) { return (typeof o) === "function" }
 function isString( o ) { return (typeof o) === "string" }
 function isBoolean( o ) { return (typeof o) === "boolean" }
 function isNumber( o ) { return (typeof o) === "number" }
@@ -266,8 +317,11 @@ function True( o ) { return true }
 /*    exports                                                          */
 /*---------------------------------------------------------------------*/
 exports.CTObject = CTObject;
+exports.CTOr = CTOr;
+exports.CTRec = CTRec;
 exports.CTFunction = CTFunction;
 exports.isObject = isObject;
+exports.isFunction = isFunction;
 exports.isString = isString;
 exports.isBoolean = isBoolean;
 exports.isNumber = isNumber;
