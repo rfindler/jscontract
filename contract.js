@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Tue Feb 18 17:35:50 2020 (serrano)                */
+/*    Last change :  Thu Feb 20 20:41:32 2020 (serrano)                */
 /*    Copyright   :  2020 manuel serrano                               */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -13,7 +13,7 @@
 /*    CT                                                               */
 /*---------------------------------------------------------------------*/
 class CT {
-   constructor( wrapper ) {
+   constructor( firstOrder, wrapper ) {
       this.cache = {};
 /*       this.wrapper = ( info ) => {                                  */
 /* 	 if( this.cache[ info ] ) {                                    */
@@ -25,6 +25,7 @@ class CT {
 /* 	    return nv;                                                 */
 /* 	 }                                                             */
 /*       }                                                             */
+      this.firstOrder = firstOrder;
       this.wrapper = wrapper;
    }
    
@@ -60,7 +61,7 @@ function CTFlat( pred ) {
 	       }
 	 } );
       }
-      return new CT( function( infot, infof ) {
+      return new CT( pred, function( infot, infof ) {
 	 return { t: mkWrapper( infot ), f: mkWrapper( infof ) }
       } );
    }
@@ -81,10 +82,14 @@ function CTFunction( domain, range ) {
       return args;
    }
 
+   function firstOrder( x ) {
+      return typeof x === "function";
+   }
+      
    if( !(domain instanceof Array) ) {
       throw new TypeError( "Illegal domain: " + domain );
    } else {
-      return new CT( function( infot, infof ) {
+      return new CT( firstOrder, function( infot, infof ) {
 	  const ri = CTapply( range, infot, infof, "CTFunction" );
 	  const dis = domain.map( d => CTapply( d, infot, infof, "CTFunction" ) );
 	 
@@ -108,7 +113,7 @@ function CTFunction( domain, range ) {
 	       }
 	    }
 	    return new CTWrapper( function( value ) {
-	       if( typeof value === "function" ) {
+	       if( firstOrder( value ) ) {
 	       	  return new Proxy( value, handler );
 	       } else {
 	       	  throw new TypeError( 
@@ -126,157 +131,188 @@ function CTFunction( domain, range ) {
 }
 
 /*---------------------------------------------------------------------*/
-/*    CTRec ...                                                         */
+/*    CTRec ...                                                        */
 /*---------------------------------------------------------------------*/
 function CTRec( thunk ) {
-    return new CT( function( infot, infof ) {
-	var ei;
-	function mkWrapper( info, kt ) {
-      	    return new CTWrapper( function( value ) {
-		if (!ei) ei = CTapply( thunk(), infot, infof, "CTRec" );
-		return ei[kt].ctor(value);
+   let _thunkctc = false;
+   
+   function mthunk() {
+      if( !_thunkctc ) {
+	 _thunkctc = CTCoerce( thunk, "CTRec" );
+      }
+      
+      return _thunkctc;
+   }
+   
+   function firstOrder( x ) {
+      return mthunk().firstOrder( x );
+   }
+   
+   return new CT( firstOrder, 
+      function( infot, infof ) {
+      	 var ei;
+      	 function mkWrapper( info, kt ) {
+	    return new CTWrapper( function( value ) {
+	       if (!ei) ei = CTapply( mthunk(), infot, infof, "CTRec" );
+	       return ei[kt].ctor(value);
 	    })}
-	return { 
+      	 return { 
 	    t: mkWrapper( infot, "t" ),
 	    f: mkWrapper( infof, "f" )
-	}
-    })
+      	 }
+      });
 }
-		 
-
 
 /*---------------------------------------------------------------------*/
 /*    CTOr ...                                                         */
 /*---------------------------------------------------------------------*/
-function CTOr( lchoose, left, rchoose, right ) {
-    return new CT( function( infot, infof ) {
-	const ei_l = CTapply( left, infot, infof, "CTOr");
-	const ei_r = CTapply( right, infot, infof, "CTOr" );
-	function mkWrapper( info, kt ) {
+function CTOrExplicitChoice( lchoose, left, rchoose, right ) {
+   return new CT( x => lchoose( x ) || rchoose( x ),
+      function( infot, infof ) {
+	 const ei_l = CTapply( left, infot, infof, "CTOr");
+	 const ei_r = CTapply( right, infot, infof, "CTOr" );
+	 function mkWrapper( info, kt ) {
       	    return new CTWrapper( function( value ) {
-		const is_l = lchoose(value);
-		const is_r = rchoose(value);
-		var ei = undefined;
-		if (is_l && is_r) ei = ei_l; // this is first-or/c, do we want or/c?
-		if (is_l) ei = ei_l;
-		if (is_r) ei = ei_r;
-		if (!ei) {
-		    throw new TypeError( 
-	    	     	"CTOr neither applied: " + value 
-	    	     	    + ": " + info );
-		}
-		return ei[kt].ctor(value);
+	       const is_l = lchoose(value);
+	       const is_r = rchoose(value);
+	       var ei = undefined;
+	       if (is_l && is_r) ei = ei_l; // this is first-or/c, do we want or/c?
+	       if (is_l) ei = ei_l;
+	       if (is_r) ei = ei_r;
+	       if (!ei) {
+		  throw new TypeError( 
+		     "CTOr neither applied: " + value 
+		     + ": " + info );
+	       }
+	       return ei[kt].ctor(value);
 	    })
-	}
-	return { 
+	 }
+	 return { 
 	    t: mkWrapper( infot, "t" ),
 	    f: mkWrapper( infof, "f" )
-	}
-    })
+	 }
+      });
 }
 
+function CTOr( left, right ) {
+   const lc = CTCoerce( left, "CTOr" );
+   const rc = CTCoerce( right, "CTOr" );
+   
+   return CTOrExplicitChoice( lc.firstOrder, lc, rc.firstOrder, rc );
+}
+   
 /*---------------------------------------------------------------------*/
 /*    CTArray ...                                                      */
 /*---------------------------------------------------------------------*/
 function CTArray( element ) {
-   return new CT( function( infot, infof ) {
-       const ei = CTapply( element, infot, infof, "CTArray" );
+   function firstOrder( x ) {
+      return x instanceof Array;
+   }
+   
+   return new CT( firstOrder,
+      function( infot, infof ) {
+       	 const ei = CTapply( element, infot, infof, "CTArray" );
 
-      function mkWrapper( info, ei, kt, kf ) {
-      	 const handler = {
-	    get: function( target, prop ) {
-	       if( prop.match( /^[0-9]+$/ ) ) {
-               return ei[ kt ].ctor( target[ prop ] );
-            } else {
-	       return target[ prop ];
-	    }
-	 },
-	 set: function( target, prop, newval ) {
-	    if( prop.match( /^[0-9]+$/ ) ) {
-                   target[ prop ] = ei[ kf ].ctor( newval );
-            } else {
-	       target[ prop ] = newval;
-	    }
-	    return true;
-	 }
-      };
-	 
-      	 return new CTWrapper( function( value ) {
-	    if( value instanceof Array ) {
-	       return new Proxy( value, handler );
-	    } else {
-	       throw new TypeError(
-	       	  "Not an array `" + value + "' " + info );
-	    }
-      	 } );
-      }
-      
-      return { 
-	 t: mkWrapper( infot, ei, "t", "f" ),
-	 f: mkWrapper( infof, ei, "f", "t" )
-      }
-   } );
+      	 function mkWrapper( info, ei, kt, kf ) {
+      	    const handler = {
+	       get: function( target, prop ) {
+	       	  if( prop.match( /^[0-9]+$/ ) ) {
+               	     return ei[ kt ].ctor( target[ prop ] );
+            	  } else {
+	       	     return target[ prop ];
+	    	  }
+	       },
+	       set: function( target, prop, newval ) {
+	    	  if( prop.match( /^[0-9]+$/ ) ) {
+                     target[ prop ] = ei[ kf ].ctor( newval );
+            	  } else {
+	       	     target[ prop ] = newval;
+	    	  }
+	    	  return true;
+	       }
+      	    };
+	    
+      	    return new CTWrapper( function( value ) {
+	       if( firstOrder( value ) ) {
+	       	  return new Proxy( value, handler );
+	       } else {
+	       	  throw new TypeError(
+	       	     "Not an array `" + value + "' " + info );
+	       }
+      	    } );
+      	 }
+      	 
+      	 return { 
+	    t: mkWrapper( infot, ei, "t", "f" ),
+	    f: mkWrapper( infof, ei, "f", "t" )
+      	 }
+      } );
 }
 
 /*---------------------------------------------------------------------*/
 /*    CTObject ...                                                     */
 /*---------------------------------------------------------------------*/
 function CTObject( fields ) {
-   return new CT( function( infot, infof ) {
-      const ei = {};
-      
-      for( let k in fields ) {
-	 const ctc = fields[ k ];
+   function firstOrder( x ) {
+      return x instanceof Object
+   }
+	 
+   return new CT( firstOrder, 
+      function( infot, infof ) {
+      	 const ei = {};
+      	 
+      	 for( let k in fields ) {
+	    const ctc = fields[ k ];
 
-	  ei[ k ] = CTapply( ctc, infot, infof, "CTObject" );
-      }
-      
-      function mkWrapper( info, ei, kt, kf ) {
-      	 var handler = {
-	    get: function( target, prop ) {
-	       const ct = ei[ prop ];
-	       const priv = target.__private;
-	       const cache = priv[ prop ];
-	       if( ct ) { 
-	       	  if( cache ) {
-		     return cache;
-	       	  } else {
-	       	     const cv = ct[ kt ].ctor( target[ prop ] );
-	       	     priv[ prop ] = cv;
-	       	     return cv;
-	       	  }
-	       } else {
-	       	  return target[ prop ];
-	       }
-      	    },
-	    set: function( target, prop, newval ) {
-	       const ct = ei[ prop ];
-	       if( ct ) { 
-	       	  priv[ prop ] = false;
-	       	  target[ prop ] = ct[ kf ].ctor( newval );
-	       } else {
-	       	  target[ prop ] = newval;
-	       }
-	       return true;
-      	    }
+	    ei[ k ] = CTapply( ctc, infot, infof, "CTObject" );
       	 }
       	 
-      	 return new CTWrapper( function( value ) {
-	    value.__private = {};
-	    if( value instanceof Object ) {
-	       return new Proxy( value, handler );
-	    } else {
-	       throw new TypeError(
-	       	  "Not an object `" + value + "' " + info );
-	    }
-      	 } );
-      }
-      
-      return {
-	 t: mkWrapper( infot, ei, "t", "f" ),
-	 f: mkWrapper( infof, ei, "f", "t" )
-      }
-   } );
+      	 function mkWrapper( info, ei, kt, kf ) {
+      	    var handler = {
+	       get: function( target, prop ) {
+	       	  const ct = ei[ prop ];
+	       	  const priv = target.__private;
+	       	  const cache = priv[ prop ];
+	       	  if( ct ) { 
+	       	     if( cache ) {
+		     	return cache;
+	       	     } else {
+	       	     	const cv = ct[ kt ].ctor( target[ prop ] );
+	       	     	priv[ prop ] = cv;
+	       	     	return cv;
+	       	     }
+	       	  } else {
+	       	     return target[ prop ];
+	       	  }
+      	       },
+	       set: function( target, prop, newval ) {
+	       	  const ct = ei[ prop ];
+	       	  if( ct ) { 
+	       	     priv[ prop ] = false;
+	       	     target[ prop ] = ct[ kf ].ctor( newval );
+	       	  } else {
+	       	     target[ prop ] = newval;
+	       	  }
+	       	  return true;
+      	       }
+      	    }
+      	    
+      	    return new CTWrapper( function( value ) {
+	       value.__private = {};
+	       if( firstOrder( value ) ) {
+	       	  return new Proxy( value, handler );
+	       } else {
+	       	  throw new TypeError(
+	       	     "Not an object `" + value + "' " + info );
+	       }
+      	    } );
+      	 }
+      	 
+      	 return {
+	    t: mkWrapper( infot, ei, "t", "f" ),
+	    f: mkWrapper( infof, ei, "f", "t" )
+      	 }
+      } );
 }
 
 /*---------------------------------------------------------------------*/
