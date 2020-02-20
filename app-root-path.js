@@ -6,257 +6,9 @@
 /*    Last change :  Wed Feb 19 14:44:44 2020 (serrano)                */
 /*    Copyright   :  2019-20 Manuel Serrano                            */
 /*    -------------------------------------------------------------    */
-/*    Basic Higher-Order contract JS implementation                    */
 /*=====================================================================*/
 "use strict";
-
-/*---------------------------------------------------------------------*/
-/*    CT                                                               */
-/*---------------------------------------------------------------------*/
-class CT {
-   constructor( wrapper ) {
-      this.wrapper = wrapper;
-   }
-   
-   wrap( value ) {
-      return this.wrapper( true ).ctor( value );
-   }
-}
-
-/*---------------------------------------------------------------------*/
-/*    CTwrapper ...                                                    */
-/*---------------------------------------------------------------------*/
-class CTWrapper {
-   constructor( ctor ) {
-      this.ctor = ctor;
-   }
-}
-
-/*---------------------------------------------------------------------*/
-/*    CTFlat ...                                                       */
-/*---------------------------------------------------------------------*/
-function CTFlat( pred ) {
-   if( typeof pred !== "function" ) {
-      throw new TypeError( "Illegal predicat: " + pred );
-   } else {
-      return new CT( function( info ) {
-      	 return new CTWrapper( function( value ) {
-	    if( pred( value ) ) {
-	       return value;
-	    } else {
-	       throw new TypeError( 
-		  "Predicate `" + pred.toString() + "' not satisfied for value `" + value + "': " + info );
-	    }
-      	 } );
-      } );
-   }
-}
-
-/*---------------------------------------------------------------------*/
-/*    CTFunction ...                                                   */
-/*---------------------------------------------------------------------*/
-function CTFunction( domain, range ) {
-   
-   function map2( args, domain, info ) {
-      if( args.length !== domain.length ) {
-	 throw new TypeError( 
-	    "Wrong number of argument " + args.length + "/" + domain.length 
-	    + ": " + info );
-      } else {
-	 let len = args.length;
-	 
-	 for( let i = 0; i < len; i++ ) {
-	    args[ i ] = domain[ i ].ctor( args[ i ] );
-	 }
-	 
-	 return args;
-      }
-   }
-   
-   const call = Function.prototype.call;
-   const apply = Function.prototype.apply;
-   
-   if( !(domain instanceof Array) ) {
-      throw new TypeError( "Illegal domain: " + domain );
-   } else {
-      return new CT( function( info ) {
-	 const ri = CTapply( range, info );
-	 const dis = domain.map( d => CTapply( d, !info ) );
-	 
-	 return new CTWrapper( function( value ) {
-	    if( typeof value === "function" ) {
-	       return new Proxy( value, {
-		  apply: function( target, self, args ) {
-		     switch( args.length ) {
-			case 0:
-		    	   return ri.ctor( value.call( this, undefined ) );
-			case 1:
-		    	   return ri.ctor( value.call( this, dis[ 0 ].ctor( args[ 0 ] ) ) );
-			default: 
-		    	   return ri.ctor( value.apply( this, map2( args, dis, info ) ) );
-		     }
-		  }
-	       } );
-	    } else {
-	       throw new TypeError( 
-		  "Not a function `" + value + "': " + info );
-	    }
-	 } );
-      } );
-   }
-}
-
-/*---------------------------------------------------------------------*/
-/*    CTArray ...                                                      */
-/*---------------------------------------------------------------------*/
-function CTArray( element ) {
-   return new CT( function( info ) {
-      const ei = CTapply( element, info );
-      const nei = CTapply( element, !info );
-      
-      const handler = {
-	 get: function( target, prop ) {
-	    if( prop.match( /^[0-9]+$/ ) ) {
-               return ei.ctor( target[ prop ] );
-            } else {
-	       return target[ prop ];
-	    }
-	 },
-	 set: function( target, prop, newval ) {
-	    if( prop.match( /^[0-9]+$/ ) ) {
-                   target[ prop ] = nei.ctor( newval );
-            } else {
-	       target[ prop ] = newval;
-	    }
-	    return true;
-	 }
-      };
-      return new CTWrapper( function( value ) {
-	 if( value instanceof Array ) {
-	    return new Proxy( value, handler );
-	 } else {
-	    throw new TypeError(
-	       "Not an array `" + value + "' " + info );
-	 }
-      } );
-   } );
-}
-
-/*---------------------------------------------------------------------*/
-/*    CTObject ...                                                     */
-/*---------------------------------------------------------------------*/
-function CTObject( fields ) {
-   return new CT( function( info ) {
-      const ei = {}, nei = {};
-      
-      for( let k in fields ) {
-	 ei[ k ] = CTapply( fields[ k ], info );
-      	 nei[ k ] = CTapply( fields[ k ], !info );
-      }
-      
-      var handler = {
-	 get: function( target, prop ) {
-	    const ct = ei[ prop ];
-	    if( ct ) { 
-	       if( handler[ prop ] ) {
-		  return handler[ prop ];
-	       } else {
-	       	  const cv = ct.ctor( target[ prop ] );
-	       	  handler[ prop ] = cv;
-	       	  return cv;
-	       }
-	    } else {
-	       return target[ prop ];
-	    }
-      	 },
-	 set: function( target, prop, newval ) {
-	    const ct = nei[ prop ];
-	    if( ct ) { 
-	       target[ prop ] = false;
-	       target[ prop ] = ct.ctor( newval );
-	    } else {
-	       target[ prop ] = newval;
-	    }
-	    return true;
-      	 }
-      }
-      
-      return new CTWrapper( function( value ) {
-	 if( value instanceof Object ) {
-	    return new Proxy( value, handler );
-	 } else {
-	    throw new TypeError(
-	       "Not an object `" + value + "' " + info );
-	 }
-      } );
-   } );
-}
-
-/*---------------------------------------------------------------------*/
-/*    CTapply ...                                                      */
-/*---------------------------------------------------------------------*/
-function CTapply( ctc, value ) {
-   if( typeof ctc === "function" ) {
-      return CTapply( CTFlat( ctc ), value );
-   } else if( ctc === true ) {
-      return CTapply( CTFlat( v => true ), value );
-   } else {
-      if( ctc instanceof CT ) {
-	 return ctc.wrapper( value );
-      } else {
-	 throw new TypeError( 
-	    "Not a contract `" + ctc + "': " + value );
-      }
-   }
-}
-
-/*---------------------------------------------------------------------*/
-/*    predicates ...                                                   */
-/*---------------------------------------------------------------------*/
-function isObject( o ) { return (typeof o) === "object" }
-function isString( o ) { return (typeof o) === "string" }
-function isBoolean( o ) { return (typeof o) === "boolean" }
-function True( o ) { return true }
-
-/*---------------------------------------------------------------------*/
-/*    example                                                          */
-/*---------------------------------------------------------------------*/
-/* function add( x, y ) {                                              */
-/*    return x + y;                                                    */
-/* }                                                                   */
-/*                                                                     */
-/* const fxadd = CTFunction(                                           */
-/*    [ Number.isInteger, Number.isInteger ],                          */
-/*    Number.isInteger )                                               */
-/*    .wrap( add );                                                    */
-/*                                                                     */
-/* function checkf( thunk ) {                                          */
-/*    try {                                                            */
-/*       return thunk();                                               */
-/*    } catch( e ) {                                                   */
-/*       console.log( "exnf=", e );                                    */
-/*       return false;                                                 */
-/*    }                                                                */
-/* }                                                                   */
-/*                                                                     */
-/* console.log( "f.test1=", checkf( () => fxadd( 5, 2 ) ) );           */
-/* console.log( "f.test2=", checkf( () => fxadd( 1.2, 2 ) ) );         */
-/*                                                                     */
-/* function checka( arr, src ) {                                       */
-/*    try {                                                            */
-/*       for( let i = src.length - 1; i >=0; i-- ) {                   */
-/*       	 arr[ i ] += src[ i ];                                 */
-/*       }                                                             */
-/*       return arr;                                                   */
-/*    } catch( e ) {                                                   */
-/*       console.log( "exna=", e );                                    */
-/*       return false;                                                 */
-/*    }                                                                */
-/* }                                                                   */
-/*                                                                     */
-/* console.log( "a.test1=", checka( CTArray( Number.isInteger ).wrap( [ 1, 2, -4 ] ), [ 10, 20, 30 ] ) ); */
-/* console.log( "a.test2=", checka( CTArray( Number.isInteger ).wrap( [ 1, 2, -4 ] ), [ 10, 2.1, 30 ] ) ); */
-/* console.log( "a.test3=", checka( CTArray( Number.isInteger ).wrap( [ 1, 2.3, -4 ] ), [ 10, 20, 30 ] ) ); */
+const CT = require ("./contract.js");
 
 const CHAR_FORWARD_SLASH = 47;
 const CHAR_BACKWARD_SLASH = 92;
@@ -537,10 +289,10 @@ const root = lib(__dirname);
 /*---------------------------------------------------------------------*/
 /*    bench                                                            */
 /*---------------------------------------------------------------------*/
-const ctz = CTObject( { z: isString } );
-const cty = CTObject( { y: ctz } );
-const ctx = CTObject( { x: cty } );
-const ctw = CTObject( { w: ctx } );
+const ctz = CT.CTObject( { z: CT.isString } );
+const cty = CT.CTObject( { y: ctz } );
+const ctx = CT.CTObject( { x: cty } );
+const ctw = CT.CTObject( { w: ctx } );
 
 function simpletest( root ) {
    const o = ctw.wrap( { w: { x: { y: { z: "zzz" } } } } );
@@ -570,13 +322,13 @@ function testmix( ctroot, root ) {
    runtest( root );
 }   
 
-const ctApi = CTObject( 
-   { aaa: CTFunction( [ isString ], isString ),
-     resolve: CTFunction( [ isString ], isString ),
-     require: CTFunction( [ isString ], isObject ),
-     toString: CTFunction( [ ], isString ),
-     setPath: CTFunction( [ isString ], True ),
-     path: isString } );
+const ctApi = CT.CTObject( 
+   { aaa: CT.CTFunction( [ CT.isString ], CT.isString ),
+     resolve: CT.CTFunction( [ CT.isString ], CT.isString ),
+     require: CT.CTFunction( [ CT.isString ], CT.isObject ),
+     toString: CT.CTFunction( [ ], CT.isString ),
+     setPath: CT.CTFunction( [ CT.isString ], CT.True ),
+     path: CT.isString } );
 			 
 
 const ctroot = ctApi.wrap( root );
