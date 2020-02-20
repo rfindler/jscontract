@@ -67,3 +67,63 @@ assert.throws( () => {
 		   CT.isNumber, CT.isNumber ).wrap((x) => "x");
     f(3);
    }, "ctor.6" );
+
+assert.ok( (() => {
+    const tree =
+	  CT.CTOr( CT.isString,  CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					   r: CT.CTRec(() => tree)}));
+    tree.wrap("x");
+    return true;
+   })(), "ctrec.1" );
+assert.ok( (() => {
+    const tree =
+	  CT.CTOr( CT.isString,  CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					   r: CT.CTRec(() => tree)}));
+    tree.wrap({l: "x", r: "y"});
+    return true;
+   })(), "ctrec.2" );
+assert.ok( (() => {
+    const tree =
+	  CT.CTOr( CT.isString,  CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					   r: CT.CTRec(() => tree)}));
+    tree.wrap({l: "x", r: {l: "y", r: "z"}});
+    return true;
+   })(), "ctrec.3" );
+assert.throws( () => {
+    const tree =
+	  CT.CTOr( CT.isString, CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					   r: CT.CTRec(() => tree)}));
+    tree.wrap(undefined);
+}, "ctrec.4");
+assert.throws( () => {
+    const tree =
+	  CT.CTOr( CT.isString, CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					      r: CT.CTRec(() => tree)}));
+    const o = tree.wrap({l: "x", r: undefined});
+    o.l;
+    o.r
+}, "ctrec.5");
+assert.ok( (() => {
+    const tree =
+	  CT.CTOr( CT.isString,  CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					      r: CT.CTRec(() => tree)}));
+    const o = tree.wrap({l: "x",r: {l: undefined, r: "x"}});
+    return o.l === "x";
+})(), "ctrec.6");
+assert.throws( () => {
+    const tree =
+	  CT.CTOr( CT.isString,  CT.isString,
+		   CT.isObject, CT.CTObject({ l: CT.CTRec(() => tree),
+					      r: CT.CTRec(() => tree)}));
+    const o = tree.wrap({l: "x",r: {l: undefined, r: "x"}});
+    o.l;
+    o.r.l;
+}, "ctrec.7");
+
+
