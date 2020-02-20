@@ -9,6 +9,12 @@
 /*    Basic contract implementation                                    */
 /*=====================================================================*/
 
+/* TODO:
+    - first-order operation (and simplify the CTOr api
+    - make infot, infof into a blame object
+    - add dependent functions.
+*/
+
 /*---------------------------------------------------------------------*/
 /*    CT                                                               */
 /*---------------------------------------------------------------------*/
