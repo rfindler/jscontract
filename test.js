@@ -13,10 +13,24 @@
 const assert = require( "assert" );
 const CT = require( "./contract.js" );
 
-assert.ok( CT.isNumber( 3 ), "isNumber.1" );
-assert.ok( !CT.isNumber( "a string" ), "isNumber.2" );
+assert.ok( CT.isObject( {x : 3} ), "isObject.1" );
+assert.ok( !CT.isObject( undefined ), "isObject.2" );
 assert.ok( CT.isFunction( (x) => x ), "isFunction.1" );
 assert.ok( !CT.isFunction( "a string" ), "isFunction.2" );
+assert.ok( CT.isString( "3" ), "isString.1" );
+assert.ok( !CT.isString( 3 ), "isString.2" );
+assert.ok( CT.isBoolean( false ), "isBoolean.1" );
+assert.ok( !CT.isBoolean( undefined ), "isBoolean.2" );
+assert.ok( CT.isNumber( 3 ), "isNumber.1" );
+assert.ok( !CT.isNumber( "a string" ), "isNumber.2" );
+
+
+assert.ok( (() =>
+	    3 === CTFlat(CT.isNumber).wrap(3)
+	   ), "ctflat.1");
+assert.throws( () => {
+    CTFlat(CT.isNumber).wrap("3")
+}, "ctflat.2");
 
 assert.throws( () => {
       function f( x ) { return x + 1 };
@@ -36,6 +50,18 @@ assert.throws( () => {
       wf("3");
       return true;
    }, "ctfunction.2.fail" );
+assert.throws( () => {
+      function f( x ) { return "x" };
+    var wf = CT.CTFunction( [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
+    wf("3", "3");
+      return true;
+   }, "ctfunction.3.fail" );
+assert.ok( (() => {
+      function f( x ) { return "x" };
+    var wf = CT.CTFunction( [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
+    wf("3", 3);
+      return true;
+})(), "ctfunction.3.pass" );
 
 assert.throws( () => {
       CT.CTOr( CT.isString, CT.isNumber ).wrap(undefined);
@@ -68,13 +94,25 @@ assert.throws( () => {
     f(3);
    }, "ctor.6" );
 
+assert.ok( (() => {
+    const tree =
+       CT.CTObject({});
+    const o = tree.wrap({});
+    return true;
+})(), "ctobject.1");
 assert.throws( () => {
     const tree =
        CT.CTObject({ l: CT.isString, r: CT.isObject});
     const o = tree.wrap({l: "x", r: undefined});
     o.l;
     o.r
-}, "ctobject.1");
+}, "ctobject.2");
+assert.ok( (() => {
+    const tree =
+       CT.CTObject({ l: CT.isString, r: CT.isNumber});
+    const o = tree.wrap({l: "x", r: 3});
+    return o.l === "x" && o.r === 3;
+})(), "ctobject.3");
 
 assert.throws( () => {
     const t2 = CT.CTRec(() => CT.isString);
@@ -138,4 +176,18 @@ assert.throws( () => {
     o.r.l;
 }, "ctrec.7");
 
-
+assert.ok( (() => {
+    return 0 === CT.CTArray(CT.isNumber).wrap([]).length;
+})(),"ctarray.0")
+assert.ok( (() => {
+    return 11 === CT.CTArray(CT.isNumber).wrap([11])[0];
+})(),"ctarray.1")
+assert.throws( () => {
+    CT.CTArray(CT.isNumber).wrap(["string"])[0];
+},"ctarray.2")
+assert.throws( () => {
+    CT.CTArray(CT.isNumber).wrap([11,"string",22])[1];
+},"ctarray.3")
+assert.ok( (() => {
+    return 22 === CT.CTArray(CT.isNumber).wrap([11,"string",22])[2];
+})(),"ctarray.4")
