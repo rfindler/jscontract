@@ -63,6 +63,68 @@ assert.ok( (() => {
       return true;
 })(), "ctfunction.3.pass" );
 
+assert.deepStrictEqual(CT.__topsort([]), [])
+assert.deepStrictEqual(CT.__topsort([ { name : "x" }]), [0])
+assert.deepStrictEqual(CT.__topsort([ { name : "x" }, { name : "y" }]), [0 , 1])
+assert.deepStrictEqual(CT.__topsort([ { name : "x" }, { name : "y" , dep : ["x"] }]), [0 , 1])
+assert.deepStrictEqual(CT.__topsort([ { name : "x" , dep : ["y"] },
+				      { name : "y" }]),
+		       [1 , 0])
+assert.deepStrictEqual(CT.__topsort([ { name : "a" , dep : ["c"] },
+				      { name : "b" },
+				      { name : "c" , dep : [] },
+				      { name : "d" },
+				      { name : "e" , dep : ["f"] },
+				      { name : "f" }]),
+		       [2, 0, 1, 3, 5, 4])
+assert.deepStrictEqual(CT.__topsort([ { name : "x" , dep : ["y"] },
+				      { name : "y" , dep : ["x"] }]),
+		       false)
+
+assert.deepStrictEqual(CT.__find_depended_on([]), []);
+assert.deepStrictEqual(CT.__find_depended_on([ { name : "x" , dep : ["y"] },
+					       { name : "y" , dep : ["x"] }]),
+		       [true, true]);
+assert.deepStrictEqual(CT.__find_depended_on([ { name : "x" },
+					       { name : "y" , dep : ["x"] }]),
+		       [true, false]);
+assert.deepStrictEqual(CT.__find_depended_on([ { name : "x" },
+					       { name : "y" }]),
+		       [false, false]);
+
+assert.ok( (() => {
+    function f( x ) { return "y" };
+    const ctc = CT.CTFunctionD( [ { name : "x", ctc : CT.isString} ], CT.isString );
+    const wf = ctc.wrap(f);
+    return wf("x") === "y";
+})(), "ctfunctiond.1" );
+assert.ok( (() => {
+    function f( x , y ) { return "y" };
+    const ctc = CT.CTFunctionD( [ { name : "x", ctc : CT.isString } ,
+				  { name : "y", ctc : CT.isNumber } ],
+				CT.isString );
+    const wf = ctc.wrap(f);
+    return wf("x", 1) === "y";
+})(), "ctfunctiond.2" );
+assert.ok( (() => {
+    function f( x , y ) { return "y" };
+    const ctc = CT.CTFunctionD( [ { name : "x", ctc : CT.isNumber } ,
+				  { name : "y", ctc : (deps) => (y) => deps.x < y , dep : ["x"] } ],
+				CT.isString );
+    const wf = ctc.wrap(f);
+    return wf(1,2) === "y";
+})(), "ctfunctiond.3" );
+assert.ok( (() => {
+    function f( x , y ) { return "y" };
+    const ctc = CT.CTFunctionD( [ { name : "x", ctc : (deps) => (x) => x < deps.y , dep : ["y"]} ,
+				  { name : "y", ctc : CT.isNumber } ],
+				CT.isString );
+    const wf = ctc.wrap(f);
+    return wf(1,2) === "y";
+})(), "ctfunctiond.4" );
+
+
+
 assert.throws( () => {
       CT.CTOr( CT.isString, CT.isNumber ).wrap(undefined);
    }, "ctor.1" );

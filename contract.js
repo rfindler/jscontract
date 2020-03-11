@@ -77,16 +77,6 @@ function CTFlat( pred ) {
 /*---------------------------------------------------------------------*/
 function CTFunction( domain, range ) {
    
-   function map2( args, domain, key ) {
-      let len = args.length;
-      
-      for( let i = 0; i < len; i++ ) {
-	 args[ i ] = domain[ i ][ key ].ctor( args[ i ] );
-      }
-      
-      return args;
-   }
-
    function firstOrder( x ) {
       return typeof x === "function";
    }
@@ -95,8 +85,8 @@ function CTFunction( domain, range ) {
       throw new TypeError( "Illegal domain: " + domain );
    } else {
       return new CT( firstOrder, function( infot, infof ) {
-	  const ri = CTapply( range, infot, infof, "CTFunction" );
 	  const dis = domain.map( d => CTapply( d, infot, infof, "CTFunction" ) );
+	  const ri = CTapply( range, infot, infof, "CTFunction" );
 	 
 	 function mkWrapper( info, ri, rik, dis, disk ) {
 	    const handler = {
@@ -133,6 +123,185 @@ function CTFunction( domain, range ) {
 	 }
       } );
    }
+}
+
+function map2( args, domain, key ) {
+    let len = args.length;
+    
+    for( let i = 0; i < len; i++ ) {
+	args[ i ] = domain[ i ][ key ].ctor( args[ i ] );
+    }
+    
+    return args;
+}
+
+/*---------------------------------------------------------------------*/
+/*    CTFunctionD ...                                                  */
+/*---------------------------------------------------------------------*/
+function CTFunctionD( domain, range , info_indy ) {
+    
+    function firstOrder( x ) {
+	return typeof x === "function";
+    }
+    
+    if( !(domain instanceof Array) ) {
+	throw new TypeError( "Illegal domain: " + domain );
+    }
+    for( let i = 0; i < domain.length; i++ ) {
+	if (!domain[i])
+	    throw new TypeError( "Illegal domain entry at index " + i + ": " + domain[i] );
+	if (!domain[i].ctc)
+	    throw new TypeError( "Illegal domain entry at index " + i + ", no ctc field: " + domain[i] );
+	if (!domain[i].name)
+	    throw new TypeError( "Illegal domain entry at index " + i + ", no name field: " + domain[i] );
+    }
+    const dep_order_to_arg_order = topsort(domain);
+    const depended_on = find_depended_on(domain);
+
+    return new CT( firstOrder, function( infot, infof ) {
+	const normal_dis = [];
+	const dep_dis = [];
+	for( let i = 0; i < domain.length; i++ ) {
+	    const d = domain[i];
+	    if (!d.dep) {
+		normal_dis[i] = CTapply( d.ctc, infot, infof, "CTFunctionD" );
+		if (depended_on[i]) {
+		    dep_dis[i] = CTapply( d.ctc, info_indy, infof, "CTFunctionD" );
+		}
+	    }
+	}
+	const ri = CTapply( range, infot, infof, "CTFunctionD" );
+
+
+	function mkWrapper( info, rik, disk ) {
+	    const handler = {
+		apply: function( target, self, args ) {
+      	       	    if( args.length !== domain.length ) {
+	 		throw new TypeError( 
+	    	     	    "Wrong number of argument " + args.length + "/" + domain.length 
+	    	     		+ ": " + info );
+      	       	    } else {
+			var wrapped_args_for_dep = {} // what happens if the dependent code modifies this thing?
+			var wrapped_args = [];
+			for( let dep_i = 0; dep_i < domain.length; dep_i++ ) {
+			    let arg_i = dep_order_to_arg_order[dep_i];
+			    if (domain[arg_i].dep) {
+				if (depended_on[arg_i]) {
+				    const ctc_for_dep = domain[arg_i].ctc(wrapped_args_for_dep);
+				    const di_for_dep = CTapply(ctc_for_dep, infot, info_indy, "CTFunctionD");
+				    wrapped_args_for_dep[domain[arg_i].name] = di_for_dep[disk].ctor(args[arg_i]);
+				}
+				// wrapped_args_for_dep has one item too many in it
+				// at this point; due to previous assignment
+				const ctc = domain[arg_i].ctc(wrapped_args_for_dep); 
+				const di = CTapply(ctc, infot, info_indy, "CTFunctionD");
+				wrapped_args[arg_i] = di[disk].ctor(args[arg_i]);
+			    } else {
+				if (depended_on[arg_i]) {
+				    wrapped_args_for_dep[domain[arg_i].name] = dep_dis[arg_i][disk].ctor(args[arg_i]);
+				}
+				wrapped_args[arg_i] = normal_dis[arg_i][disk].ctor(args[arg_i]);
+			    }
+			}
+
+			// skiped the post-condition contract (for now); it would be something like
+			// ri[ rik ].ctor(<<result>>)
+			return target.apply(this, wrapped_args);
+	       	    }
+		}
+	    }
+	    return new CTWrapper( function( value ) {
+		if( firstOrder( value ) ) {
+	       	    return new Proxy( value, handler );
+		} else {
+	       	    throw new TypeError( 
+			"Not a function `" + value + "': " + info );
+		}
+	    } );
+	}
+	
+	return { 
+	    t: mkWrapper( infot, "t", "f" ),
+	    f: mkWrapper( infof, "f", "t" )
+	}
+    } );
+}
+
+
+function topsort( orig_domain ) {
+
+    const name_to_id = [];
+    for( let i = 0; i < orig_domain.length; i++ ) {
+	name_to_id[orig_domain[i].name] = i;
+    }
+
+    // make a copy of the input objects so we can modify
+    // them (by adding the temporary and permanent marks)
+    const domain = orig_domain.slice();
+    for( let i = 0; i < domain.length; i++ ) {
+	function cmp (x , y) { return name_to_id[x.name] < name_to_id[y.name]; }
+	domain[i] = { name : domain[i].name,
+		      dep : (domain[i].dep) ?
+		      domain[i].dep.slice().sort(cmp) : [],
+		      temporary_mark : false,
+		      permanent_mark : false };
+    }
+
+    let cycle = false;
+    const result = [];
+
+    function visit( node ) {
+	if (node.permanent_mark) {
+	    return;
+	}
+	if (node.temporary_mark) {
+	    cycle = true;
+	    return;
+	}
+	node.temporary_mark = true;
+	if (node.dep) {
+	    for( let i = 0; i < node.dep.length; i++ ) {
+		visit(domain[name_to_id[node.dep[i]]]);
+	    }
+	}
+	node.temporary_mark = false;
+	node.permanent_mark = true;
+	result.push(node);
+    }
+
+    const unmarked = domain.slice();
+    while (unmarked.length != 0 && !cycle) {
+	if (unmarked[0].permanent_mark) {
+	    unmarked.shift();
+	} else {
+	    visit(unmarked[0])
+	}
+    }
+    if (cycle) return false;
+
+    for( let i = 0; i < result.length; i++ ) {
+	result[i] = name_to_id[result[i].name];
+    }
+    return result;
+}
+
+function find_depended_on(domain) {
+    const result = [];
+    const name_to_id = [];
+    for( let i = 0; i < domain.length; i++ ) {
+	name_to_id[domain[i].name] = i;
+	result[i] = false;
+    }
+    for( let i = 0; i < domain.length; i++ ) {
+	const dep = domain[i].dep;
+	if (dep) {
+	    for (let j = 0; j < dep.length; j++) {
+		result[name_to_id[dep[j]]] = true;
+	    }
+	}
+    }
+
+    return result;
 }
 
 /*---------------------------------------------------------------------*/
@@ -362,6 +531,7 @@ exports.CTObject = CTObject;
 exports.CTOr = CTOr;
 exports.CTRec = CTRec;
 exports.CTFunction = CTFunction;
+exports.CTFunctionD = CTFunctionD;
 exports.CTArray = CTArray;
 exports.isObject = isObject;
 exports.isFunction = isFunction;
@@ -369,6 +539,10 @@ exports.isString = isString;
 exports.isBoolean = isBoolean;
 exports.isNumber = isNumber;
 exports.True = True;
+
+// exported for the test suite only
+exports.__topsort = topsort;
+exports.__find_depended_on = find_depended_on;
 
 exports.CTexports = function( ctc, val, locationt ) {
     return (locationf) =>
