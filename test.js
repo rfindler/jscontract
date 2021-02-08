@@ -13,6 +13,9 @@
 const assert = require( "assert" );
 const CT = require( "./contract.js" );
 
+/*
+ * predicates
+ */
 assert.ok( CT.isObject( {x : 3} ), "isObject.1" );
 assert.ok( !CT.isObject( undefined ), "isObject.2" );
 assert.ok( CT.isFunction( (x) => x ), "isFunction.1" );
@@ -25,6 +28,9 @@ assert.ok( CT.isNumber( 3 ), "isNumber.1" );
 assert.ok( !CT.isNumber( "a string" ), "isNumber.2" );
 
 
+/*
+ * CTFlat
+ */
 assert.ok( (() =>
 	    3 === CTFlat(CT.isNumber).wrap(3)
 	   ), "ctflat.1");
@@ -32,6 +38,9 @@ assert.throws( () => {
     CTFlat(CT.isNumber).wrap("3")
 }, "ctflat.2");
 
+/*
+ * CTFunction
+ */
 assert.throws( () => {
       function f( x ) { return x + 1 };
       var wf = CT.CTFunction( [ CT.isString ], CT.isString ).wrap(f);
@@ -63,6 +72,17 @@ assert.ok( (() => {
       return true;
 })(), "ctfunction.3.pass" );
 
+// check errors happen at the right time
+assert.throws( () => {
+    CT.CTFunction([57],true);
+}, /CTFunction: not a contract/, "ctfunction.arg1-check");
+assert.throws( () => {
+    CT.CTFunction([true],57);
+}, /CTFunction: not a contract/, "ctfunction.arg2-check");
+
+/*
+ * CTFunctionD
+ */
 assert.deepStrictEqual(CT.__topsort([]), [])
 assert.deepStrictEqual(CT.__topsort([ { name : "x" }]), [0])
 assert.deepStrictEqual(CT.__topsort([ { name : "x" }, { name : "y" }]), [0 , 1])
@@ -125,6 +145,9 @@ assert.ok( (() => {
 
 
 
+/*
+ * CTOr
+ */
 assert.throws( () => {
       CT.CTOr( CT.isString, CT.isNumber ).wrap(undefined);
    }, "ctor.1" );
@@ -156,6 +179,17 @@ assert.throws( () => {
     f(3);
    }, "ctor.6" );
 
+// check errors happen at the right time
+assert.throws( () => {
+    CT.CTOr(57,true);
+}, /CTOr: not a contract/, "ctor.arg1-check");
+assert.throws( () => {
+    CT.CTOr(true,57);
+}, /CTOr: not a contract/, "ctor.arg2-check");
+
+/*
+ * CTObject
+ */
 assert.ok( (() => {
     const tree =
        CT.CTObject({});
@@ -176,6 +210,15 @@ assert.ok( (() => {
     return o.l === "x" && o.r === 3;
 })(), "ctobject.3");
 
+// check errors happen at the right time
+assert.throws( () => {
+    CT.CTObject({x : 57});
+}, /CTObject: not a contract/, "ctobject.arg-check");
+
+
+/*
+ * CTRec
+ */
 assert.throws( () => {
     const t2 = CT.CTRec(() => CT.isString);
     const o2 = t2.wrap(undefined);
@@ -238,6 +281,9 @@ assert.throws( () => {
     o.r.l;
 }, "ctrec.7");
 
+/*
+ * CTArray
+ */
 assert.ok( (() => {
     return 0 === CT.CTArray(CT.isNumber).wrap([]).length;
 })(),"ctarray.0")
@@ -253,3 +299,7 @@ assert.throws( () => {
 assert.ok( (() => {
     return 22 === CT.CTArray(CT.isNumber).wrap([11,"string",22])[2];
 })(),"ctarray.4")
+// check errors happen at the right time
+assert.throws( () => {
+    CT.CTArray(57);
+}, /CTArray: not a contract/, "ctarray.arg-check");

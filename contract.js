@@ -12,6 +12,7 @@
 /* TODO:
     - make infot, infof into a blame object
     - add dependent functions.
+    - get rid of CTApply from dependent function contracts
 */
 
 /*---------------------------------------------------------------------*/
@@ -54,7 +55,7 @@ class CTWrapper {
 /*---------------------------------------------------------------------*/
 function CTFlat( pred ) {
    if( typeof pred !== "function" ) {
-      throw new TypeError( "Illegal predicat: " + pred );
+      throw new TypeError( "Illegal predicate: " + pred );
    } else {
       function mkWrapper( info ) {
 	 return new CTWrapper( function( value ) {
@@ -84,11 +85,15 @@ function CTFunction( domain, range ) {
    if( !(domain instanceof Array) ) {
       throw new TypeError( "Illegal domain: " + domain );
    } else {
-      return new CT( firstOrder, function( infot, infof ) {
-	  const dis = domain.map( d => CTapply( d, infot, infof, "CTFunction" ) );
-	  const ri = CTapply( range, infot, infof, "CTFunction" );
-	 
+       const coerced_dis = domain.map ( d => CTCoerce ( d, "CTFunction" ) );
+       const coerced_ri = CTCoerce ( range, "CTFunction" ) ;
+       return new CT( firstOrder, function( infot, infof ) {
+         const dis = coerced_dis.map( d => d.wrapper( infot, infof ) );
+         const ri = coerced_ri.wrapper( infot, infof );
+
 	 function mkWrapper( info, ri, rik, dis, disk ) {
+	    const ri_wrapper = ri [ rik ] ;
+	    const di0_wrapper = domain.length > 0 ? dis[ 0 ][ disk ] : undefined;
 	    const handler = {
 	       apply: function( target, self, args ) {
       	       	  if( args.length !== domain.length ) {
@@ -96,13 +101,13 @@ function CTFunction( domain, range ) {
 	    	     	"Wrong number of argument " + args.length + "/" + domain.length 
 	    	     	+ ": " + info );
       	       	  } else {
-	       	     switch( args.length ) {
-		     	case 0:
-		     	   return ri[ rik ].ctor( target.call( this, undefined ) );
-		     	case 1:
-		     	   return ri[ rik ].ctor( target.call( this, dis[ 0 ][ disk ].ctor( args[ 0 ] ) ) );
-		     	default: 
-		     	   return ri[ rik ].ctor( target.apply( this, map2( args, dis, disk ) ) );
+                     switch( args.length ) {
+                     case 0:
+                         return ri_wrapper.ctor( target.call( this, undefined ) );
+                     case 1:
+                         return ri_wrapper.ctor( target.call( this, di0_wrapper.ctor( args[ 0 ] ) ) );
+                     default:
+                         return ri_wrapper.ctor( target.apply( this, map2( args, dis, disk ) ) );
 	       	     }
 	       	  }
 	       }
@@ -324,10 +329,10 @@ function CTRec( thunk ) {
    
    return new CT( firstOrder, 
       function( infot, infof ) {
-      	 var ei;
+         let ei = false;
       	 function mkWrapper( info, kt ) {
 	    return new CTWrapper( function( value ) {
-	       if (!ei) ei = CTapply( mthunk(), infot, infof, "CTRec" );
+	       if (!ei) ei = mthunk().wrapper( infot, infof );
 	       return ei[kt].ctor(value);
 	    })}
       	 return { 
@@ -341,26 +346,20 @@ function CTRec( thunk ) {
 /*    CTOr ...                                                         */
 /*---------------------------------------------------------------------*/
 function CTOrExplicitChoice( lchoose, left, rchoose, right ) {
-   return new CT( x => lchoose( x ) || rchoose( x ),
+    return new CT( x => lchoose( x ) || rchoose( x ),
       function( infot, infof ) {
-	 const ei_l = CTapply( left, infot, infof, "CTOr");
-	 const ei_r = CTapply( right, infot, infof, "CTOr" );
+         const ei_l = left.wrapper( infot, infof );
+         const ei_r = right.wrapper( infot, infof );
 	 function mkWrapper( info, kt ) {
       	    return new CTWrapper( function( value ) {
 	       const is_l = lchoose(value);
 	       const is_r = rchoose(value);
-	       var ei = undefined;
-	       if (is_l && is_r) ei = ei_l; // this is first-or/c, do we want or/c?
-	       if (is_l) ei = ei_l;
-	       if (is_r) ei = ei_r;
-	       if (!ei) {
-		  throw new TypeError( 
-		     "CTOr neither applied: " + value 
-		     + ": " + info );
-	       }
-	       return ei[kt].ctor(value);
-	    })
-	 }
+	       if (is_l) return ei_l[kt].ctor(value);
+	       if (is_r) return ei_r[kt].ctor(value);
+               throw new TypeError(
+		   "CTOr neither applied: " + value
+		       + ": " + info );
+	    })}
 	 return { 
 	    t: mkWrapper( infot, "t" ),
 	    f: mkWrapper( infof, "f" )
@@ -383,9 +382,10 @@ function CTArray( element ) {
       return x instanceof Array;
    }
    
+   element_ctc = CTCoerce( element,  "CTArray" );
    return new CT( firstOrder,
       function( infot, infof ) {
-       	 const ei = CTapply( element, infot, infof, "CTArray" );
+         const ei = element_ctc.wrapper( infot, infof );
 
       	 function mkWrapper( info, ei, kt, kf ) {
       	    const handler = {
@@ -431,14 +431,20 @@ function CTObject( fields ) {
       return x instanceof Object
    }
 	 
+   const fields_as_ctcs = {};
+   for( let k in fields ) {
+       const ctc = fields[ k ];
+       fields_as_ctcs[ k ] = CTCoerce( ctc, "CTObject" );
+   }
+
    return new CT( firstOrder, 
       function( infot, infof ) {
       	 const ei = {};
-      	 
-      	 for( let k in fields ) {
-	    const ctc = fields[ k ];
 
-	    ei[ k ] = CTapply( ctc, infot, infof, "CTObject" );
+          for( let k in fields_as_ctcs ) {
+	    const ctc = fields_as_ctcs[ k ];
+
+	    ei[ k ] = ctc.wrapper( infot, infof );
       	 }
       	 
       	 function mkWrapper( info, ei, kt, kf ) {
