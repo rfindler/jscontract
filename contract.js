@@ -11,8 +11,6 @@
 
 /* TODO:
     - make infot, infof into a blame object
-    - add dependent functions.
-    - get rid of CTApply from dependent function contracts
 */
 
 /*---------------------------------------------------------------------*/
@@ -163,19 +161,27 @@ function CTFunctionD( domain, range , info_indy ) {
     const dep_order_to_arg_order = topsort(domain);
     const depended_on = find_depended_on(domain);
 
+    const domain_ctcs = [];
+    for( let i = 0; i < domain.length; i++ ) {
+	const d = domain[i];
+	if (!d.dep)
+            domain_ctcs[i] = CTCoerce(d.ctc , "CTFunctionD");
+    }
+    const range_ctc = CTCoerce(range , "CTFunctionD");
+
     return new CT( firstOrder, function( infot, infof ) {
 	const normal_dis = [];
 	const dep_dis = [];
 	for( let i = 0; i < domain.length; i++ ) {
 	    const d = domain[i];
 	    if (!d.dep) {
-		normal_dis[i] = CTapply( d.ctc, infot, infof, "CTFunctionD" );
+		normal_dis[i] = domain_ctcs[i].wrapper( infot, infof );
 		if (depended_on[i]) {
-		    dep_dis[i] = CTapply( d.ctc, info_indy, infof, "CTFunctionD" );
+		    dep_dis[i] = domain_ctcs[i].wrapper( infot, infof );
 		}
 	    }
 	}
-	const ri = CTapply( range, infot, infof, "CTFunctionD" );
+	const ri = range_ctc.wrapper( infot, infof );
 
 
 	function mkWrapper( info, rik, disk ) {
@@ -193,13 +199,13 @@ function CTFunctionD( domain, range , info_indy ) {
 			    if (domain[arg_i].dep) {
 				if (depended_on[arg_i]) {
 				    const ctc_for_dep = domain[arg_i].ctc(wrapped_args_for_dep);
-				    const di_for_dep = CTapply(ctc_for_dep, infot, info_indy, "CTFunctionD");
+				    const di_for_dep = CTDepApply(ctc_for_dep, infot, info_indy, "CTFunctionD");
 				    wrapped_args_for_dep[domain[arg_i].name] = di_for_dep[disk].ctor(args[arg_i]);
 				}
 				// wrapped_args_for_dep has one item too many in it
 				// at this point; due to previous assignment
 				const ctc = domain[arg_i].ctc(wrapped_args_for_dep); 
-				const di = CTapply(ctc, infot, info_indy, "CTFunctionD");
+				const di = CTDepApply(ctc, infot, info_indy, "CTFunctionD");
 				wrapped_args[arg_i] = di[disk].ctor(args[arg_i]);
 			    } else {
 				if (depended_on[arg_i]) {
@@ -230,6 +236,10 @@ function CTFunctionD( domain, range , info_indy ) {
 	    f: mkWrapper( infof, "f", "t" )
 	}
     } );
+}
+
+function CTDepApply( ctc, infot, infof, who ) {
+    return CTCoerce( ctc, who ).wrapper( infot, infof );
 }
 
 
@@ -512,12 +522,6 @@ function CTCoerce( obj, who ) {
 	     "not a contract `" + obj + "'" );
       }
    }
-}
-/*---------------------------------------------------------------------*/
-/*    CTapply ...                                                      */
-/*---------------------------------------------------------------------*/
-function CTapply( ctc, infot, infof, who ) {
-    return CTCoerce( ctc, who ).wrapper( infot, infof );
 }
 
 /*---------------------------------------------------------------------*/

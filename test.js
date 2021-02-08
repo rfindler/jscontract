@@ -142,8 +142,13 @@ assert.ok( (() => {
     const wf = ctc.wrap(f);
     return wf(1,2) === "y";
 })(), "ctfunctiond.4" );
-
-
+// check errors happen at the right time
+assert.throws( () => {
+    CT.CTFunctionD([{name : "x", ctc : 57}],CT.isString);
+}, /CTFunctionD: not a contract/, "ctfunctiond.arg-check");
+assert.throws( () => {
+    CT.CTFunctionD([{name : "x", ctc : CT.isString}], 57);
+}, /CTFunctionD: not a contract/, "ctfunctiond.rng-check");
 
 /*
  * CTOr
