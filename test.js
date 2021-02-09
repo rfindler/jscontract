@@ -43,41 +43,52 @@ assert.throws( () => {
  */
 assert.throws( () => {
       function f( x ) { return x + 1 };
-      var wf = CT.CTFunction( [ CT.isString ], CT.isString ).wrap(f);
+      var wf = CT.CTFunction( true, [ CT.isString ], CT.isString ).wrap(f);
       wf(3);
       return true;
    }, "ctfunction.1.succeed" );
 assert.ok( (() => {
       function f( x ) { return x + 1 };
-      var wf = CT.CTFunction( [ CT.isString ], CT.isString ).wrap(f);
+      var wf = CT.CTFunction( CT.trueCT, [ CT.isString ], CT.isString ).wrap(f);
       wf("3");
       return true;
    })(), "ctfunction.1.fail" );
 assert.throws( () => {
       function f( x ) { return 1 };
-      var wf = CT.CTFunction( [ CT.isString ], CT.isString ).wrap(f);
+      var wf = CT.CTFunction( true, [ CT.isString ], CT.isString ).wrap(f);
       wf("3");
       return true;
    }, "ctfunction.2.fail" );
 assert.throws( () => {
       function f( x ) { return "x" };
-    var wf = CT.CTFunction( [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
+    var wf = CT.CTFunction( true, [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
     wf("3", "3");
       return true;
    }, "ctfunction.3.fail" );
 assert.ok( (() => {
       function f( x ) { return "x" };
-    var wf = CT.CTFunction( [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
+    var wf = CT.CTFunction( true, [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
     wf("3", 3);
       return true;
 })(), "ctfunction.3.pass" );
+assert.throws( () => {
+    function f( x ) { return "x" };
+    function hasg( x ) { return "g" in x; }
+    var wf = CT.CTFunction( hasg , [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
+    var o = { f : wf };
+    o.f("3", 3);
+    return true;
+}, "ctfunction.4.fail" );
 
 // check errors happen at the right time
 assert.throws( () => {
-    CT.CTFunction([57],true);
+    CT.CTFunction(true,[57],true);
 }, /CTFunction: not a contract/, "ctfunction.arg1-check");
 assert.throws( () => {
-    CT.CTFunction([true],57);
+    CT.CTFunction(true,[true],57);
+}, /CTFunction: not a contract/, "ctfunction.arg2-check");
+assert.throws( () => {
+    CT.CTFunction(57,[true],true);
 }, /CTFunction: not a contract/, "ctfunction.arg2-check");
 
 /*
@@ -165,21 +176,22 @@ assert.ok( (() => {
       return true;
    })(), "ctor.3" );
 assert.ok( (() => {
+    function f_(x) { return "x"; }
     const f =
-	  CT.CTOr( CT.CTFunction( [ CT.isString ], CT.isString ),
-		   CT.isNumber ).wrap((x) => "x");
+	  CT.CTOr( CT.CTFunction( true, [ CT.isString ], CT.isString ),
+		   CT.isNumber ).wrap(f_);
     f("x");
     return true;
    })(), "ctor.4" );
 assert.throws( () => {
     const f =
-	  CT.CTOr( CT.CTFunction( [ CT.isString ], CT.isString ),
+	  CT.CTOr( CT.CTFunction( true, [ CT.isString ], CT.isString ),
 		   CT.isNumber ).wrap((x) => 3);
     f("x");
    }, "ctor.5" );
 assert.throws( () => {
     const f =
-	  CT.CTOr( CT.CTFunction( [ CT.isString ], CT.isString ),
+	  CT.CTOr( CT.CTFunction( true, [ CT.isString ], CT.isString ),
 		   CT.isNumber ).wrap((x) => "x");
     f(3);
    }, "ctor.6" );

@@ -565,7 +565,7 @@ function CTObject( fields ) {
 	    ei[ k ] = ctc.wrapper( infot, infof );
       	 }
       	 
-      	  function mkWrapper( priv, info, ei, kt, kf ) {
+      	  function mkWrapper( info, ei, kt, kf ) {
       	     var handler = {
 	       	get: function( target, prop ) {
 	       	   const ct = ei[ prop ];
