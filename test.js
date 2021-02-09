@@ -87,6 +87,17 @@ assert.ok( (() => {
       wf(1);
       return true;
 })(), "ctfunction.5.succeed" );
+assert.ok( (() => {
+      function f() { return "abc" };
+      var wf = CT.CTFunction( CT.trueCT, [ ], CT.isString ).wrap(f);
+      wf();
+      return true;
+})(), "ctfunction.6.succeed" );
+assert.throws( () => {
+      function f() { return "abc" };
+      var wf = CT.CTFunction( CT.trueCT, [ ], 123 ).wrap(f);
+      wf();
+}, "ctfunction.6.fail" );
 
 // check errors happen at the right time
 assert.throws( () => {
