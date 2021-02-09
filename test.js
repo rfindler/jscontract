@@ -13,6 +13,8 @@
 const assert = require( "assert" );
 const CT = require( "./contract.js" );
 
+const not_a_contract = [57];
+
 /*
  * predicates
  */
@@ -79,16 +81,22 @@ assert.throws( () => {
     o.f("3", 3);
     return true;
 }, "ctfunction.4.fail" );
+assert.ok( (() => {
+      function f( x ) { return x + 1 };
+      var wf = CT.CTFunction( true, [ 1 ], 2 ).wrap(f);
+      wf(1);
+      return true;
+})(), "ctfunction.5.succeed" );
 
 // check errors happen at the right time
 assert.throws( () => {
-    CT.CTFunction(true,[57],true);
+    CT.CTFunction(true,[not_a_contract],true);
 }, /CTFunction: not a contract/, "ctfunction.arg1-check");
 assert.throws( () => {
-    CT.CTFunction(true,[true],57);
+    CT.CTFunction(true,[true],not_a_contract);
 }, /CTFunction: not a contract/, "ctfunction.arg2-check");
 assert.throws( () => {
-    CT.CTFunction(57,[true],true);
+    CT.CTFunction(not_a_contract,[true],true);
 }, /CTFunction: not a contract/, "ctfunction.arg2-check");
 
 /*
@@ -155,10 +163,10 @@ assert.ok( (() => {
 })(), "ctfunctiond.4" );
 // check errors happen at the right time
 assert.throws( () => {
-    CT.CTFunctionD([{name : "x", ctc : 57}],CT.isString);
+    CT.CTFunctionD([{name : "x", ctc : not_a_contract}],CT.isString);
 }, /CTFunctionD: not a contract/, "ctfunctiond.arg-check");
 assert.throws( () => {
-    CT.CTFunctionD([{name : "x", ctc : CT.isString}], 57);
+    CT.CTFunctionD([{name : "x", ctc : CT.isString}], not_a_contract);
 }, /CTFunctionD: not a contract/, "ctfunctiond.rng-check");
 
 /*
@@ -198,10 +206,10 @@ assert.throws( () => {
 
 // check errors happen at the right time
 assert.throws( () => {
-    CT.CTOr(57,true);
+    CT.CTOr(not_a_contract,true);
 }, /CTOr: not a contract/, "ctor.arg1-check");
 assert.throws( () => {
-    CT.CTOr(true,57);
+    CT.CTOr(true,not_a_contract);
 }, /CTOr: not a contract/, "ctor.arg2-check");
 
 /*
@@ -229,9 +237,12 @@ assert.ok( (() => {
 
 // check errors happen at the right time
 assert.throws( () => {
-    CT.CTObject({x : 57});
+    CT.CTObject({x : not_a_contract});
 }, /CTObject: not a contract/, "ctobject.arg-check");
 
+assert.throws( () => {
+    CT.CTObject({x : CT.isString, y : CT.isObject}).wrap({});
+}, /Not an object {x, y}/, "ctojbect.tostring")
 
 /*
  * CTRec
@@ -318,5 +329,5 @@ assert.ok( (() => {
 })(),"ctarray.4")
 // check errors happen at the right time
 assert.throws( () => {
-    CT.CTArray(57);
+    CT.CTArray(not_a_contract);
 }, /CTArray: not a contract/, "ctarray.arg-check");

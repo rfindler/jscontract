@@ -622,6 +622,8 @@ function CTCoerce( obj, who ) {
        return CTCoerce( CTFlat( obj ) , who);
    } else if( obj === true ) {
        return CTCoerce( CTFlat( v => true ) , who);
+   } else if( isNumber(obj) ) {
+       return CTCoerce( CTFlat( v => obj === v ) , who);
    } else {
       if( obj instanceof CT ) {
 	 return obj;
