@@ -7,10 +7,13 @@ const CT = require( "../../contract.js" );
 const archy = require( "./index.js" );
 
 const archyDataCT = CT.CTRec( () => 
-	    CT.CTOr( CT.CTObject( { label: CT.stringCT } ), 
-   			       	  CT.CTObject( { label: CT.stringCT, nodes: CT.CTArray( CT.CTOr( archyDataCT, CT.stringCT ) ) } ) ) );
+	    CT.CTObject( { label: CT.stringCT,
+			   nodes: { contract: CT.CTArray( 
+				       CT.CTOr( archyDataCT, CT.stringCT ) ), 
+				    optional: true } } ) );
 
-const archyOptionsCT = CT.CTOr( CT.CTObject( {} ), CT.CTObject( { unicode: CT.booleanCT } ) );
+const archyOptionsCT = 
+   CT.CTObject( { unicode: { contract: CT.booleanCT, optional: true } } );
 
 const archyCT = CT.CTFunction( CT.trueCT, 
    [ CT.CTOr( archyDataCT, CT.stringCT ), CT.CTOr( CT.stringCT, CT.undefinedCT ), CT.CTOr( archyOptionsCT, CT.undefinedCT ) ], CT.stringCT )

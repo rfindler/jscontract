@@ -520,10 +520,11 @@ function CTArray( element ) {
 /*    CTObject ...                                                     */
 /*---------------------------------------------------------------------*/
 function CTObject( fields ) {
+   
    function firstOrder( x ) {
       if( x instanceof Object ) {
 	 for( let n in fields ) { 
-	    if( !(n in x) ) return false;
+	    if( !(n in x) && (!fields[ n ].optional) ) return false;
 	 }
 	 
 	 for( let n in x ) {
@@ -627,6 +628,8 @@ function CTCoerce( obj, who ) {
    } else {
       if( obj instanceof CT ) {
 	 return obj;
+      } else if( "contract" in obj ) {
+	 return CTCoerce( obj.contract );
       } else {
 	 throw new TypeError( 
 	     (who ? (who + ": ") : "") +
