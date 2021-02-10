@@ -4,7 +4,7 @@
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
 /*    Last change :  Thu Feb 20 20:59:41 2020 (serrano)                */
-/*    Copyright   :  2020 manuel serrano                               */
+/*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
 /*=====================================================================*/
@@ -245,6 +245,12 @@ assert.ok( (() => {
     const o = tree.wrap({l: "x", r: 3});
     return o.l === "x" && o.r === 3;
 })(), "ctobject.3");
+assert.ok( (() => {
+    const person =
+       CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isNumber, CT.isString ), index: "string" } });
+       const o = person.wrap({id: 23, name: "foo", firstname: "bar", age: 55});
+       return o.id === 23 && o.name === "foo" && o.age === 55;
+})(), "ctobject.4");
 
 // check errors happen at the right time
 assert.throws( () => {
@@ -253,8 +259,15 @@ assert.throws( () => {
 
 assert.throws( () => {
     CT.CTObject({x : CT.isString, y : CT.isObject}).wrap({});
-}, /Not an object {x, y}/, "ctojbect.tostring")
+}, /Object missmatch, expecting "{x, y}"/, "ctojbect.tostring");
 
+assert.throws( () => {
+     const person =
+       	CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isNumber, CT.isString ), index: "string" } });
+     const o = person.wrap({id: 23, name: "foo", firstname: "bar", age: false});
+     return o.id === 23 && o.name === "foo" && o.age === 55;
+}, /CTOr neither applied/, "ctobject.index" );
+   
 /*
  * CTRec
  */

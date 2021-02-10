@@ -519,7 +519,28 @@ function CTArray( element ) {
 /*---------------------------------------------------------------------*/
 /*    CTObject ...                                                     */
 /*---------------------------------------------------------------------*/
-function CTObject( fields ) {
+function CTObject( ctfields ) {
+   
+   let stringIndexContract = false, numberIndexContract = false;
+   let fields = {};
+   
+   for( let k in ctfields ) {
+      const p = ctfields[ k ];
+      if( "contract" in p ) {
+	 if( p.index === "string" ) {
+	    stringIndexContract = CTCoerce( p.contract, "CTObject" );
+	 } else if( p.index === "number" ) {
+	    numberIndexContract = CTCoerce( p.contract, "CTObject" );
+	 } else {
+	    fields[ k ] = { 
+	       contract: CTCoerce( p.contract, "CTObject" ), 
+	       optional: p.optional 
+	    }
+	 }
+      } else {
+	 fields[ k ] = { contract: CTCoerce( p, "CTObject" ) };
+      } 
+   }
    
    function firstOrder( x ) {
       if( x instanceof Object ) {
@@ -527,11 +548,18 @@ function CTObject( fields ) {
 	    if( !(n in x) && (!fields[ n ].optional) ) return false;
 	 }
 	 
-	 for( let n in x ) {
+      	 for( let n in x ) {
 	    if( n !== "__private" ) {
-	       if( !(n in fields) ) return false;
+	       if( !(n in fields) ) {
+	       	  if( typeof( n ) === "string" && !stringIndexContract ) {
+		     return false;
+	       	  }
+	       	  if( typeof( n ) === "number" && !numberIndexContract ) {
+		     return false;
+	       	  }
+	       }
 	    }
-	 }
+      	 }
 	 
 	 return true;
       } else {
@@ -547,65 +575,72 @@ function CTObject( fields ) {
 	 res += sep + n;
 	 sep = ", ";
       }
-      return res + "}";
+      
+      if( sep === "{" ) {
+	 return "{}";
+      } else {
+      	 return res + "}";
+      }
    }
 	 
-   const fields_as_ctcs = {};
-   for( let k in fields ) {
-       const ctc = fields[ k ];
-       fields_as_ctcs[ k ] = CTCoerce( ctc, "CTObject" );
-   }
-
    return new CT( firstOrder, 
       function( infot, infof ) {
       	 const ei = {};
+	 const eis = stringIndexContract && 
+	    stringIndexContract.wrapper( infot, infof );
+	 const ein = numberIndexContract && 
+	    numberIndexContract.wrapper( infot, infof );
 
-          for( let k in fields_as_ctcs ) {
-	    const ctc = fields_as_ctcs[ k ];
+	 for( let k in fields ) {
+	    const ctc = fields[ k ].contract;
 
 	    ei[ k ] = ctc.wrapper( infot, infof );
       	 }
       	 
-      	  function mkWrapper( info, ei, kt, kf ) {
-      	     var handler = {
-	       	get: function( target, prop ) {
-	       	   const ct = ei[ prop ];
-	       	   const priv = target.__private;
-	       	   const cache = priv[ prop ];
-	       	   if( ct ) { 
-	       	      if( cache ) {
-		     	 return cache;
-	       	      } else {
-	       	     	 const cv = ct[ kt ].ctor( target[ prop ] );
-	       	     	 priv[ prop ] = cv;
-	       	     	 return cv;
-	       	      }
-	       	   } else {
-	       	      return target[ prop ];
-	       	   }
-      	       	},
-	       	set: function( target, prop, newval ) {
-	       	   const ct = ei[ prop ];
-	       	   if( ct ) { 
-	       	      priv[ prop ] = false;
-	       	      target[ prop ] = ct[ kf ].ctor( newval );
-	       	   } else {
-	       	      target[ prop ] = newval;
-	       	   }
-	       	   return true;
-      	       	}
-      	     }
+	 function mkWrapper( info, ei, kt, kf ) {
+	    var handler = {
+	       get: function( target, prop ) {
+		  const ct = ei[ prop ] 
+		     || typeof( prop ) === "string" && eis
+		     || typeof( prop ) === "number" && ein
+			 
+                  const priv = target.__private;
+		  const cache = priv[ prop ];
+		   
+		  if( ct ) { 
+		     if( cache ) {
+			return cache;
+		     } else {
+			const cv = ct[ kt ].ctor( target[ prop ] );
+			priv[ prop ] = cv;
+			return cv;
+		     }
+		  } else {
+		     return target[ prop ];
+		  }
+	       },
+	       set: function( target, prop, newval ) {
+		  const ct = ei[ prop ];
+		  if( ct ) { 
+		     priv[ prop ] = false;
+		     target[ prop ] = ct[ kf ].ctor( newval );
+		  } else {
+		     target[ prop ] = newval;
+		  }
+		  return true;
+	       }
+	    }
       	     
-      	     return new CTWrapper( function( value ) {
-	       	value.__private = {};
-	       	
-	       	if( firstOrder( value ) ) {
-	       	   return new Proxy( value, handler );
-	       	} else {
-	       	   throw new TypeError(
-	       	      `Not an object ${toString( fields )} "${toString( value )}" ${info}` );
-	       	}
-      	     } );
+	    return new CTWrapper( function( value ) {
+	       value.__private = {};
+	       
+	       if( firstOrder( value ) ) {
+		  return new Proxy( value, handler );
+	       } else {
+		  throw new TypeError(
+		     `Object missmatch, expecting "${toString( fields )}", got "${toString( value )}" ${info}` );
+	       }
+	    } );
       	  }
       	 
       	 return {
@@ -628,8 +663,6 @@ function CTCoerce( obj, who ) {
    } else {
       if( obj instanceof CT ) {
 	 return obj;
-      } else if( "contract" in obj ) {
-	 return CTCoerce( obj.contract );
       } else {
 	 throw new TypeError( 
 	     (who ? (who + ": ") : "") +
