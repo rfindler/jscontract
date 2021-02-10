@@ -1,11 +1,17 @@
 
+Misc
+----
+
+ccontract = <a value coercicle into a contract>
+
 
 CTObject
 --------
 
 CTObject: { [string: fieldct]* } => contract
 
-fieldct: contract
-  | { "contract": contract }
-  | { "contract": contract, optional: boolean }
-  | { "contract": contract, index: "string" | "number" }
+fieldct: ccontract
+  | { "contract": ccontract }
+  | { "contract": ccontract, optional: boolean }
+  | { "contract": ccontract, index: "string" | "number" }
+

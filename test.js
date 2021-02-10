@@ -98,6 +98,30 @@ assert.throws( () => {
       var wf = CT.CTFunction( CT.trueCT, [ ], 123 ).wrap(f);
       wf();
 }, "ctfunction.6.fail" );
+assert.ok( (() => {
+      function f( x, ...y ) { return parseInt( x ) + y.length; };
+      var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
+      wf("3"); wf("3", 1); wf("3", 1, 2); wf("3", 1, 2, 3);
+      return true;
+})(), "ctfunction.7.succeed" );
+assert.throws( () => {
+      function f( x, ...y ) { return parseInt( x ) + y.length; };
+      var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
+      wf();
+      return true;
+}, "ctfunction.8.succeed"); 
+assert.throws( () => {
+      function f( x, ...y ) { return parseInt( x ) + y.length; };
+      var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
+      wf(1);
+      return true;
+}, "ctfunction.9.succeed"); 
+assert.throws( () => {
+      function f( x, ...y ) { return parseInt( x ) + y.length; };
+      var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
+      wf("1", 1, 2, "3");
+      return true;
+}, "ctfunction.10.succeed"); 
 
 // check errors happen at the right time
 assert.throws( () => {

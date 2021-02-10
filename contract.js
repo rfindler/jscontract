@@ -84,8 +84,32 @@ function fixArity( f ) {
 /*    CTFunction ...                                                   */
 /*---------------------------------------------------------------------*/
 function CTFunction( self, domain, range ) {
+   const arity = domain.length;
+   let minarity = arity, maxarity = arity;
    
-   function map2( args, domain, key ) {
+   if( !(domain instanceof Array) ) {
+      throw new TypeError( "Illegal domain: " + domain );
+   }
+   
+   const coerced_args = domain.map( p => {
+        if( typeof p === "object" && ("contract" in p) ) {
+	    minarity -= 1;
+	    if( p.dotdotdot ) maxarity = Number.MIN_SAFE_INTEGER;
+
+	    return {
+	       contract: CTCoerce( p.contract, "CTFunction" ), 
+	       dotdotdot: p.dotdotdot,
+	       optional: p.optional 
+	    }
+      	 } else {
+	    return { contract: CTCoerce( p, "CTFunction" ) };
+      	 } 
+      } );
+   
+   const coerced_si = CTCoerce( self, "CTFunction" );
+   const coerced_ri = CTCoerce( range, "CTFunction" );
+      
+   function map2fix( args, domain, key ) {
       let len = args.length;
       
       for( let i = 0; i < len; i++ ) {
@@ -95,61 +119,84 @@ function CTFunction( self, domain, range ) {
       return args;
    }
 
+   function map2opt( args, domain, key ) {
+      let len = args.length;
+      
+      for( let i = 0; i < domain.length; i++ ) {
+	 args[ i ] = domain[ i ][ key ].ctor( args[ i ] );
+      }
+      
+      for( let i = domain.length; i < args.length; i++ ) {
+	 args[ i ] = domain[ domain.length - 1 ][ key ].ctor( args[ i ] );
+      }
+      
+      return args;
+   }
+
+   function map2dotdotdot( args, domain, key ) {
+      let len = args.length;
+      
+      for( let i = 0; i < domain.length - 1; i++ ) {
+	 args[ i ] = domain[ i ][ key ].ctor( args[ i ] );
+      }
+      
+      for( let i = domain.length; i < args.length; i++ ) {
+	 args[ i ] = domain[ domain.length - 1 ][ key ].ctor( args[ i ] );
+      }
+      
+      return args;
+   }
+
    function firstOrder( x ) {
-      return typeof x === "function" && fixArity( x );
+      return typeof x === "function";
    }
    
-   if( !(domain instanceof Array) ) {
-      throw new TypeError( "Illegal domain: " + domain );
-   } else {
-      const coerced_si = CTCoerce( self, "CTFunction" );
-      const coerced_dis = domain.map( d => CTCoerce( d, "CTFunction" ) );
-      const coerced_ri = CTCoerce( range, "CTFunction" );
-      
-      return new CT( firstOrder, function( infot, infof ) {
-         const si = coerced_si.wrapper( infot, infof );
-         const dis = coerced_dis.map( d => d.wrapper( infot, infof ) );
-         const ri = coerced_ri.wrapper( infot, infof );
+   return new CT( firstOrder, function( infot, infof ) {
+      const si = coerced_si.wrapper( infot, infof );
+      const dis = coerced_args.map( d => d.contract.wrapper( infot, infof ) );
+      const ri = coerced_ri.wrapper( infot, infof );
 
-	 function mkWrapper( info, si, sik, ri, rik, dis, disk ) {
-	    const si_wrapper = si[ sik ];
-	    const ri_wrapper = ri[ rik ];
-	    const di0_wrapper = domain.length > 0 ? dis[ 0 ][ disk ] : undefined;
-	    
-	    const handler = {
-	       apply: function( target, self, args ) {
-      	       	  if( args.length !== domain.length ) {
-	 	     throw new TypeError( 
-	    	     	"Wrong number of argument " + args.length + "/" + domain.length 
-	    	     	+ ": " + info );
-      	       	  } else {
-                     switch( args.length ) {
-                     	case 0:
-                           return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), undefined ) );
-                     	case 1:
-                           return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), di0_wrapper.ctor( args[ 0 ] ) ) );
-                     	default:
-                           return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2( args, dis, disk ) ) );
-	       	     }
-	       	  }
-	       }
-	    }
-	    return new CTWrapper( function( value ) {
-	       if( firstOrder( value ) ) {
-	       	  return new Proxy( value, handler );
-	       } else {
-	       	  throw new TypeError( 
-		     "Not a function `" + value + "': " + info );
-	       }
-	    } );
-	 }
+      function mkWrapper( info, si, sik, ri, rik, dis, disk ) {
+	 const si_wrapper = si[ sik ];
+	 const ri_wrapper = ri[ rik ];
+	 const di0_wrapper = coerced_args.length > 0 ? dis[ 0 ][ disk ] : undefined;
 	 
-	 return { 
-	    t: mkWrapper( infot, si, "t", ri, "t", dis, "f" ),
-	    f: mkWrapper( infof, si, "f", ri, "f", dis, "t" )
+	 const handler = {
+	    apply: function( target, self, args ) {
+	       if( args.length === arity ) 
+		  switch( args.length ) {
+		     case 0:
+			return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), undefined ) );
+		     case 1:
+			return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), di0_wrapper.ctor( args[ 0 ] ) ) );
+		     default:
+			return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2fix( args, dis, disk ) ) );
+		  } else if( args.length >= minarity && args.length <= maxarity ) {
+		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2opt( args, dis, disk ) ) );
+		  } else if( args.length >= minarity && maxarity === Number.MIN_SAFE_INTEGER ) {
+		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2dotdotdot( args, dis, disk ) ) );
+		  } else {
+		     throw new TypeError( 
+		     	"Wrong number of argument " + args.length + "/" + domain.length 
+		     	+ ": " + info );
+		  }
+	    }
 	 }
-      } );
-   }
+	 return new CTWrapper( function( value ) {
+	    if( firstOrder( value ) ) {
+	       return new Proxy( value, handler );
+	    } else {
+	       throw new TypeError( 
+		  "Not a function `" + value + "': " + info );
+	    }
+	 } );
+      }
+      
+      return { 
+	 t: mkWrapper( infot, si, "t", ri, "t", dis, "f" ),
+	 f: mkWrapper( infof, si, "f", ri, "f", dis, "t" )
+      }
+   } );
 }
 
 /*---------------------------------------------------------------------*/
@@ -526,6 +573,7 @@ function CTObject( ctfields ) {
    
    for( let k in ctfields ) {
       const p = ctfields[ k ];
+      
       if( "contract" in p ) {
 	 if( p.index === "string" ) {
 	    stringIndexContract = CTCoerce( p.contract, "CTObject" );
