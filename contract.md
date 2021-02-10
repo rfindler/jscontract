@@ -50,3 +50,8 @@ Of course, this can be combined into:
 ```shell
 tsc -m es2020 --outDir tmp --allowjs tstoc.js && node tmp/tstoc.js argv.d.ts
 ```
+
+The following URL help developping (and probably fixing) `tstoc`:
+
+  [https://ts-ast-viewer.com](ast viewer)
+  [https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API](api)
