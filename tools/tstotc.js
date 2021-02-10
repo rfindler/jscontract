@@ -89,7 +89,7 @@ function typeCT( node ) {
 	 case ts.SyntaxKind.ArrayType:
 	    return `CT.CTArray( ${typeCT( node.elementType )} )`;
       	 case ts.SyntaxKind.TypeLiteral:
-	    return `CT.CTObject( { ${node.members.map( sigCT ).join( "; " )} } )`;
+	    return `CT.CTObject( { ${node.members.map( sigCT ).join( ", " )} } )`;
       	 case ts.SyntaxKind.UnionType:
 	    return `CT.CTOr( ${node.types.map( typeCT ).filter( x => x )} )`;
       	 case ts.SyntaxKind.FunctionType:
