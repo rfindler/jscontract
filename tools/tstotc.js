@@ -55,10 +55,20 @@ function CT( node ) {
 
 function functionCT( node ) {
    const ctself = "CT.trueCT";
-   const ctparams = node.parameters.map( p => typeCT( p.type ) ).toString();
+   const ctparams = node.parameters.map( p => paramCT( p ) );
    const ctret = typeCT( node.type );
    
    return `CT.CTFunction( ${ctself }, [ ${ctparams} ], ${ctret} )`;
+}
+
+function paramCT( node ) {
+   if( node.dotDotDotToken ) {
+      return `{ contract: ${typeCT( node.type.elementType )}, dotdotdot: true }`;
+   } else if( node.questionToken ) {
+      return `{ contract: ${typeCT( node.type )}, optional: true }`;
+   } else {
+      return typeCT( node.type );
+   }
 }
 
 function typeCT( node ) {
@@ -133,5 +143,5 @@ function sigCT( node ) {
    }
 }
 
-// tsc --sourceMap -m es2020 --outDir tmp --allowjs comp2.js && node tmp/comp2.js $PWD/argv.d.ts
+// tsc --sourceMap -m es2020 --outDir tmp --allowjs tstotc.js && node tmp/tstotc.js $PWD/argv.d.ts
 tc( process.argv.slice( 2 ), options );
