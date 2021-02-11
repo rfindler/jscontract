@@ -47,11 +47,18 @@ To compile declaration files:
 ```shell
 node tmp/tstoc.js argv.d.ts
 ```
-
 Of course, this can be combined into:
 
 ```shell
 tsc -m es2020 --outDir tmp --allowjs tstoc.js && node tmp/tstoc.js argv.d.ts
+```
+
+
+It might be that the file `tmp/tstoc.js` has to be renamed `tmp/tstoc.mjs`
+so that node accepts to execute it. For that use,
+
+```shell
+tsc -m es2020 --outDir tmp --allowjs ../../tools/tstoc.js && mv tmp/tstoc.js tmp/tstoc.mjs && node tmp/tstoc.mjs argv.d.ts
 ```
 
 The following URL help developing (and probably fixing) `tstoc`:

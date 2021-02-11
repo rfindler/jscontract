@@ -585,17 +585,17 @@ function CTObject( ctfields ) {
       
       if( "contract" in p ) {
 	 if( p.index === "string" ) {
-	    stringIndexContract = CTCoerce( p.contract, "CTObject" );
+	    stringIndexContract = CTCoerce( p.contract, k + "@CTObject" );
 	 } else if( p.index === "number" ) {
-	    numberIndexContract = CTCoerce( p.contract, "CTObject" );
+	    numberIndexContract = CTCoerce( p.contract, k + "@CTObject" );
 	 } else {
 	    fields[ k ] = { 
-	       contract: CTCoerce( p.contract, "CTObject" ), 
+	       contract: CTCoerce( p.contract, k + "@CTObject" ), 
 	       optional: p.optional 
 	    }
 	 }
       } else {
-	 fields[ k ] = { contract: CTCoerce( p, "CTObject" ) };
+	 fields[ k ] = { contract: CTCoerce( p, k + "@CTObject" ) };
       } 
    }
    
