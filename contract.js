@@ -139,11 +139,13 @@ function CTFunction( self, domain, range ) {
 
    function map2opt( args, domain, key ) {
       let len = args.length;
-      
+
       for( let i = 0; i < domain.length; i++ ) {
-	 args[ i ] = domain[ i ][ key ].ctor( args[ i ] );
+          if (args [ i ] === undefined && coerced_args[ i ].optional === true ) {
+          } else {
+	      args[ i ] = domain[ i ][ key ].ctor( args[ i ] );
+          }
       }
-      
       for( let i = domain.length; i < args.length; i++ ) {
 	 args[ i ] = domain[ domain.length - 1 ][ key ].ctor( args[ i ] );
       }
