@@ -283,7 +283,7 @@ assert.throws( () => {
 
 assert.throws( () => {
     CT.CTObject({x : CT.isString, y : CT.isObject}).wrap({});
-}, /Object missmatch, expecting "{x, y}"/, "ctojbect.tostring");
+}, /Object mismatch, expecting "{x, y}"/, "ctojbect.tostring");
 
 assert.throws( () => {
      const person =

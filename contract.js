@@ -11,10 +11,6 @@
 "use strict";
 "use hopscript";
 
-/* TODO:
-    - make infot, infof into a blame object
-*/
-
 /*---------------------------------------------------------------------*/
 /*    CT                                                               */
 /*---------------------------------------------------------------------*/
@@ -32,11 +28,14 @@ class CT {
 /* 	 }                                                             */
 /*       }                                                             */
       this.firstOrder = firstOrder;
+      if ( wrapper.length != 1 )
+          throw new TypeError(
+              " CT's wrapper argument should accept only one argument: " + wrapper );
       this.wrapper = wrapper;
    }
    
    wrap( value, locationt = true, locationf = false ) {
-      const { t: tval, f: fval } = this.wrapper( locationt, locationf );
+      const { t: tval, f: fval } = this.wrapper( new_blame_object(locationt, locationf) );
       return tval.ctor( value );
    }
 }
@@ -57,18 +56,20 @@ function CTFlat( pred ) {
    if( typeof pred !== "function" ) {
       throw new TypeError( "Illegal predicate: " + pred );
    } else {
-      function mkWrapper( info ) {
+      function mkWrapper( blame_object ) {
 	 return new CTWrapper( function( value ) {
 	       if( pred( value ) ) {
 	       	  return value;
 	       } else {
-	       	  throw new TypeError( 
-		     "Predicate `" + pred.toString() + "' not satisfied for value `" + value + "': " + info );
+                   signal_contract_violation(
+                       value ,
+                       blame_object , 
+		       "Predicate `" + pred.toString() + "' not satisfied for value `" + value + "'");
 	       }
 	 } );
       }
-      return new CT( pred, function( infot, infof ) {
-	 return { t: mkWrapper( infot ), f: mkWrapper( infof ) }
+      return new CT( pred, function( blame_object ) {
+	  return { t: mkWrapper( blame_object ), f: mkWrapper( blame_swap(blame_object) ) }
       } );
    }
 }
@@ -151,12 +152,12 @@ function CTFunction( self, domain, range ) {
       return typeof x === "function";
    }
    
-   return new CT( firstOrder, function( infot, infof ) {
-      const si = coerced_si.wrapper( infot, infof );
-      const dis = coerced_args.map( d => d.contract.wrapper( infot, infof ) );
-      const ri = coerced_ri.wrapper( infot, infof );
+   return new CT( firstOrder, function( blame_object ) {
 
-      function mkWrapper( info, si, sik, ri, rik, dis, disk ) {
+      function mkWrapper( blame_object, sik, rik, disk ) {
+         const si = coerced_si.wrapper( blame_object ); // should we swap here?
+         const dis = coerced_args.map( d => d.contract.wrapper( blame_swap(blame_object) ) );
+         const ri = coerced_ri.wrapper( blame_object );
 	 const si_wrapper = si[ sik ];
 	 const ri_wrapper = ri[ rik ];
 	 const di0_wrapper = coerced_args.length > 0 ? dis[ 0 ][ disk ] : undefined;
@@ -176,9 +177,10 @@ function CTFunction( self, domain, range ) {
 		  } else if( args.length >= minarity && maxarity === Number.MIN_SAFE_INTEGER ) {
 		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2dotdotdot( args, dis, disk ) ) );
 		  } else {
-		     throw new TypeError( 
-		     	"Wrong number of argument " + args.length + "/" + domain.length 
-		     	+ ": " + info );
+                      signal_contract_violation(
+                          target,
+                          blame_object,
+		     	  "Wrong argument count " + args.length + "/" + domain.length);
 		  }
 	    }
 	 }
@@ -186,15 +188,17 @@ function CTFunction( self, domain, range ) {
 	    if( firstOrder( value ) ) {
 	       return new Proxy( value, handler );
 	    } else {
-	       throw new TypeError( 
-		  "Not a function `" + value + "': " + info );
+                signal_contract_violation(
+                    value,
+                    blame_object,
+		    "Not a function `" + value + "': ");
 	    }
 	 } );
       }
       
       return { 
-	 t: mkWrapper( infot, si, "t", ri, "t", dis, "f" ),
-	 f: mkWrapper( infof, si, "f", ri, "f", dis, "t" )
+	 t: mkWrapper( blame_object, "t", "t", "f" ),
+         f: mkWrapper( blame_swap(blame_object), "f", "f", "t" )
       }
    } );
 }
@@ -298,28 +302,28 @@ function CTFunctionD( domain, range , info_indy ) {
     }
     const range_ctc = CTCoerce(range , "CTFunctionD");
 
-    return new CT( firstOrder, function( infot, infof ) {
-	const normal_dis = [];
-	const dep_dis = [];
-	for( let i = 0; i < domain.length; i++ ) {
-	    const d = domain[i];
-	    if (!d.dep) {
-		normal_dis[i] = domain_ctcs[i].wrapper( infot, infof );
-		if (depended_on[i]) {
-		    dep_dis[i] = domain_ctcs[i].wrapper( infot, infof );
-		}
+    return new CT( firstOrder, function( blame_object ) {
+
+	function mkWrapper( blame_object, rik, disk ) {
+	    const normal_dis = [];
+	    const dep_dis = [];
+	    for( let i = 0; i < domain.length; i++ ) {
+	        const d = domain[i];
+	        if (!d.dep) {
+		    normal_dis[i] = domain_ctcs[i].wrapper( blame_swap(blame_object) );
+		    if (depended_on[i]) {
+		        dep_dis[i] = domain_ctcs[i].wrapper( blame_swap(blame_object) );
+		    }
+	        }
 	    }
-	}
-	const ri = range_ctc.wrapper( infot, infof );
-
-
-	function mkWrapper( info, rik, disk ) {
+	    const ri = range_ctc.wrapper( blame_object );
 	    const handler = {
 		apply: function( target, self, args ) {
       	       	    if( args.length !== domain.length ) {
-	 		throw new TypeError( 
-	    	     	    "Wrong number of argument " + args.length + "/" + domain.length 
-	    	     		+ ": " + info );
+                        signal_contract_violation(
+                            target,
+                            blame_object,
+	    	     	    "Wrong number of argument " + args.length + "/" + domain.length);
       	       	    } else {
 			var wrapped_args_for_dep = {} // what happens if the dependent code modifies this thing?
 			var wrapped_args = [];
@@ -328,13 +332,13 @@ function CTFunctionD( domain, range , info_indy ) {
 			    if (domain[arg_i].dep) {
 				if (depended_on[arg_i]) {
 				    const ctc_for_dep = domain[arg_i].ctc(wrapped_args_for_dep);
-				    const di_for_dep = CTDepApply(ctc_for_dep, infot, info_indy, "CTFunctionD");
+				    const di_for_dep = CTDepApply(ctc_for_dep, blame_replace_neg(blame_object, info_indy), "CTFunctionD");
 				    wrapped_args_for_dep[domain[arg_i].name] = di_for_dep[disk].ctor(args[arg_i]);
 				}
 				// wrapped_args_for_dep has one item too many in it
 				// at this point; due to previous assignment
 				const ctc = domain[arg_i].ctc(wrapped_args_for_dep); 
-				const di = CTDepApply(ctc, infot, info_indy, "CTFunctionD");
+				const di = CTDepApply(ctc, blame_replace_neg(blame_object, info_indy), "CTFunctionD");
 				wrapped_args[arg_i] = di[disk].ctor(args[arg_i]);
 			    } else {
 				if (depended_on[arg_i]) {
@@ -354,21 +358,23 @@ function CTFunctionD( domain, range , info_indy ) {
 		if( firstOrder( value ) ) {
 	       	    return new Proxy( value, handler );
 		} else {
-	       	    throw new TypeError( 
-			"Not a function `" + value + "': " + info );
+                    signal_contract_violation(
+                        value,
+                        blame_object,
+			"Not a function `" + value );
 		}
 	    } );
 	}
 	
 	return { 
-	    t: mkWrapper( infot, "t", "f" ),
-	    f: mkWrapper( infof, "f", "t" )
+	    t: mkWrapper( blame_object, "t", "f" ),
+	    f: mkWrapper( blame_swap(blame_object), "f", "t" )
 	}
     } );
 }
 
-function CTDepApply( ctc, infot, infof, who ) {
-    return CTCoerce( ctc, who ).wrapper( infot, infof );
+function CTDepApply( ctc, blame_object, who ) {
+    return CTCoerce( ctc, who ).wrapper( blame_object );
 }
 
 
@@ -467,16 +473,16 @@ function CTRec( thunk ) {
    }
    
    return new CT( firstOrder, 
-      function( infot, infof ) {
+      function( blame_object ) {
          let ei = false;
-      	 function mkWrapper( info, kt ) {
+      	 function mkWrapper( blame_object, kt ) {
 	    return new CTWrapper( function( value ) {
-	       if (!ei) ei = mthunk().wrapper( infot, infof );
+	       if (!ei) ei = mthunk().wrapper( blame_object );
 	       return ei[kt].ctor(value);
 	    })}
       	 return { 
-	    t: mkWrapper( infot, "t" ),
-	    f: mkWrapper( infof, "f" )
+	    t: mkWrapper( blame_object, "t" ),
+	    f: mkWrapper( blame_swap(blame_object), "f" )
       	 }
       });
 }
@@ -486,22 +492,23 @@ function CTRec( thunk ) {
 /*---------------------------------------------------------------------*/
 function CTOrExplicitChoice( lchoose, left, rchoose, right ) {
     return new CT( x => lchoose( x ) || rchoose( x ),
-      function( infot, infof ) {
-         const ei_l = left.wrapper( infot, infof );
-         const ei_r = right.wrapper( infot, infof );
-	 function mkWrapper( info, kt ) {
+      function( blame_object ) {
+	 function mkWrapper( blame_object, kt ) {
+             const ei_l = left.wrapper( blame_object );
+             const ei_r = right.wrapper( blame_object );
       	    return new CTWrapper( function( value ) {
 	       const is_l = lchoose(value);
 	       const is_r = rchoose(value);
 	       if (is_l) return ei_l[kt].ctor(value);
 	       if (is_r) return ei_r[kt].ctor(value);
-               throw new TypeError(
-		   "CTOr neither applied: " + value
-		       + ": " + info );
+                signal_contract_violation(
+                    value,
+                    blame_object,
+		    "CTOr neither applied: " + value);
 	    })}
 	 return { 
-	    t: mkWrapper( infot, "t" ),
-	    f: mkWrapper( infof, "f" )
+	    t: mkWrapper( blame_object, "t" ),
+	    f: mkWrapper( blame_swap(blame_object), "f" )
 	 }
       });
 }
@@ -524,10 +531,10 @@ function CTArray( element ) {
    const element_ctc = CTCoerce( element,  "CTArray" );
    
    return new CT( firstOrder,
-      function( infot, infof ) {
-         const ei = element_ctc.wrapper( infot, infof );
-
-      	 function mkWrapper( info, ei, kt, kf ) {
+      function( blame_object ) {
+      	 function mkWrapper( blame_object, kt, kf ) {
+             const ei = element_ctc.wrapper( blame_object );
+             
       	    const handler = {
 	       get: function( target, prop ) {
 	       	  if( prop.match( /^[0-9]+$/ ) ) {
@@ -550,15 +557,17 @@ function CTArray( element ) {
 	       if( firstOrder( value ) ) {
 	       	  return new Proxy( value, handler );
 	       } else {
-	       	  throw new TypeError(
-	       	     "Not an array `" + value + "' " + info );
+                   signal_contract_violation(
+                       value,
+                       blame_object,
+	       	       "Not an array `" + value + "' ");
 	       }
       	    } );
       	 }
       	 
       	 return { 
-	    t: mkWrapper( infot, ei, "t", "f" ),
-	    f: mkWrapper( infof, ei, "f", "t" )
+	    t: mkWrapper( blame_object, "t", "f" ),
+	    f: mkWrapper( blame_swap(blame_object) , "f", "t" )
       	 }
       } );
 }
@@ -632,20 +641,19 @@ function CTObject( ctfields ) {
    }
 	 
    return new CT( firstOrder, 
-      function( infot, infof ) {
-      	 const ei = {};
-	 const eis = stringIndexContract && 
-	    stringIndexContract.wrapper( infot, infof );
-	 const ein = numberIndexContract && 
-	    numberIndexContract.wrapper( infot, infof );
-
-	 for( let k in fields ) {
-	    const ctc = fields[ k ].contract;
-
-	    ei[ k ] = ctc.wrapper( infot, infof );
-      	 }
-      	 
-	 function mkWrapper( info, ei, kt, kf ) {
+      function( blame_object ) {
+	 function mkWrapper( blame_object, kt, kf ) {
+      	     const ei = {};
+	     const eis = stringIndexContract && 
+	           stringIndexContract.wrapper( blame_object );
+	     const ein = numberIndexContract && 
+	           numberIndexContract.wrapper( blame_object );
+             
+	     for( let k in fields ) {
+	         const ctc = fields[ k ].contract;
+                 
+	         ei[ k ] = ctc.wrapper( blame_object );
+      	     }      	 
 	    var handler = {
 	       get: function( target, prop ) {
 		  const ct = ei[ prop ] 
@@ -685,15 +693,17 @@ function CTObject( ctfields ) {
 	       if( firstOrder( value ) ) {
 		  return new Proxy( value, handler );
 	       } else {
-		  throw new TypeError(
-		     `Object missmatch, expecting "${toString( fields )}", got "${toString( value )}" ${info}` );
+		   signal_contract_violation(
+                       value,
+                       blame_object,
+		       `Object mismatch, expecting "${toString( fields )}", got "${toString( value )}"` );
 	       }
 	    } );
       	  }
       	 
       	 return {
-	    t: mkWrapper( infot, ei, "t", "f" ),
-	    f: mkWrapper( infof, ei, "f", "t" )
+	    t: mkWrapper( blame_object, "t", "f" ),
+	    f: mkWrapper( blame_swap(blame_object), "f", "t" )
       	 }
       } );
 }
@@ -717,6 +727,17 @@ function CTCoerce( obj, who ) {
 	     "not a contract `" + obj + "'" );
       }
    }
+}
+
+/*---------------------------------------------------------------------*/
+/*    Blame Objects                                                    */
+/*---------------------------------------------------------------------*/
+
+function new_blame_object(pos, neg) { return {pos: pos, neg: neg}; }
+function blame_swap(blame_object) { return { pos: blame_object.neg, neg: blame_object.pos }; }
+function blame_replace_neg(blame_object, new_neg) { return { pos: blame_object.pos, neg: new_neg }; }
+function signal_contract_violation(value, blame_object, message) {
+    throw new TypeError( message + " : " + blame_object.pos );
 }
 
 /*---------------------------------------------------------------------*/
@@ -776,3 +797,5 @@ exports.CTimports = function( obj, location ) {
    }
    return res;
 }
+
+
