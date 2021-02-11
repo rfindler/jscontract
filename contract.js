@@ -64,13 +64,30 @@ function CTFlat( pred ) {
                    signal_contract_violation(
                        value ,
                        blame_object , 
-		       "Predicate `" + pred.toString() + "' not satisfied for value `" + value + "'");
+		       "Predicate `" + predToString( pred ) + "' not satisfied for value `" + value + "'");
 	       }
 	 } );
       }
       return new CT( pred, function( blame_object ) {
 	  return { t: mkWrapper( blame_object ), f: mkWrapper( blame_swap(blame_object) ) }
       } );
+   }
+}
+
+/*---------------------------------------------------------------------*/
+/*    predToString ...                                                 */
+/*---------------------------------------------------------------------*/
+function predToString( pred ) {
+   if( pred === isString ) {
+      return "isString";
+   } else if( pred === isBoolean ) {
+      return "isBoolean";
+   } else if( pred === isNumber ) {
+      return "isNumber";
+   } else if( pred === isObject ) {
+      return "isObject";
+   } else {
+      return pred.toString();
    }
 }
 
@@ -676,7 +693,9 @@ function CTObject( ctfields ) {
 		  }
 	       },
 	       set: function( target, prop, newval ) {
+                  const priv = target.__private;
 		  const ct = ei[ prop ];
+		  
 		  if( ct ) { 
 		     priv[ prop ] = false;
 		     target[ prop ] = ct[ kf ].ctor( newval );
@@ -744,12 +763,6 @@ function signal_contract_violation(value, blame_object, message) {
 /*---------------------------------------------------------------------*/
 /*    predicates ...                                                   */
 /*---------------------------------------------------------------------*/
-const booleanCT = new CTFlat( o => (typeof o) === "boolean" );
-const objectCT = new CTFlat( o => (typeof o) === "object" );
-const stringCT = new CTFlat( o => (typeof o) === "string" );
-const trueCT = new CTFlat( o => true );
-const undefinedCT = new CTFlat( o => o === undefined );
-
 function isObject( o ) { return (typeof o) === "object" }
 function isFunction( o ) { return (typeof o) === "function" }
 function isString( o ) { return (typeof o) === "string" }
@@ -757,9 +770,17 @@ function isBoolean( o ) { return (typeof o) === "boolean" }
 function isNumber( o ) { return (typeof o) === "number" }
 function True( o ) { return true }
 
+const booleanCT = new CTFlat( isBoolean );
+const numberCT = new CTFlat( isNumber );
+const objectCT = new CTFlat( isObject );
+const stringCT = new CTFlat( isString );
+const trueCT = new CTFlat( o => true );
+const undefinedCT = new CTFlat( o => o === undefined );
+
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
 /*---------------------------------------------------------------------*/
+exports.anyCT = trueCT;
 exports.booleanCT = booleanCT;
 exports.objectCT = objectCT;
 exports.stringCT = stringCT;
