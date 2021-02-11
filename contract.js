@@ -34,7 +34,7 @@ class CT {
       this.wrapper = wrapper;
    }
    
-   wrap( value, locationt = true, locationf = false ) {
+   wrap( value, locationt = "pos", locationf = "neg" ) {
       const { t: tval, f: fval } = this.wrapper( new_blame_object(locationt, locationf) );
       return tval.ctor( value );
    }
@@ -173,7 +173,7 @@ function CTFunction( self, domain, range ) {
    
    return new CT( firstOrder, function( blame_object ) {
 
-      function mkWrapper( blame_object, sik, rik, disk ) {
+       function mkWrapper( blame_object, swap_blame_object, sik, rik, disk ) {
          const si = coerced_si.wrapper( blame_object );
          const dis = coerced_args.map( d => d.contract.wrapper( blame_object ) );
          const ri = coerced_ri.wrapper( blame_object );
@@ -202,7 +202,7 @@ function CTFunction( self, domain, range ) {
 		  } else {
                       return signal_contract_violation(
                           target,
-                          blame_object,
+                          swap_blame_object,
 		     	  "Wrong argument count " + args.length + "/" + domain.length);
 		  }
 	    }
@@ -220,8 +220,8 @@ function CTFunction( self, domain, range ) {
       }
       
       return { 
-	 t: mkWrapper( blame_object, "t", "t", "f" ),
-         f: mkWrapper( blame_swap(blame_object), "f", "f", "t" )
+         t: mkWrapper( blame_object, blame_swap(blame_object), "t", "t", "f" ),
+         f: mkWrapper( blame_swap(blame_object), blame_object, "f", "f", "t" )
       }
    } );
 }
@@ -855,11 +855,11 @@ function neg_choice(parent_blame_object) {
 }
 function signal_contract_violation(value, blame_object, message) {
     if ( typeof(blame_object.alive) === "boolean" ) {
-        throw new TypeError( message + " : " + blame_object.pos )
+        throw_contract_violation(blame_object.pos, message);
     } else if (!blame_object.alive.alive) {
         return value; 
     } else if (typeof(blame_object.pos_state) === "boolean") {
-        throw new TypeError( message + " : " + blame_object.pos )
+        throw_contract_violation(blame_object.pos, message);
     } else {
         blame_object.alive.alive = false; 
         if (blame_object.pos_state.sibling.alive.alive)
@@ -868,6 +868,11 @@ function signal_contract_violation(value, blame_object, message) {
             return signal_contract_violation(value, blame_object.pos_state.parent, message);
     }
 }
+
+function throw_contract_violation(pos, message) {
+    throw new TypeError( message + "\n   blaming: " + pos );
+}
+
 
 /*---------------------------------------------------------------------*/
 /*    predicates ...                                                   */
@@ -904,6 +909,7 @@ exports.CTFunction = CTFunction;
 exports.CTFunctionOpt = CTFunctionOpt;
 exports.CTFunctionD = CTFunctionD;
 exports.CTArray = CTArray;
+exports.CTFlat = CTFlat;
 
 exports.isObject = isObject;
 exports.isFunction = isFunction;

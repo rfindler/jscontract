@@ -34,11 +34,11 @@ assert.ok( !CT.isNumber( "a string" ), "isNumber.2" );
  * CTFlat
  */
 assert.ok( (() =>
-	    3 === CTFlat(CT.isNumber).wrap(3)
-	   ), "ctflat.1");
+	    3 === CT.CTFlat(CT.isNumber).wrap(3)
+	   )(), "ctflat.1");
 assert.throws( () => {
-    CTFlat(CT.isNumber).wrap("3")
-}, "ctflat.2");
+    CT.CTFlat(CT.isNumber).wrap("3")
+}, /blaming: pos/, "ctflat.2");
 
 /*
  * CTFunction
@@ -48,7 +48,7 @@ assert.throws( () => {
       var wf = CT.CTFunction( true, [ CT.isString ], CT.isString ).wrap(f);
       wf(3);
       return true;
-   }, "ctfunction.1.succeed" );
+}, /blaming: neg/, "ctfunction.1.succeed" );
 assert.ok( (() => {
       function f( x ) { return x + 1 };
       var wf = CT.CTFunction( CT.trueCT, [ CT.isString ], CT.isString ).wrap(f);
@@ -60,13 +60,13 @@ assert.throws( () => {
       var wf = CT.CTFunction( true, [ CT.isString ], CT.isString ).wrap(f);
       wf("3");
       return true;
-   }, "ctfunction.2.fail" );
+}, /blaming: pos/, "ctfunction.2.fail" );
 assert.throws( () => {
       function f( x ) { return "x" };
     var wf = CT.CTFunction( true, [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
     wf("3", "3");
       return true;
-   }, "ctfunction.3.fail" );
+}, /blaming: neg/, "ctfunction.3.fail" );
 assert.ok( (() => {
       function f( x ) { return "x" };
     var wf = CT.CTFunction( true, [ CT.isString, CT.isNumber ], CT.isString ).wrap(f);
@@ -80,7 +80,7 @@ assert.throws( () => {
     var o = { f : wf };
     o.f("3", 3);
     return true;
-}, "ctfunction.4.fail" );
+}, /blaming: pos/, "ctfunction.4.fail" );
 assert.ok( (() => {
       function f( x ) { return x + 1 };
       var wf = CT.CTFunction( true, [ 1 ], 2 ).wrap(f);
@@ -97,7 +97,7 @@ assert.throws( () => {
       function f() { return "abc" };
       var wf = CT.CTFunction( CT.trueCT, [ ], 123 ).wrap(f);
       wf();
-}, "ctfunction.6.fail" );
+}, /blaming: pos/, "ctfunction.6.fail" );
 assert.ok( (() => {
       function f( x, ...y ) { return parseInt( x ) + y.length; };
       var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
@@ -109,19 +109,19 @@ assert.throws( () => {
       var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
       wf();
       return true;
-}, "ctfunction.8.succeed"); 
+}, /blaming: neg/, "ctfunction.8.succeed");
 assert.throws( () => {
       function f( x, ...y ) { return parseInt( x ) + y.length; };
       var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
       wf(1);
       return true;
-}, "ctfunction.9.succeed"); 
+}, /blaming: neg/, "ctfunction.9.succeed");
 assert.throws( () => {
       function f( x, ...y ) { return parseInt( x ) + y.length; };
       var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, dotdotdot: true } ], CT.isNumber ).wrap(f);
       wf("1", 1, 2, "3");
       return true;
-}, "ctfunction.10.succeed"); 
+}, /blaming: neg/, "ctfunction.10.succeed");
 assert.ok( (() => {
       function f( x, y = 1, z = true ) { return parseInt( x ) + y + (z ? 10 : -10) };
       var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, optional: true }, { contract: CT.isBoolean, optional: true } ], CT.isNumber ).wrap(f);
@@ -238,13 +238,13 @@ assert.throws( () => {
 	  CT.CTOr( CT.CTFunction( true, [ CT.isString ], CT.isString ),
 		   CT.isNumber ).wrap((x) => 3);
     f("x");
-   }, "ctor.5" );
+}, /blaming: pos/, "ctor.5" );
 assert.throws( () => {
     const f =
 	  CT.CTOr( CT.CTFunction( true, [ CT.isString ], CT.isString ),
 		   CT.isNumber ).wrap((x) => "x");
     f(3);
-   }, "ctor.6" );
+}, /blaming: neg/, "ctor.6" );
 
 // check errors happen at the right time
 assert.throws( () => {
@@ -269,7 +269,7 @@ assert.throws( () => {
     const o = tree.wrap({l: "x", r: undefined});
     o.l;
     o.r
-}, "ctobject.2");
+}, /blaming: pos/, "ctobject.2");
 assert.ok( (() => {
     const tree =
        CT.CTObject({ l: CT.isString, r: CT.isNumber});
@@ -287,13 +287,13 @@ assert.throws( () => {
        	CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isString, CT.isBoolean ), index: "string" } });
      const o = person.wrap({id: 23, name: "foo", firstname: "bar", alive: 23});
      return o.id === 23 && o.name === "foo" && o.alive;
-}, /CTOr neither applied/, "ctobject.index" );
+}, /CTOr neither applied.*\n.*blaming: pos/, "ctobject.index" );
 assert.throws( () => {
      const person =
        	CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isString, CT.isBoolean ), index: "number" } });
      const o = person.wrap({id: 23, name: "foo", firstname: "bar"});
      return o.id === 23 && o.name === "foo"
-}, /Object mismatch/, "ctobject.index.2" );
+}, /Object mismatch.*\n.*blaming: pos/, "ctobject.index.2" );
 
 // check errors happen at the right time
 assert.throws( () => {
@@ -310,7 +310,7 @@ assert.throws( () => {
 assert.throws( () => {
     const t2 = CT.CTRec(() => CT.isString);
     const o2 = t2.wrap(undefined);
-}, "ctrec.0");
+}, /blaming: pos/, "ctrec.0");
 assert.ok( (() => {
     const tree =
 	  CT.CTOr( CT.isString,
@@ -341,7 +341,7 @@ assert.throws( () => {
 		   CT.CTObject({ l: CT.CTRec(() => tree),
 				 r: CT.CTRec(() => tree)}));
     tree.wrap(undefined);
-}, "ctrec.4");
+}, /blaming: pos/, "ctrec.4");
 assert.throws( () => {
     const tree =
 	  CT.CTOr( CT.isString,
@@ -350,7 +350,7 @@ assert.throws( () => {
     const o = tree.wrap({l: "x", r: undefined});
     o.l;
     o.r
-}, "ctrec.5");
+},/blaming: pos/, "ctrec.5");
 assert.ok( (() => {
     const tree =
 	  CT.CTOr( CT.isString,
@@ -367,7 +367,7 @@ assert.throws( () => {
     const o = tree.wrap({l: "x",r: {l: undefined, r: "x"}});
     o.l;
     o.r.l;
-}, "ctrec.7");
+}, /blaming: pos/, "ctrec.7");
 
 /*
  * CTArray
@@ -380,10 +380,10 @@ assert.ok( (() => {
 })(),"ctarray.1")
 assert.throws( () => {
     CT.CTArray(CT.isNumber).wrap(["string"])[0];
-},"ctarray.2")
+},/blaming: pos/, "ctarray.2")
 assert.throws( () => {
     CT.CTArray(CT.isNumber).wrap([11,"string",22])[1];
-},"ctarray.3")
+},/blaming: pos/, "ctarray.3")
 assert.ok( (() => {
     return 22 === CT.CTArray(CT.isNumber).wrap([11,"string",22])[2];
 })(),"ctarray.4")
@@ -413,6 +413,8 @@ assert.ok( (() => {
     const wf = plus_ctc.wrap(f);
     return "12" === wf("1","2");
 })(), "ctand.2");
+
+/* this test case has the wrong blame. I think */
 assert.throws( (() => {
     const plus_ctc =
           CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
