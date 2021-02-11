@@ -270,11 +270,23 @@ assert.ok( (() => {
     return o.l === "x" && o.r === 3;
 })(), "ctobject.3");
 assert.ok( (() => {
-    const person =
-       CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isNumber, CT.isString ), index: "string" } });
-       const o = person.wrap({id: 23, name: "foo", firstname: "bar", age: 55});
-       return o.id === 23 && o.name === "foo" && o.age === 55;
+     const person =
+           CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isString, CT.isBoolean ), index: "string" } });
+     const o = person.wrap({id: 23, name: "foo", firstname: "bar", alive: true});
+     return o.id === 23 && o.name === "foo" && o.alive;
 })(), "ctobject.4");
+assert.throws( () => {
+     const person =
+       	CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isString, CT.isBoolean ), index: "string" } });
+     const o = person.wrap({id: 23, name: "foo", firstname: "bar", alive: 23});
+     return o.id === 23 && o.name === "foo" && o.alive;
+}, /CTOr neither applied/, "ctobject.index" );
+assert.throws( () => {
+     const person =
+       	CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isString, CT.isBoolean ), index: "number" } });
+     const o = person.wrap({id: 23, name: "foo", firstname: "bar"});
+     return o.id === 23 && o.name === "foo"
+}, /Object mismatch/, "ctobject.index.2" );
 
 // check errors happen at the right time
 assert.throws( () => {
@@ -285,13 +297,6 @@ assert.throws( () => {
     CT.CTObject({x : CT.isString, y : CT.isObject}).wrap({});
 }, /Object mismatch, expecting "{x, y}"/, "ctojbect.tostring");
 
-assert.throws( () => {
-     const person =
-       	CT.CTObject({ id: CT.isNumber, prop: { contract: CT.CTOr( CT.isNumber, CT.isString ), index: "string" } });
-     const o = person.wrap({id: 23, name: "foo", firstname: "bar", age: false});
-     return o.id === 23 && o.name === "foo" && o.age === 55;
-}, /CTOr neither applied/, "ctobject.index" );
-   
 /*
  * CTRec
  */

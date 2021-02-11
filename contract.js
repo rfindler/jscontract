@@ -693,6 +693,7 @@ function CTObject( ctfields ) {
 	       if( firstOrder( value ) ) {
 		  return new Proxy( value, handler );
 	       } else {
+                   // TODO: this error message is not always accurate
 		   signal_contract_violation(
                        value,
                        blame_object,

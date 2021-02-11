@@ -10,21 +10,24 @@ CTObject
 
 CTObject: { [string: fieldct]* } => contract
 
-fieldct: ccontract
-  | { "contract": ccontract }
-  | { "contract": ccontract, optional: boolean }
-  | { "contract": ccontract, index: "string" | "number" }
+fieldct ::=
+    ccontract
+  | { contract: ccontract }
+  | { contract: ccontract, optional: boolean }
+  | { contract: ccontract, index: "string" | "number" }
+    // this alternative can appear at most once
 
 
 CTFunction
 ==========
 
 CTFunction: { ccontract, [ argct* ], ccontract } => contract
-argct: ccontract
-  | { "contract": ccontract }
-  | { "contract": ccontract, optional: boolean }
-  | { "contract": ccontract, doddotdot: boolean }
-
+argct ::=
+    ccontract
+  | { contract: ccontract }
+  | { contract: ccontract, optional: boolean }
+  | { contract: ccontract, dotdotdot: boolean }
+    // this alternative can appear at most once
 
 TsToC
 =====
@@ -51,7 +54,7 @@ Of course, this can be combined into:
 tsc -m es2020 --outDir tmp --allowjs tstoc.js && node tmp/tstoc.js argv.d.ts
 ```
 
-The following URL help developping (and probably fixing) `tstoc`:
+The following URL help developing (and probably fixing) `tstoc`:
 
   [https://ts-ast-viewer.com](ast viewer)
   [https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API](api)
