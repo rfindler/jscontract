@@ -61,7 +61,7 @@ function CTFlat( pred ) {
 	       if( pred( value ) ) {
 	       	  return value;
 	       } else {
-                   signal_contract_violation(
+                   return signal_contract_violation(
                        value ,
                        blame_object , 
 		       "Predicate `" + predToString( pred ) + "' not satisfied for value `" + value + "'");
@@ -172,13 +172,13 @@ function CTFunction( self, domain, range ) {
    return new CT( firstOrder, function( blame_object ) {
 
       function mkWrapper( blame_object, sik, rik, disk ) {
-         const si = coerced_si.wrapper( blame_object ); // should we swap here?
-         const dis = coerced_args.map( d => d.contract.wrapper( blame_swap(blame_object) ) );
+         const si = coerced_si.wrapper( blame_object );
+         const dis = coerced_args.map( d => d.contract.wrapper( blame_object ) );
          const ri = coerced_ri.wrapper( blame_object );
 	 const si_wrapper = si[ sik ];
 	 const ri_wrapper = ri[ rik ];
 	 const di0_wrapper = coerced_args.length > 0 ? dis[ 0 ][ disk ] : undefined;
-	 
+	 const di1_wrapper = coerced_args.length > 1 ? dis[ 1 ][ disk ] : undefined;
 	 const handler = {
 	    apply: function( target, self, args ) {
 	       if( args.length === arity ) 
@@ -187,6 +187,10 @@ function CTFunction( self, domain, range ) {
 			return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), undefined ) );
 		     case 1:
 			return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), di0_wrapper.ctor( args[ 0 ] ) ) );
+		     case 2:
+		      return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ),
+                                                           di0_wrapper.ctor( args[ 0 ] ),
+                                                           di1_wrapper.ctor( args[ 1 ] ) ) );
 		     default:
 			return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2fix( args, dis, disk ) ) );
 		  } else if( args.length >= minarity && args.length <= maxarity ) {
@@ -194,18 +198,18 @@ function CTFunction( self, domain, range ) {
 		  } else if( args.length >= minarity && maxarity === Number.MIN_SAFE_INTEGER ) {
 		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2dotdotdot( args, dis, disk ) ) );
 		  } else {
-                      signal_contract_violation(
+                      return signal_contract_violation(
                           target,
                           blame_object,
 		     	  "Wrong argument count " + args.length + "/" + domain.length);
 		  }
 	    }
 	 }
-	 return new CTWrapper( function( value ) {
+	  return new CTWrapper( function( value ) {
 	    if( firstOrder( value ) ) {
 	       return new Proxy( value, handler );
 	    } else {
-                signal_contract_violation(
+                return signal_contract_violation(
                     value,
                     blame_object,
 		    "Not a function `" + value + "': ");
@@ -327,9 +331,9 @@ function CTFunctionD( domain, range , info_indy ) {
 	    for( let i = 0; i < domain.length; i++ ) {
 	        const d = domain[i];
 	        if (!d.dep) {
-		    normal_dis[i] = domain_ctcs[i].wrapper( blame_swap(blame_object) );
+		    normal_dis[i] = domain_ctcs[i].wrapper( blame_object );
 		    if (depended_on[i]) {
-		        dep_dis[i] = domain_ctcs[i].wrapper( blame_swap(blame_object) );
+		        dep_dis[i] = domain_ctcs[i].wrapper( blame_object );
 		    }
 	        }
 	    }
@@ -337,7 +341,7 @@ function CTFunctionD( domain, range , info_indy ) {
 	    const handler = {
 		apply: function( target, self, args ) {
       	       	    if( args.length !== domain.length ) {
-                        signal_contract_violation(
+                        return signal_contract_violation(
                             target,
                             blame_object,
 	    	     	    "Wrong number of argument " + args.length + "/" + domain.length);
@@ -375,7 +379,7 @@ function CTFunctionD( domain, range , info_indy ) {
 		if( firstOrder( value ) ) {
 	       	    return new Proxy( value, handler );
 		} else {
-                    signal_contract_violation(
+                    return signal_contract_violation(
                         value,
                         blame_object,
 			"Not a function `" + value );
@@ -505,6 +509,47 @@ function CTRec( thunk ) {
 }
 
 /*---------------------------------------------------------------------*/
+/*    CTAnd ....                                                       */
+/*---------------------------------------------------------------------*/
+function CTAnd( left, right ) {
+   const lc = CTCoerce( left, "CTAnd" );
+   const rc = CTCoerce( right, "CTAnd" );
+   
+    return new CT( x => lc.firstOrder( x ) && rc.firstOrder( x ),
+      function( blame_object ) {
+	  function mkWrapper( blame_object, kt ) {
+              const handler = {
+                  apply: function( target, self, args ) {
+                      const { left: left_blame, right: right_blame } = neg_choice( blame_object );
+                      const ei_l = left.wrapper( left_blame );
+                      const ei_r = right.wrapper( right_blame );
+                      return ei_l[kt].ctor( ei_r[kt].ctor( target ) ).apply( self, args );
+                  }
+              }
+      	      return new CTWrapper( function( value ) {
+                  if (!lc.firstOrder(value)) {
+                      return 
+                      signal_contract_violation(
+                          value,
+                          blame_object,
+		          "CTAnd left didn't apply: " + value);
+                  }
+                  if (!rc.firstOrder(value)) {
+                      return signal_contract_violation(
+                          value,
+                          blame_object,
+		          "CTAnd right didn't apply: " + value);
+                  }
+                  return new Proxy(value, handler);
+	      })}
+	  return { 
+	      t: mkWrapper( blame_object, "t" ),
+	      f: mkWrapper( blame_swap(blame_object), "f" )
+	  }
+      });
+}
+   
+/*---------------------------------------------------------------------*/
 /*    CTOr ...                                                         */
 /*---------------------------------------------------------------------*/
 function CTOrExplicitChoice( lchoose, left, rchoose, right ) {
@@ -518,7 +563,7 @@ function CTOrExplicitChoice( lchoose, left, rchoose, right ) {
 	       const is_r = rchoose(value);
 	       if (is_l) return ei_l[kt].ctor(value);
 	       if (is_r) return ei_r[kt].ctor(value);
-                signal_contract_violation(
+                return signal_contract_violation(
                     value,
                     blame_object,
 		    "CTOr neither applied: " + value);
@@ -574,7 +619,7 @@ function CTArray( element ) {
 	       if( firstOrder( value ) ) {
 	       	  return new Proxy( value, handler );
 	       } else {
-                   signal_contract_violation(
+                   return signal_contract_violation(
                        value,
                        blame_object,
 	       	       "Not an array `" + value + "' ");
@@ -713,7 +758,7 @@ function CTObject( ctfields ) {
 		  return new Proxy( value, handler );
 	       } else {
                    // TODO: this error message is not always accurate
-		   signal_contract_violation(
+                   return signal_contract_violation(
                        value,
                        blame_object,
 		       `Object mismatch, expecting "${toString( fields )}", got "${toString( value )}"` );
@@ -753,11 +798,73 @@ function CTCoerce( obj, who ) {
 /*    Blame Objects                                                    */
 /*---------------------------------------------------------------------*/
 
-function new_blame_object(pos, neg) { return {pos: pos, neg: neg}; }
-function blame_swap(blame_object) { return { pos: blame_object.neg, neg: blame_object.pos }; }
-function blame_replace_neg(blame_object, new_neg) { return { pos: blame_object.pos, neg: new_neg }; }
+/*
+blame_object = 
+  { pos: name of potential blame party
+    neg: name of potential blame party
+    alive : (or/c false { alive : boolean } )
+    pos_state: (or/c false -- no and/or in play
+                     { parent : blame_object,   -- defer to when both arms are dead
+                       sibling : blame_object } -- our sibling in the or/and
+    neg_state: same as pos_state
+  }
+// INVARIANT: (alive != false) <=> (pos_state != false) or (neg_state != false)
+*/
+
+function new_blame_object(pos, neg) {
+    return {pos: pos,
+            neg: neg,
+            alive: false,
+            pos_state: false,
+            neg_state: false};
+}
+function blame_swap(blame_object) {
+    return { pos: blame_object.neg,
+             neg: blame_object.pos,
+             alive: blame_object.alive,
+             pos_state: blame_object.neg_state,
+             neg_state: blame_object.pos_state };
+}
+function blame_replace_neg(blame_object, new_neg) {
+    return { pos: blame_object.pos,
+             neg: new_neg,
+             alive: blame_object.alive,
+             pos_state: blame_object.pos_state,
+             neg_state: blame_object.neg_state };
+}
+function neg_choice(parent_blame_object) {
+    const left = {
+        pos: parent_blame_object.pos,
+        neg: parent_blame_object.neg,
+        alive : { alive : true },
+        pos_state: parent_blame_object.pos_state,
+        neg_state: { parent: parent_blame_object }
+    };
+    const right = {
+        pos: parent_blame_object.pos,
+        neg: parent_blame_object.neg,
+        alive : { alive : true },
+        pos_state: parent_blame_object.pos_state,
+        neg_state: { parent: parent_blame_object }
+    };
+    left.neg_state.sibling = right;
+    right.neg_state.sibling = left;
+    return { left: left, right: right };
+}
 function signal_contract_violation(value, blame_object, message) {
-    throw new TypeError( message + " : " + blame_object.pos );
+    if ( typeof(blame_object.alive) === "boolean" ) {
+        throw new TypeError( message + " : " + blame_object.pos )
+    } else if (!blame_object.alive.alive) {
+        return value; 
+    } else if (typeof(blame_object.pos_state) === "boolean") {
+        throw new TypeError( message + " : " + blame_object.pos )
+    } else {
+        blame_object.alive.alive = false; 
+        if (blame_object.pos_state.sibling.alive.alive)
+            return value;
+        else
+            return signal_contract_violation(value, blame_object.pos_state.parent, message);
+    }
 }
 
 /*---------------------------------------------------------------------*/
@@ -789,6 +896,7 @@ exports.undefinedCT = undefinedCT;
 
 exports.CTObject = CTObject;
 exports.CTOr = CTOr;
+exports.CTAnd = CTAnd;
 exports.CTRec = CTRec;
 exports.CTFunction = CTFunction;
 exports.CTFunctionOpt = CTFunctionOpt;
@@ -819,5 +927,4 @@ exports.CTimports = function( obj, location ) {
    }
    return res;
 }
-
 

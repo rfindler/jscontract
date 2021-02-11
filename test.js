@@ -391,3 +391,33 @@ assert.ok( (() => {
 assert.throws( () => {
     CT.CTArray(not_a_contract);
 }, /CTArray: not a contract/, "ctarray.arg-check");
+
+
+/*
+ * CTAnd
+ */
+
+assert.ok( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
+                   CT.CTFunction(true, [CT.isString, CT.isString], true))
+    function f(x,y) { return x+y; }
+    const wf = plus_ctc.wrap(f);
+    return 3 === wf(1,2);
+})(), "ctand.1");
+assert.ok( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
+                   CT.CTFunction(true, [CT.isString, CT.isString], true))
+    function f(x,y) { return x+y; }
+    const wf = plus_ctc.wrap(f);
+    return "12" === wf("1","2");
+})(), "ctand.2");
+assert.throws( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
+                   CT.CTFunction(true, [CT.isString, CT.isString], true))
+    function f(x,y) { return x+y; }
+    const wf = plus_ctc.wrap(f);
+    wf(1,"2")
+}), "ctand.3");
