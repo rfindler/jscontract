@@ -50,7 +50,7 @@ class NS {
       if( this.depth === 1 ) {
       	 console.log( `${m}const __${this.id} = {` );
       } else {
-	 console.log( `__${this.id} : {` );
+	 console.log( `__${this.id}${this.tag} : {` );
       }
       
       this.outDeclarations( m + " " );
@@ -68,7 +68,7 @@ class NS {
       const l = this.declarations.length;
       if( l > 0 ) {
 	 this.declarations.forEach( (d, i) => {
-	       console.log( `${m}${d.id}CT: ${d.toString()}${i === l - 1 ? "" : ","}` );
+	       console.log( `${m}${d.id}: ${d.toString()}${i === l - 1 ? "" : ","}` );
 	    } )
       }
    }
@@ -96,11 +96,11 @@ class Module extends NS {
       if( this.declarations.length > 0 ) {
 	 this.declarations.forEach( d => {
 	       const id = d.id;
-      	       const decl = `const ${id}CT = ${d.toString()};`;
+      	       const decl = `const ${id}${d.tag} = ${d.toString()};`;
       	       
       	       if( d.export && options.module === "commonJS" ) {
       	       	  console.log( m + decl );
-	       	  console.log( `${m}exports.${id}CT = ${id}CT;` );
+	       	  console.log( `${m}exports.${id} = ${id};` );
       	       } else if( d.export ) {
       	       	  console.log( `${m}export ${decl};` );
       	       } else {
@@ -113,9 +113,9 @@ class Module extends NS {
       if( this.export ) {
       	 console.log( "// module exports" );
       	 if( options.module === "commonJS" ) {
-	    console.log( `module.exports = ${this.export}CT;` );
+	    console.log( `module.exports = ${this.export};` );
       	 } else {
-	    console.log( `export default ${this.export}CT;` );
+	    console.log( `export default ${this.export};` );
       	 }
       }
    }
@@ -125,9 +125,11 @@ class Module extends NS {
 /*    Decl ...                                                         */
 /*---------------------------------------------------------------------*/
 class Decl {
-   constructor( id, ct ) {
+   constructor( id, ns, tag, obj ) {
       this.id = id;
-      this.CT = ct;
+      this.ns = ns;
+      this.tag = tag;
+      this.obj = obj;
       this.export = false;
    }
 }
@@ -136,12 +138,12 @@ class Decl {
 /*    TypeDecl ...                                                     */
 /*---------------------------------------------------------------------*/
 class TypeDecl extends Decl {
-   constructor( id, ct ) {
-      super( id, ct );
+   constructor( id, ns, obj ) {
+      super( id, ns, "CT", obj );
    }
    
    toString() {
-      return this.ct;
+      return this.obj;
    }
 }
 
@@ -149,14 +151,13 @@ class TypeDecl extends Decl {
 /*    FunDecl ...                                                      */
 /*---------------------------------------------------------------------*/
 class FunDecl extends Decl {
-   constructor( id, ct, exp ) {
-      super( id );
-      this.ct = ct;
+   constructor( id, ns, obj, exp ) {
+      super( id, ns, "F", obj );
       this.export = exp;
    }
    
    toString() {
-      return `${this.ct}.wrap( ${this.id} )`;
+      return `${this.obj}.wrap( ${nsName( this.ns, this.id ) } )`;
    }
 }
 
@@ -175,19 +176,19 @@ function CT( node, env, ns ) {
 	    if( odecl ) {
 	       odecl.ct = `CT.CTAnd( ${odecl.ct}, ${ct} )`;
 	    } else {
-	       ns.declarations.push( new FunDecl( id, ct, exp ) );
+	       ns.declarations.push( new FunDecl( id, ns, ct, exp ) );
 	    }
 	 }
 	 break;
 	 
       case ts.SyntaxKind.TypeAliasDeclaration: 
 	 if( node.name ) {
-	    const id = node.name.escapedText;
+	    const id = nsName( ns, node.name.escapedText );
 	    const descr = { rec: false };
 	    const nenv = { [id]: descr, __proto__: env };
 	    const ct = typeCT( node.type, nenv );
 	    
-	    ns.declarations.push( new TypeDecl( id, descr.rec ? `CT.CTRec( () => ${ct} )` : ct ) );
+	    ns.declarations.push( new TypeDecl( id, ns, descr.rec ? `CT.CTRec( () => ${ct} )` : ct ) );
 	 }
 	 break;
 	 
@@ -205,7 +206,7 @@ function CT( node, env, ns ) {
 	 return;
 	 
       case ts.SyntaxKind.ModuleDeclaration:
-	 const nns = new NS( node.name.escapedText, ns );
+	 const nns = new NS( nameToString( node.name ), ns );
 
 	 CT( node.body, {}, nns );
 	 return;
@@ -251,7 +252,18 @@ function nameToString( tname ) {
 	 return "";
    }
 }
-   	    
+
+/*---------------------------------------------------------------------*/
+/*    nsName ...                                                       */
+/*---------------------------------------------------------------------*/
+function nsName( ns, name ) {
+   if( ns.parent ) {
+      return `${ns.id}.${name}`;
+   } else {
+      return name;
+   }
+}
+
 function typeCT( node, env ) {
    if( !node.kind ) {
       return false;
