@@ -399,16 +399,16 @@ assert.throws( () => {
 
 assert.ok( (() => {
     const plus_ctc =
-          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
-                   CT.CTFunction(true, [CT.isString, CT.isString], true))
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isString))
     function f(x,y) { return x+y; }
     const wf = plus_ctc.wrap(f);
     return 3 === wf(1,2);
 })(), "ctand.1");
 assert.ok( (() => {
     const plus_ctc =
-          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
-                   CT.CTFunction(true, [CT.isString, CT.isString], true))
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isString))
     function f(x,y) { return x+y; }
     const wf = plus_ctc.wrap(f);
     return "12" === wf("1","2");
@@ -416,8 +416,8 @@ assert.ok( (() => {
 
 assert.throws( (() => {
     const plus_ctc =
-          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
-                   CT.CTFunction(true, [CT.isString, CT.isString], true))
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isString))
     function f(x,y) { return x+y; }
     const wf = plus_ctc.wrap(f);
     wf(1,"2")
