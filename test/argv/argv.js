@@ -348,7 +348,7 @@ module.exports = self = {
 
 		// Iterate over arguments
 		argv.forEach(function( arg, i ) {
-		   var peek = (i === argv.length - 1) ? undefined: argv[ i + 1 ], option, index, value;
+		   var peek = argv[i+1], option, index, value;
 
 			// Allow skipping of arguments
 			if ( skip ) {

@@ -881,6 +881,7 @@ function isFunction( o ) { return (typeof o) === "function" }
 function isString( o ) { return (typeof o) === "string" }
 function isBoolean( o ) { return (typeof o) === "boolean" }
 function isNumber( o ) { return (typeof o) === "number" }
+function isUndefined( o ) { return (typeof o) === "undefined" }
 function True( o ) { return true }
 
 const booleanCT = new CTFlat( isBoolean );
@@ -888,12 +889,13 @@ const numberCT = new CTFlat( isNumber );
 const objectCT = new CTFlat( isObject );
 const stringCT = new CTFlat( isString );
 const trueCT = new CTFlat( o => true );
-const undefinedCT = new CTFlat( o => o === undefined );
+const undefinedCT = new CTFlat( isUndefined );
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
 /*---------------------------------------------------------------------*/
 exports.anyCT = trueCT;
+exports.voidCT = undefinedCT;
 exports.booleanCT = booleanCT;
 exports.objectCT = objectCT;
 exports.stringCT = stringCT;

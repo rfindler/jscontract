@@ -125,7 +125,7 @@ assert.throws( () => {
 assert.ok( (() => {
       function f( x, y = 1, z = true ) { return parseInt( x ) + y + (z ? 10 : -10) };
       var wf = CT.CTFunction( true, [ CT.isString, { contract: CT.isNumber, optional: true }, { contract: CT.isBoolean, optional: true } ], CT.isNumber ).wrap(f);
-      wf("1", 1, false); wf("1", 1);
+      wf("1", 1, false); wf("1", 1); wf("1");
       return true;
 })(), "ctfunction.11.succeed"); 
 

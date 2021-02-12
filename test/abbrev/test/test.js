@@ -1,4 +1,4 @@
-var abbrev = require('../abbrev-ct.js')
+var abbrev = require('../abbrev.ct.js')
 var t = require('assert')
 var util = require("util")
 
