@@ -413,6 +413,33 @@ assert.ok( (() => {
     const wf = plus_ctc.wrap(f);
     return "12" === wf("1","2");
 })(), "ctand.2");
+assert.ok( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isString),
+                   CT.CTFunction(true, [CT.isBoolean, CT.isBoolean], CT.isBoolean))
+    function f(x,y) { return CT.isBoolean(x) ? x && y : x + y; }
+    const wf = plus_ctc.wrap(f);
+    return false === wf(true, false)
+})(), "ctand.3a");
+assert.ok( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isString),
+                   CT.CTFunction(true, [CT.isBoolean, CT.isBoolean], CT.isBoolean))
+    function f(x,y) { return CT.isBoolean(x) ? x && y : x + y; }
+    const wf = plus_ctc.wrap(f);
+    return 5 === wf(2,3)
+})(), "ctand.3b");
+assert.ok( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isString),
+                   CT.CTFunction(true, [CT.isBoolean, CT.isBoolean], CT.isBoolean))
+    function f(x,y) { return CT.isBoolean(x) ? x && y : x + y; }
+    const wf = plus_ctc.wrap(f);
+    return "xy" === wf("x","y")
+})(), "ctand.3c");
 
 assert.throws( (() => {
     const plus_ctc =

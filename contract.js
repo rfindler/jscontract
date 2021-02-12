@@ -515,33 +515,33 @@ function CTRec( thunk ) {
 /*---------------------------------------------------------------------*/
 /*    CTAnd ....                                                       */
 /*---------------------------------------------------------------------*/
-function CTAnd( left, right ) {
-   const lc = CTCoerce( left, "CTAnd" );
-   const rc = CTCoerce( right, "CTAnd" );
-   
+function CTAnd( ...args ) {
+    const argcs = [];
+    for ( let i = 0; i < args.length; ++i ) {
+        argcs[i] = CTCoerce( args[ i ] , "CTAnd" );
+    }
     return new CT( x => lc.firstOrder( x ) && rc.firstOrder( x ),
       function( blame_object ) {
 	  function mkWrapper( blame_object, kt ) {
               const handler = {
-                  apply: function( target, self, args ) {
-                      const { left: left_blame, right: right_blame } = neg_choice( blame_object );
-                      const ei_l = left.wrapper( left_blame );
-                      const ei_r = right.wrapper( right_blame );
-                      return ei_l[kt].ctor( ei_r[kt].ctor( target ) ).apply( self, args );
+                  apply: function( target, self, target_args ) {
+                      const blame_objects = neg_choice( blame_object, argcs.length );
+                      var wrapped_target = target;
+                      for ( let i = 0; i < argcs.length; ++i ) {
+                          const ei = argcs[ i ].wrapper( blame_objects[ i ] );
+                          wrapped_target = ei[kt].ctor( wrapped_target );
+                      }
+                      return wrapped_target.apply( self, target_args );
                   }
               }
       	      return new CTWrapper( function( value ) {
-                  if (!lc.firstOrder(value)) {
+                  for ( let i = 0; i < argcs.length; ++i ) {
+                      if (!argcs[i].firstOrder(value)) {
                       return signal_contract_violation(
                           value,
                           blame_object,
-		          "CTAnd left didn't apply: " + value);
-                  }
-                  if (!rc.firstOrder(value)) {
-                      return signal_contract_violation(
-                          value,
-                          blame_object,
-		          "CTAnd right didn't apply: " + value);
+		          "CTAnd argument " + i +  " didn't apply: " + value);
+                      }
                   }
                   return new Proxy(value, handler);
 	      })}
@@ -836,31 +836,25 @@ function blame_replace_neg(blame_object, new_neg) {
              pos_state: blame_object.pos_state,
              neg_state: blame_object.neg_state };
 }
-function neg_choice(blame_object) {
-    const left = {
-        pos: blame_object.pos,
-        neg: blame_object.neg,
-        dead : { dead : false },
-        pos_state: blame_object.pos_state,
-    };
-    const right = {
-        pos: blame_object.pos,
-        neg: blame_object.neg,
-        dead : { dead : false },
-        pos_state: blame_object.pos_state,
-    };
-    left.neg_state = right;
-    right.neg_state = left;
-    return { left: left, right: right };
+function neg_choice(blame_object, howmany) {
+    const blame_objects = [];
+    for (let i = 0; i < howmany; ++i) {
+        blame_objects[i] = {
+            pos: blame_object.pos,
+            neg: blame_object.neg,
+            dead: { dead : false },
+            neg_state: blame_objects,
+            pos_state: blame_object.pos_state,
+        }
+    }
+    return blame_objects;
 }
 function signal_contract_violation(value, blame_object, message) {
-    // console.log("signal_contract_violation: " + value + " " + message);
-    // console.log(blame_object);
     if ( typeof(blame_object.dead) === "boolean" ) {
         // regular contract violation, no and/or here
         throw_contract_violation(blame_object.pos, message);
     } else if (blame_object.dead.dead) {
-        // we're already dead (but our sibling isn't)
+        // we're already dead (but some siblings aren't)
         return value; 
     } else if (typeof(blame_object.pos_state) === "boolean") {
         // we're in an and/or contract, but this is not the side with
@@ -869,11 +863,19 @@ function signal_contract_violation(value, blame_object, message) {
     } else {
         // we're newly dead
         blame_object.dead.dead = message;
-        if (blame_object.pos_state.dead.dead) {
-            // if sibling was already dead, there were no viable choices
-            throw_contract_violation(
-                blame_object.pos,
-                blame_object.pos_state.dead.dead + "\n     also: " + message);
+        const siblings = blame_object.pos_state;
+        var all_dead = true;
+        for (let i = 0; i < siblings.length; ++i) {
+            all_dead = all_dead && siblings[i].dead.dead;
+        }
+        if (all_dead) {
+            // there were no viable choices
+            var complete_message = "";
+            for (let i = 0; i < siblings.length; ++i) {
+                complete_message += (i === 0 ? "" :  "\n     also: ");
+                complete_message += siblings[i].dead.dead;
+            }
+            throw_contract_violation(blame_object.pos, complete_message);
         } else {
             // sibling isn't dead yet, so keep going
             return value;
