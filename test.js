@@ -414,7 +414,6 @@ assert.ok( (() => {
     return "12" === wf("1","2");
 })(), "ctand.2");
 
-/* this test case has the wrong blame. I think */
 assert.throws( (() => {
     const plus_ctc =
           CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], true),
@@ -422,4 +421,4 @@ assert.throws( (() => {
     function f(x,y) { return x+y; }
     const wf = plus_ctc.wrap(f);
     wf(1,"2")
-}), "ctand.3");
+}), /blaming: pos/, "ctand.3"); // I think this is wrong
