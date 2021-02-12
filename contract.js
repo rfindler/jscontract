@@ -530,8 +530,7 @@ function CTAnd( left, right ) {
               }
       	      return new CTWrapper( function( value ) {
                   if (!lc.firstOrder(value)) {
-                      return 
-                      signal_contract_violation(
+                      return signal_contract_violation(
                           value,
                           blame_object,
 		          "CTAnd left didn't apply: " + value);
