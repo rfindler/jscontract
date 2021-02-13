@@ -803,68 +803,79 @@ function CTCoerce( obj, who ) {
 blame_object = 
   { pos: name of potential blame party
     neg: name of potential blame party
-    alive : (or/c false { alive : boolean } )
-    pos_state: (or/c false -- no and/or in play
-                     { parent : blame_object,   -- defer to when both arms are dead
-                       sibling : blame_object } -- our sibling in the or/and
+    dead : (or/c false                      -- not involved in or/and contract
+                { dead : (or/c false        -- still alive
+                               string) } )  -- dead with this error message
+    pos_state: (or/c false          -- no and/or in play
+                     blame_object)  -- our sibling in the or/and
     neg_state: same as pos_state
   }
-// INVARIANT: (alive != false) <=> (pos_state != false) or (neg_state != false)
+// INVARIANT: (dead != false) <=> (pos_state != false) or (neg_state != false)
 */
 
 function new_blame_object(pos, neg) {
     return {pos: pos,
             neg: neg,
-            alive: false,
+            dead: false,
             pos_state: false,
             neg_state: false};
 }
 function blame_swap(blame_object) {
     return { pos: blame_object.neg,
              neg: blame_object.pos,
-             alive: blame_object.alive,
+             dead: blame_object.dead,
              pos_state: blame_object.neg_state,
              neg_state: blame_object.pos_state };
 }
 function blame_replace_neg(blame_object, new_neg) {
     return { pos: blame_object.pos,
              neg: new_neg,
-             alive: blame_object.alive,
+             dead: blame_object.dead,
              pos_state: blame_object.pos_state,
              neg_state: blame_object.neg_state };
 }
-function neg_choice(parent_blame_object) {
+function neg_choice(blame_object) {
     const left = {
-        pos: parent_blame_object.pos,
-        neg: parent_blame_object.neg,
-        alive : { alive : true },
-        pos_state: parent_blame_object.pos_state,
-        neg_state: { parent: parent_blame_object }
+        pos: blame_object.pos,
+        neg: blame_object.neg,
+        dead : { dead : false },
+        pos_state: blame_object.pos_state,
     };
     const right = {
-        pos: parent_blame_object.pos,
-        neg: parent_blame_object.neg,
-        alive : { alive : true },
-        pos_state: parent_blame_object.pos_state,
-        neg_state: { parent: parent_blame_object }
+        pos: blame_object.pos,
+        neg: blame_object.neg,
+        dead : { dead : false },
+        pos_state: blame_object.pos_state,
     };
-    left.neg_state.sibling = right;
-    right.neg_state.sibling = left;
+    left.neg_state = right;
+    right.neg_state = left;
     return { left: left, right: right };
 }
 function signal_contract_violation(value, blame_object, message) {
-    if ( typeof(blame_object.alive) === "boolean" ) {
+    // console.log("signal_contract_violation: " + value + " " + message);
+    // console.log(blame_object);
+    if ( typeof(blame_object.dead) === "boolean" ) {
+        // regular contract violation, no and/or here
         throw_contract_violation(blame_object.pos, message);
-    } else if (!blame_object.alive.alive) {
+    } else if (blame_object.dead.dead) {
+        // we're already dead (but our sibling isn't)
         return value; 
     } else if (typeof(blame_object.pos_state) === "boolean") {
+        // we're in an and/or contract, but this is not the side with
+        // the choice, so signal a violation
         throw_contract_violation(blame_object.pos, message);
     } else {
-        blame_object.alive.alive = false; 
-        if (blame_object.pos_state.sibling.alive.alive)
+        // we're newly dead
+        blame_object.dead.dead = message;
+        if (blame_object.pos_state.dead.dead) {
+            // if sibling was already dead, there were no viable choices
+            throw_contract_violation(
+                blame_object.pos,
+                blame_object.pos_state.dead.dead + "\n     also: " + message);
+        } else {
+            // sibling isn't dead yet, so keep going
             return value;
-        else
-            return signal_contract_violation(value, blame_object.pos_state.parent, message);
+        }
     }
 }
 

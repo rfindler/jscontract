@@ -421,4 +421,20 @@ assert.throws( (() => {
     function f(x,y) { return x+y; }
     const wf = plus_ctc.wrap(f);
     wf(1,"2")
-}), /blaming: pos/, "ctand.3"); // I think this is wrong
+}), /blaming: neg/, "ctand.4");
+assert.throws( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isString, CT.isString], CT.isNumber))
+    function f(x,y) { return 3; }
+    const wf = plus_ctc.wrap(f);
+    wf(1,"2")
+}), /blaming: neg/, "ctand.5");
+assert.throws( (() => {
+    const plus_ctc =
+          CT.CTAnd(CT.CTFunction(true, [CT.isNumber, CT.isNumber], CT.isNumber),
+                   CT.CTFunction(true, [CT.isNumber, CT.isBoolean], CT.isNumber))
+    function f(x,y) { return 3; }
+    const wf = plus_ctc.wrap(f);
+    wf(1,"2")
+}), /Predicate `isBoolean' not satisfied for value `2'.*\n.*blaming: neg/, "ctand.6");
