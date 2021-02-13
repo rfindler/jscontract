@@ -16,6 +16,7 @@
 /*    module                                                           */
 /*---------------------------------------------------------------------*/
 import { readFileSync } from "fs";
+import * as path from "path";
 import * as _ts from "typescript";
 
 const ts = _ts.default;
@@ -26,6 +27,7 @@ const ts = _ts.default;
 const options = { 
    allowJS: true,
    module: "commonJS",
+   autorequire: true,
    contractjs: "../../contract.js"
 };
 
@@ -50,18 +52,22 @@ class NS {
       if( this.depth === 1 ) {
       	 console.log( `${m}const __${this.id} = {` );
       } else {
-	 console.log( `__${this.id}${this.tag} : {` );
+	 console.log( `__${this.id}${this.tag}: {` );
       }
       
-      this.outDeclarations( m + " " );
+      this.outDeclarations( m + "  " );
       
-      console.log( `${m}}` );
+      if( this.depth === 1 ) {
+      	 console.log( `${m}};` );
+      } else {
+      	 console.log( `${m}},` );
+      }
    }
    
    outDeclarations( m ) {
       // namespaces
       if( this.namespaces.length > 0 ) {
-	 this.namespaces.forEach( ns => ns.out( m + " " ) );
+	 this.namespaces.forEach( ns => ns.out( m + "  " ) );
       }
 	 
       // declarations
@@ -70,6 +76,14 @@ class NS {
 	 this.declarations.forEach( (d, i) => {
 	       console.log( `${m}${d.id}: ${d.toString()}${i === l - 1 ? "" : ","}` );
 	    } )
+      }
+   }
+   
+   qname( name ) {
+      if( this.parent ) {
+      	 return `${this.id}.${name}`;
+      } else {
+      	 return name;
       }
    }
 }
@@ -81,7 +95,7 @@ class Module extends NS {
    constructor( id, filename ) {
       super( id, false );
       this.filename = filename;
-      this.export = false;
+      this.defexport = false;
    }
    
    out( m ) {
@@ -95,27 +109,39 @@ class Module extends NS {
       // declarations
       if( this.declarations.length > 0 ) {
 	 this.declarations.forEach( d => {
-	       const id = d.id;
-      	       const decl = `const ${id}${d.tag} = ${d.toString()};`;
+      	       const decl = `const ${d.id}${d.tag} = ${d.toString()};`;
       	       
-      	       if( d.export && options.module === "commonJS" ) {
-      	       	  console.log( m + decl );
-	       	  console.log( `${m}exports.${id} = ${id};` );
-      	       } else if( d.export ) {
-      	       	  console.log( `${m}export ${decl};` );
-      	       } else {
-      	       	  console.log( m + decl );
-      	       }
+	       console.log( m + decl );
       	       console.log( "" );
       	    } );
       }
 
-      if( this.export ) {
+      // exports
+      if( this.declarations.length > 0 ) {
+	 if( options.module === "commonJS" ) {
+	    this.declarations.forEach( d => {
+		  if( d.export ) {
+	       	     console.log( `exports.${d.id} = ${d.id}${d.tag};` );
+		  }
+	       } );
+	 } else {
+	    this.declarations.forEach( d => {
+		  if( d.export ) {
+	       	     console.log( `export exports.${d.id}.${d.tag} as ${d.id};` );
+		  }
+	       } );
+      	 }
+      }
+      
+      // default export
+      if( this.defexport ) {
+	 const defexport = `${this.defexport.id}${this.defexport.tag}`;
+	 
       	 console.log( "// module exports" );
       	 if( options.module === "commonJS" ) {
-	    console.log( `module.exports = ${this.export};` );
+	    console.log( `module.exports = ${defexport};` );
       	 } else {
-	    console.log( `export default ${this.export};` );
+	    console.log( `export default ${defexport};` );
       	 }
       }
    }
@@ -152,12 +178,12 @@ class TypeDecl extends Decl {
 /*---------------------------------------------------------------------*/
 class FunDecl extends Decl {
    constructor( id, ns, obj, exp ) {
-      super( id, ns, "F", obj );
+      super( id, ns, "_ct", obj );
       this.export = exp;
    }
    
    toString() {
-      return `${this.obj}.wrap( ${nsName( this.ns, this.id ) } )`;
+      return `${this.obj}.wrap( ${this.ns.qname( this.id ) } )`;
    }
 }
 
@@ -183,7 +209,7 @@ function CT( node, env, ns ) {
 	 
       case ts.SyntaxKind.TypeAliasDeclaration: 
 	 if( node.name ) {
-	    const id = nsName( ns, node.name.escapedText );
+	    const id = nameToString( node.name );
 	    const descr = { rec: false };
 	    const nenv = { [id]: descr, __proto__: env };
 	    const ct = typeCT( node.type, nenv );
@@ -193,12 +219,26 @@ function CT( node, env, ns ) {
 	 break;
 	 
       case ts.SyntaxKind.InterfaceDeclaration: 
-	 console.log( "// interface not implemented yet..." );
+	 if( node.name ) {
+	    const id = nameToString( node.name );
+	    const descr = { rec: false };
+	    const nenv = { [id]: descr, __proto__: env };
+	    const ct = intfCT( node, nenv );
+	    
+	    ns.declarations.push( new TypeDecl( id, ns, descr.rec ? `CT.CTRec( () => ${ct} )` : ct ) );
+	 }
 	 break;
 	 
       case ts.SyntaxKind.ExportAssignment:
 	 if( node.expression.kind === ts.SyntaxKind.Identifier ) {
-	    ns.export = node.expression.escapedText;
+	    const id = node.expression.escapedText;
+	    const d = ns.declarations.find( d => d.id === id );
+	    
+	    if( d ) {
+	       ns.defexport = d;
+	    } else {
+	       console.log( "// error, cannot find exported declaration", id );
+	    }
 	 }
 	 return;
 	    
@@ -220,7 +260,9 @@ function CT( node, env, ns ) {
    }
 }
 
-
+/*---------------------------------------------------------------------*/
+/*    functionCT ...                                                   */
+/*---------------------------------------------------------------------*/
 function functionCT( node, env ) {
    const ctself = "CT.trueCT";
    const ctparams = node.parameters.map( p => paramCT( p, env ) );
@@ -229,6 +271,9 @@ function functionCT( node, env ) {
    return `CT.CTFunction( ${ctself }, [ ${ctparams} ], ${ctret} )`;
 }
 
+/*---------------------------------------------------------------------*/
+/*    paramCT ...                                                      */
+/*---------------------------------------------------------------------*/
 function paramCT( node, env ) {
    if( node.dotDotDotToken ) {
       return `{ contract: ${typeCT( node.type.elementType, env )}, dotdotdot: true }`;
@@ -254,16 +299,8 @@ function nameToString( tname ) {
 }
 
 /*---------------------------------------------------------------------*/
-/*    nsName ...                                                       */
+/*    typeCT ...                                                       */
 /*---------------------------------------------------------------------*/
-function nsName( ns, name ) {
-   if( ns.parent ) {
-      return `${ns.id}.${name}`;
-   } else {
-      return name;
-   }
-}
-
 function typeCT( node, env ) {
    if( !node.kind ) {
       return false;
@@ -299,6 +336,16 @@ function typeCT( node, env ) {
    }
 }
 
+/*---------------------------------------------------------------------*/
+/*    intfCT ...                                                       */
+/*---------------------------------------------------------------------*/
+function intfCT( node, env ) {
+   return `CT.CTInterface( { ${node.members.map( s => sigCT( s, env ) ).join( ", " )} } )`;
+}
+
+/*---------------------------------------------------------------------*/
+/*    typeName ...                                                     */
+/*---------------------------------------------------------------------*/
 function typeName( node, env ) {
    if( !node.kind ) {
       return false;
@@ -320,28 +367,42 @@ function typeName( node, env ) {
    }
 }
 
+/*---------------------------------------------------------------------*/
+/*    sigCT ...                                                        */
+/*---------------------------------------------------------------------*/
 function sigCT( node, env ) {
    const ct = typeCT( node.type, env );
    
    switch( node.kind ) {
       case ts.SyntaxKind.PropertySignature:
 	 if( node.questionToken ) {
-	    return `"${node.name.escapedText}": { contract: ${ct}, optional: true }`;
+	    return `"${nameToString( node.name )}": { contract: ${ct}, optional: true }`;
 	 } else {
-	    return `"${node.name.escapedText}": ${ct}`;
+	    return `"${nameToString( node.name )}": ${ct}`;
       	 }
 	 
       case ts.SyntaxKind.IndexSignature:
 	 const param = node.parameters[ 0 ];
-	 return `"${param.name.escapedText}": { contract: ${ct}, index: "${typeName( param.type, env )}"  }`;
+	 return `"${nameToString( param.name )}": { contract: ${ct}, index: "${typeName( param.type, env )}"  }`;
 	 
       default:
 	 return "sigCT" + ts.SyntaxKind[ node.type ];
    }
 }
 
-function dump( options ) {
-   console.log( "// function declarations" );
+/*---------------------------------------------------------------------*/
+/*    autorequire ...                                                  */
+/*    -------------------------------------------------------------    */
+/*    Try to guess a good "require" for that module.                   */
+/*---------------------------------------------------------------------*/
+function autorequire( file ) {
+   if( file === "index.d.ts" ) {
+      const basename = path.basename( process.cwd() );
+      console.log( `const ${basename} = require( "./index.js" );` );
+   } else {
+      const basename = file.replace( /d.ts$/, "" );
+      console.log( `const ${basename} = require( "./${basename}.js" );` );
+   }
 }
 
 /*---------------------------------------------------------------------*/
@@ -351,15 +412,17 @@ function main() {
    const files = process.argv.slice( 2 );
    const program = ts.createProgram( files, options );
    let checker = program.getTypeChecker();
-   const sourceFile = program.getSourceFile( files[ 0 ] );
-   const prog = new Module( "", sourceFile.fileName );
+   const file = program.getSourceFile( files[ 0 ] );
+   const prog = new Module( "", file.fileName );
    
-   ts.forEachChild( sourceFile, n => CT( n, {}, prog ) );
+   ts.forEachChild( file, n => CT( n, {}, prog ) );
    
    console.log( '"use strict";' );
    console.log( '"use hopscript";' );
+   
    console.log( "" );
    console.log( `const CT = require( "${options.contractjs}" );` );
+   if( options.autorequire ) autorequire( file.fileName );
    console.log( "" );
 
    prog.out( "" );

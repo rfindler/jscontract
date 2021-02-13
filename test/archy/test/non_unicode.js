@@ -1,5 +1,5 @@
 const assert = require( "assert" );
-var archy = require('../index_ct.js');
+var archy = require('../index.ct.js');
 
 var s = archy({
       label : 'beep',
