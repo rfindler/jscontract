@@ -914,6 +914,7 @@ exports.trueCT = trueCT;
 exports.undefinedCT = undefinedCT;
 
 exports.CTObject = CTObject;
+exports.CTInterface = CTObject;
 exports.CTOr = CTOr;
 exports.CTAnd = CTAnd;
 exports.CTRec = CTRec;

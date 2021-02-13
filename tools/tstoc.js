@@ -49,19 +49,11 @@ class NS {
    }
  
    out( m ) {
-      if( this.depth === 1 ) {
-      	 console.log( `${m}const __${this.id} = {` );
-      } else {
-	 console.log( `__${this.id}${this.tag}: {` );
-      }
+      console.log( `${m}const __${this.id} = (function() {` );
       
       this.outDeclarations( m + "  " );
       
-      if( this.depth === 1 ) {
-      	 console.log( `${m}};` );
-      } else {
-      	 console.log( `${m}},` );
-      }
+      console.log( `${m}})();` );
    }
    
    outDeclarations( m ) {
@@ -74,8 +66,14 @@ class NS {
       const l = this.declarations.length;
       if( l > 0 ) {
 	 this.declarations.forEach( (d, i) => {
-	       console.log( `${m}${d.id}: ${d.toString()}${i === l - 1 ? "" : ","}` );
-	    } )
+	       console.log( `${m}const ${d.id}${d.tag} = ${d.toString()};` );
+	    } );
+	 
+	 console.log( `${m}return {` );
+	 this.declarations.forEach( (d, i) => {
+	       console.log( `  ${m}${d.id}${d.tag}: ${d.id}${d.tag}${i === l - 1 ? "" : ","}` );
+	    } );
+	 console.log( `${m}};` );
       }
    }
    
