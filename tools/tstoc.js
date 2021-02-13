@@ -28,7 +28,14 @@ const options = {
    allowJS: true,
    module: "commonJS",
    autorequire: true,
-   contractjs: "../../contract.js"
+   contractjs: "contract.js"
+};
+
+/*---------------------------------------------------------------------*/
+/*    builtinTypes                                                     */
+/*---------------------------------------------------------------------*/
+const builtinTypes = {
+   Error: "CT.errorCT"
 };
 
 /*---------------------------------------------------------------------*/
@@ -327,7 +334,7 @@ function typeCT( node, env ) {
       	 case ts.SyntaxKind.TypeReference:
 	    const id = nameToString( node.typeName );
 	    if( env[ id ] ) { env[ id ].rec = true }
-	    return `${id}CT`;
+	    return builtinTypes[ id ] || `${id}CT`;
       	 default:
 	    return `/* unknown type ${ts.SyntaxKind[ node.kind ]} */CT.trueCT`;
       }
@@ -411,7 +418,7 @@ function main() {
    const program = ts.createProgram( files, options );
    let checker = program.getTypeChecker();
    const file = program.getSourceFile( files[ 0 ] );
-   const prog = new Module( "", file.fileName );
+   const prog = new Module( "", file.file );
    
    ts.forEachChild( file, n => CT( n, {}, prog ) );
    

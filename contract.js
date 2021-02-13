@@ -86,6 +86,8 @@ function predToString( pred ) {
       return "isNumber";
    } else if( pred === isObject ) {
       return "isObject";
+   } else if( pred === isError ) {
+      return "isError";
    } else {
       return pred.toString();
    }
@@ -893,6 +895,7 @@ function isString( o ) { return (typeof o) === "string" }
 function isBoolean( o ) { return (typeof o) === "boolean" }
 function isNumber( o ) { return (typeof o) === "number" }
 function isUndefined( o ) { return (typeof o) === "undefined" }
+function isError( o ) { return (o instanceof Error) }
 function True( o ) { return true }
 
 const booleanCT = new CTFlat( isBoolean );
@@ -901,6 +904,7 @@ const objectCT = new CTFlat( isObject );
 const stringCT = new CTFlat( isString );
 const trueCT = new CTFlat( o => true );
 const undefinedCT = new CTFlat( isUndefined );
+const errorCT = new CTFlat( isError );
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -912,6 +916,7 @@ exports.objectCT = objectCT;
 exports.stringCT = stringCT;
 exports.trueCT = trueCT;
 exports.undefinedCT = undefinedCT;
+exports.errorCT = errorCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;
