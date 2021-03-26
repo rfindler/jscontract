@@ -35,9 +35,12 @@ TsToC
 TsToC is the TypeScript-to-Contract translator. As of 10 feb 2021,
 it translates a TypeScript file declaration (a `.d.ts` file) into
 JavaScript contracts. It requires `tsc` to be installed on the host.
+Example
 
 ```shell
-nodejs ../../tools/tstoc.js argv.d.ts
+cd test/argv
+nnodejs ../../tools/tstoc.js argv.d.ts > argvCT.js
+nodejs test.js
 ```
 
 The following URL help developing (and probably fixing) `tstoc`:

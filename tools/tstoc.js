@@ -15,11 +15,10 @@
 /*---------------------------------------------------------------------*/
 /*    module                                                           */
 /*---------------------------------------------------------------------*/
-import { readFileSync } from "fs";
-import * as path from "path";
-import * as _ts from "typescript";
-
-const ts = _ts.default;
+const ts = require( "typescript" );
+const fs = require( "fs" );
+const readFileSync = fs.readFileSync;
+const path = require( "path" );
 
 /*---------------------------------------------------------------------*/
 /*    global options                                                   */
@@ -30,6 +29,10 @@ const options = {
    autorequire: true,
    contractjs: "contract.js"
 };
+
+if( fs.existsSync( "./package.json" ) ) {
+   Object.assign( options, JSON.parse( fs.readFileSync('./package.json' ) ) );
+}
 
 /*---------------------------------------------------------------------*/
 /*    builtinTypes                                                     */
@@ -401,11 +404,14 @@ function sigCT( node, env ) {
 /*    Try to guess a good "require" for that module.                   */
 /*---------------------------------------------------------------------*/
 function autorequire( file ) {
-   if( file === "index.d.ts" ) {
+   if( !options.require && file === "index.d.ts" ) {
       const basename = path.basename( process.cwd() );
       console.log( `const ${basename} = require( "./index.js" );` );
+   } else if( options.require ) {
+      const basename = path.basename( process.cwd() );
+      console.log( `const ${basename} = require( "${options.require}" );` );
    } else {
-      const basename = file.replace( /d.ts$/, "" );
+      const basename = file.replace( /.d.ts$/, "" );
       console.log( `const ${basename} = require( "./${basename}.js" );` );
    }
 }
