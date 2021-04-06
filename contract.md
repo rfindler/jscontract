@@ -2,7 +2,7 @@
 Misc
 ====
 
-ccontract = <a value coercicle into a contract>
+ccontract = <a value coercible into a contract>
 
 
 CTObject
@@ -37,7 +37,8 @@ it translates a TypeScript file declaration (a `.d.ts` file) into
 JavaScript contracts. It requires `tsc` to be installed on the host.
 
 ```shell
-nodejs ../../tools/tstoc.js argv.d.ts
+cd test/abbrev
+nodejs ../../tools/tstoc.js argv.d.ts > abbrev.ct.js
 ```
 
 The following URL help developing (and probably fixing) `tstoc`:

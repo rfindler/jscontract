@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano & robby findler                    */
 /*    Creation    :  Fri Feb 12 14:32:28 2021                          */
-/*    Last change :                                                    */
+/*    Last change :  Fri Mar 26 15:54:16 2021 (serrano)                */
 /*    Copyright   :  2021 manuel serrano & robby finder                */
 /*    -------------------------------------------------------------    */
 /*    TypeScript declaration to Contract                               */
@@ -17,9 +17,10 @@
 /*---------------------------------------------------------------------*/
 import { readFileSync } from "fs";
 import * as path from "path";
-import * as _ts from "typescript";
-
-const ts = _ts.default;
+const ts = require( "typescript" );
+/* import * as _ts from "typescript";                                  */
+/*                                                                     */
+/* const ts = _ts.default;                                             */
 
 /*---------------------------------------------------------------------*/
 /*    global options                                                   */
