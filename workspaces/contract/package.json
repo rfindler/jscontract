@@ -1,0 +1,13 @@
+{
+  "name": "@jscontract/contract",
+  "version": "1.0.0",
+  "description": "Contract library for jscontract.",
+  "main": "contract.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3"
+  },
+  "type": "commonjs"
+}

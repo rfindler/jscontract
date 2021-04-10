@@ -1,0 +1,10 @@
+{
+  "name": "the-unsupported-package",
+  "files": [
+    "hello.js",
+    "goodbye.js"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
