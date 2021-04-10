@@ -6,6 +6,7 @@
     "prepare": "husky install",
     "pretty-quick": "pretty-quick --staged",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "test:watch": "jest --watch"
   },
   "repository": {
