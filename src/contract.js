@@ -1,3 +1,17 @@
+/*=====================================================================*/
+/*    serrano/prgm/project/jscontract/contract.js                      */
+/*    -------------------------------------------------------------    */
+/*    Author      :  manuel serrano                                    */
+/*    Creation    :  Tue Feb 18 17:19:39 2020                          */
+/*    Last change :  Thu Feb 20 20:41:32 2020 (serrano)                */
+/*    Copyright   :  2020-21 manuel serrano                            */
+/*    -------------------------------------------------------------    */
+/*    Basic contract implementation                                    */
+/*=====================================================================*/
+
+/*---------------------------------------------------------------------*/
+/*    CT                                                               */
+/*---------------------------------------------------------------------*/
 class CT {
   constructor(firstOrder, wrapper) {
     this.cache = {};
@@ -8,6 +22,7 @@ class CT {
       );
     this.wrapper = wrapper;
   }
+
   wrap(value, locationt = "pos", locationf = "neg") {
     const { t: tval, f: fval } = this.wrapper(
       new_blame_object(locationt, locationf)
@@ -16,12 +31,18 @@ class CT {
   }
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTwrapper ...                                                    */
+/*---------------------------------------------------------------------*/
 class CTWrapper {
   constructor(ctor) {
     this.ctor = ctor;
   }
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTFlat ...                                                       */
+/*---------------------------------------------------------------------*/
 function CTFlat(pred) {
   if (typeof pred !== "function") {
     throw new TypeError("Illegal predicate: " + pred);
@@ -52,6 +73,9 @@ function CTFlat(pred) {
   }
 }
 
+/*---------------------------------------------------------------------*/
+/*    predToString ...                                                 */
+/*---------------------------------------------------------------------*/
 function predToString(pred) {
   if (pred === isString) {
     return "isString";
@@ -68,10 +92,16 @@ function predToString(pred) {
   }
 }
 
+/*---------------------------------------------------------------------*/
+/*    fixArity ...                                                     */
+/*---------------------------------------------------------------------*/
 function fixArity(f) {
   return f.toString().match(/^[^(*]([^.]*)/);
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTFunction ...                                                   */
+/*---------------------------------------------------------------------*/
 function CTFunction(self, domain, range) {
   const arity = domain.length;
   let minarity = arity,
@@ -220,6 +250,9 @@ function CTFunction(self, domain, range) {
   });
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTFunctionOpt ...                                                */
+/*---------------------------------------------------------------------*/
 function CTFunctionOpt(self, domain, range) {
   function map2opt(args, domain, key) {
     let len = args.length;
@@ -290,6 +323,9 @@ function CTFunctionOpt(self, domain, range) {
   }
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTFunctionD ...                                                  */
+/*---------------------------------------------------------------------*/
 function CTFunctionD(domain, range, info_indy) {
   function firstOrder(x) {
     return typeof x === "function";
@@ -488,6 +524,9 @@ function find_depended_on(domain) {
   return result;
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTRec ...                                                        */
+/*---------------------------------------------------------------------*/
 function CTRec(thunk) {
   let _thunkctc = false;
 
@@ -518,6 +557,9 @@ function CTRec(thunk) {
   });
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTAnd ....                                                       */
+/*---------------------------------------------------------------------*/
 function CTAnd(...args) {
   const argcs = [];
   for (let i = 0; i < args.length; ++i) {
@@ -559,6 +601,9 @@ function CTAnd(...args) {
   );
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTOr ...                                                         */
+/*---------------------------------------------------------------------*/
 function CTOrExplicitChoice(lchoose, left, rchoose, right) {
   return new CT(
     (x) => lchoose(x) || rchoose(x),
@@ -593,6 +638,9 @@ function CTOr(left, right) {
   return CTOrExplicitChoice(lc.firstOrder, lc, rc.firstOrder, rc);
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTArray ...                                                      */
+/*---------------------------------------------------------------------*/
 function CTArray(element) {
   function firstOrder(x) {
     return x instanceof Array;
@@ -642,6 +690,9 @@ function CTArray(element) {
   });
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTObject ...                                                     */
+/*---------------------------------------------------------------------*/
 function CTObject(ctfields) {
   let stringIndexContract = false,
     numberIndexContract = false;
@@ -781,6 +832,9 @@ function CTObject(ctfields) {
   });
 }
 
+/*---------------------------------------------------------------------*/
+/*    CTCoerce ...                                                     */
+/*---------------------------------------------------------------------*/
 function CTCoerce(obj, who) {
   if (typeof obj === "function") {
     return CTCoerce(CTFlat(obj), who);
@@ -804,6 +858,24 @@ function CTCoerce(obj, who) {
     }
   }
 }
+
+/*---------------------------------------------------------------------*/
+/*    Blame Objects                                                    */
+/*---------------------------------------------------------------------*/
+
+/*
+blame_object = 
+  { pos: name of potential blame party
+    neg: name of potential blame party
+    dead : (or/c false                      -- not involved in or/and contract
+                { dead : (or/c false        -- still alive
+                               string) } )  -- dead with this error message
+    pos_state: (or/c false          -- no and/or in play
+                     blame_object)  -- our sibling in the or/and
+    neg_state: same as pos_state
+  }
+// INVARIANT: (dead != false) <=> (pos_state != false) or (neg_state != false)
+*/
 
 function new_blame_object(pos, neg) {
   return {
@@ -883,6 +955,9 @@ function throw_contract_violation(pos, message) {
   throw new TypeError(message + "\n   blaming: " + pos);
 }
 
+/*---------------------------------------------------------------------*/
+/*    predicates ...                                                   */
+/*---------------------------------------------------------------------*/
 function isObject(o) {
   return typeof o === "object";
 }
@@ -916,6 +991,9 @@ const trueCT = new CTFlat((o) => true);
 const undefinedCT = new CTFlat(isUndefined);
 const errorCT = new CTFlat(isError);
 
+/*---------------------------------------------------------------------*/
+/*    exports                                                          */
+/*---------------------------------------------------------------------*/
 exports.anyCT = trueCT;
 exports.voidCT = undefinedCT;
 exports.booleanCT = booleanCT;
@@ -943,6 +1021,7 @@ exports.isBoolean = isBoolean;
 exports.isNumber = isNumber;
 exports.True = True;
 
+// exported for the test suite only
 exports.__topsort = topsort;
 exports.__find_depended_on = find_depended_on;
 
