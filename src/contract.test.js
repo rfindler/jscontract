@@ -640,4 +640,9 @@ describe("Our contract library", () => {
       /Predicate `isBoolean' not satisfied for value `2'.*\n.*blaming: neg/
     );
   });
+  test("Flat predicates work correctly", () => {
+    expect(CT.isObject(null)).toBe(false);
+    expect(() => CT.numberCT.wrap(3)).not.toThrow();
+    expect(() => CT.nullCT.wrap(null)).not.toThrow();
+  });
 });

@@ -959,7 +959,7 @@ function throw_contract_violation(pos, message) {
 /*    predicates ...                                                   */
 /*---------------------------------------------------------------------*/
 function isObject(o) {
-  return typeof o === "object";
+  return typeof o === "object" && o !== null;
 }
 function isFunction(o) {
   return typeof o === "function";
@@ -982,6 +982,9 @@ function isError(o) {
 function True(o) {
   return true;
 }
+function isNull(o) {
+  return o === null;
+}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -989,6 +992,7 @@ const objectCT = new CTFlat(isObject);
 const stringCT = new CTFlat(isString);
 const trueCT = new CTFlat((o) => true);
 const undefinedCT = new CTFlat(isUndefined);
+const nullCT = new CTFlat(isNull);
 const errorCT = new CTFlat(isError);
 
 /*---------------------------------------------------------------------*/
@@ -1002,6 +1006,8 @@ exports.stringCT = stringCT;
 exports.trueCT = trueCT;
 exports.undefinedCT = undefinedCT;
 exports.errorCT = errorCT;
+exports.numberCT = numberCT;
+exports.nullCT = nullCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;
