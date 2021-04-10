@@ -5,7 +5,8 @@
   "scripts": {
     "prepare": "husky install",
     "pretty-quick": "pretty-quick --staged",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "repository": {
     "type": "git",
