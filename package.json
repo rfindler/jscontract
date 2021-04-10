@@ -18,9 +18,16 @@
     ],
     "rules": {
       "max-classes-per-file": "off"
+    },
+    "env": {
+      "node": true,
+      "browser": true,
+      "jest": true
     }
   },
   "devDependencies": {
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.14.37",
     "eslint": "^7.24.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-prettier": "^8.1.0",
@@ -29,5 +36,8 @@
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
     "pretty-quick": "^3.1.0"
+  },
+  "dependencies": {
+    "typescript": "^4.2.4"
   }
 }
