@@ -4,6 +4,7 @@ import { File } from "@babel/types";
 import generator from "@babel/generator";
 import { makeAst, getAst } from "./actions";
 import { requireDependencies } from "./requires";
+import { exportContracts } from "./exports";
 
 export const compileContracts = () => {
   const { typeString, packageJson } = readPackageFiles();
@@ -12,6 +13,7 @@ export const compileContracts = () => {
   const state = { contractAst, declarationAst, packageJson, identifiers: [] };
   requireDependencies(state);
   addContracts(state);
+  exportContracts(state);
   const { code } = generator(contractAst);
   return {
     ...state,

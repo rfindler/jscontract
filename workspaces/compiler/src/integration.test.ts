@@ -32,4 +32,8 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
       `= require("./lib/${REPLACEMENT_NAME}")`
     );
   });
+  test("We can handle simple functions", () => {
+    gotoFixture("simple-function");
+    compileContracts().code;
+  });
 });

@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/node14",
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/fixtures", "src/**/*.spec.ts", "src/**/*.test.ts"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true
+  }
+}

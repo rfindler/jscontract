@@ -1,16 +1,54 @@
 import { NodePath } from "@babel/core";
 import {
   Identifier,
+  TSTypeAnnotation,
   ExportNamedDeclaration,
   TSDeclareFunction,
   VariableDeclaration,
   VariableDeclarator,
 } from "@babel/types";
 import { CompilerHandler } from "./types";
+import {
+  makeFunctionCt,
+  makeAnyCt,
+  makeBooleanCt,
+  ANY_CT,
+} from "./contractFactories";
+import mapParamTypesToContracts from "./mapParamTypesToContracts";
+import mapAnnotationToContractFunction from "./mapAnnotationToContractFunction";
+
+interface IdentifierWithType {
+  node: Identifier;
+  typeNode: TSTypeAnnotation;
+}
+
+const handleTSTypeAnnotation: CompilerHandler<IdentifierWithType> = (
+  node,
+  state
+) => {
+  const { node: identifier, typeNode } = node;
+  const body = state.contractAst.program.body;
+  switch (typeNode.typeAnnotation.type) {
+    case "TSBooleanKeyword":
+      return body.push(makeBooleanCt(identifier));
+    default:
+      return body.push(makeAnyCt(identifier));
+  }
+};
 
 const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
-  state.identifiers.push(node.name);
-  // TODO: Look at the type definitions and build up the contracts.
+  const { name } = node;
+  const body = state.contractAst.program.body;
+  state.identifiers.push(name);
+  switch (node?.typeAnnotation?.type) {
+    case "TSTypeAnnotation":
+      return handleTSTypeAnnotation(
+        { node, typeNode: node.typeAnnotation },
+        state
+      );
+    default:
+      return body.push(makeAnyCt(node));
+  }
 };
 
 const handleVariableDeclarator: CompilerHandler<VariableDeclarator> = (
@@ -39,8 +77,14 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
   state
 ) => {
   if (!node?.id) return;
-  state.identifiers.push(node.id.name);
-  // TODO: Look at the type definition and build up the contract.
+  const { name } = node.id;
+  state.identifiers.push(name);
+  const domain = mapParamTypesToContracts(node.params);
+  const range =
+    node.returnType?.type === "TSTypeAnnotation"
+      ? mapAnnotationToContractFunction(node.returnType)
+      : ANY_CT;
+  state.contractAst.program.body.push(makeFunctionCt({ domain, range, name }));
 };
 
 const handleExportNamedDeclaration: CompilerHandler<
