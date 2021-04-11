@@ -30,7 +30,7 @@ export interface FunctionContractElements {
 
 export const makeFunctionCt = (contracts: FunctionContractElements) => {
   return template(
-    `const %%name%% = CT.FunctionCT(CT.trueCT, %%domain%%, %%range%%).wrap(%%originalCode%%)`
+    `const %%name%% = CT.CTFunction(CT.trueCT, %%domain%%, %%range%%).wrap(%%originalCode%%)`
   )({
     name: t.identifier(contracts.name),
     domain: t.arrayExpression(

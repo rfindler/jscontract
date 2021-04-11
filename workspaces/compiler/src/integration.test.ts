@@ -34,6 +34,16 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   });
   test("We can handle simple functions", () => {
     gotoFixture("simple-function");
-    compileContracts().code;
+    const { code } = compileContracts();
+    expect(code).toMatch(
+      `CT.CTFunction(CT.trueCT, [CT.numberCT], CT.numberCT).wrap(originalModule.addFive);`
+    );
+  });
+  test("We can handle functions that don't take any arguments", () => {
+    gotoFixture("browser-or-node");
+    const { code } = compileContracts();
+    expect(code).toMatch(
+      `CT.CTFunction(CT.trueCT, [], CT.booleanCT).wrap(originalModule.isJsDom);`
+    );
   });
 });
