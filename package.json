@@ -10,10 +10,6 @@
     "pretty-quick": "pretty-quick --staged"
   },
   "devDependencies": {
-    "eslint": "^7.24.0",
-    "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-import": "^2.22.1",
     "husky": "^6.0.0",
     "prettier": "^2.2.1",
     "pretty-quick": "^3.1.0"
@@ -21,20 +17,6 @@
   "engines": {
     "node": "14.16.1",
     "npm": "7.9.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "airbnb-base",
-      "prettier"
-    ],
-    "rules": {
-      "max-classes-per-file": "off"
-    },
-    "env": {
-      "node": true,
-      "browser": true,
-      "jest": true
-    }
   },
   "repository": {
     "type": "git",

@@ -1,7 +1,8 @@
-const path = require("path");
-const { compileContracts, getPackageJson, EBADENTRY } = require("./compiler");
+import path from "path";
+import { getPackageJson, EBADENTRY } from "./entry";
+import { compileContracts } from "./index";
 
-const gotoFixture = (packageName) =>
+export const gotoFixture = (packageName: string) =>
   process.chdir(path.join(__dirname, "fixtures", packageName));
 
 beforeEach(() => {
@@ -24,14 +25,5 @@ describe("Entry errors", () => {
   test("Throws an exception when it can't compile anything", () => {
     gotoFixture("the-unsupported-package");
     expect(() => compileContracts()).toThrow(EBADENTRY);
-  });
-});
-
-describe("Simple packages", () => {
-  test("Our compiler works on an empty package", () => {
-    gotoFixture("the-empty-package");
-    expect(compileContracts()).toBe(
-      `const CT = require('@jscontract/contract');`
-    );
   });
 });

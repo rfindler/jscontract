@@ -1,0 +1,35 @@
+import { gotoFixture } from "./entry.test";
+import { compileContracts } from "./index";
+import { REPLACEMENT_NAME } from "./requires";
+
+describe("Simple packages", () => {
+  test("Our compiler works on an empty package", () => {
+    gotoFixture("the-empty-package");
+    expect(compileContracts().code).toBe(
+      `const CT = require('@jscontract/contract');
+
+const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
+    );
+  });
+  test("We pick up on all of the exports in a simple case", () => {
+    gotoFixture("browser-or-node");
+    expect(compileContracts().identifiers.sort()).toEqual([
+      "isBrowser",
+      "isJsDom",
+      "isNode",
+      "isWebWorker",
+    ]);
+  });
+  test("Imports paths work correctly in a simple case", () => {
+    gotoFixture("browser-or-node");
+    expect(compileContracts().code).toMatch(
+      `= require("./${REPLACEMENT_NAME}")`
+    );
+  });
+  test("Import paths work correctly when the package name is relative", () => {
+    gotoFixture("relative-browser-or-node");
+    expect(compileContracts().code).toMatch(
+      `= require("./lib/${REPLACEMENT_NAME}")`
+    );
+  });
+});
