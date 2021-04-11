@@ -6,6 +6,7 @@
     "workspaces/*"
   ],
   "scripts": {
+    "setup": "npm run build --workspace @jscontract/compiler",
     "prepare": "husky install",
     "pretty-quick": "pretty-quick --staged"
   },
