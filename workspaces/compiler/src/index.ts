@@ -3,8 +3,10 @@ import addContracts from "./addContracts";
 import { File } from "@babel/types";
 import generator from "@babel/generator";
 import { makeAst, getAst } from "./actions";
-import { requireDependencies } from "./requires";
+import { requireDependencies, REPLACEMENT_NAME } from "./requires";
 import { exportContracts } from "./exports";
+
+export const ORIGINAL_MODULE_FILE = REPLACEMENT_NAME;
 
 export const compileContracts = () => {
   const { typeString, packageJson } = readPackageFiles();

@@ -1,0 +1,104 @@
+#!/usr/bin/env node
+/* eslint-disable no-console */
+const path = require("path");
+const fs = require("fs-extra");
+const childProcess = require("child_process");
+const {
+  ORIGINAL_MODULE_FILE,
+  compileContracts,
+} = require("@jscontract/compiler");
+
+const DEFINITELY_TYPED_PATH = path.resolve(
+  path.join(__dirname, "..", "DefinitelyTyped")
+);
+const SANDBOX_PATH = path.resolve(path.join(__dirname, "..", "sandbox"));
+
+const sh = (command) =>
+  childProcess.spawnSync(command, [], { shell: true, stdio: "inherit" });
+
+const shString = (command) =>
+  childProcess.spawnSync(command, [], { shell: true, encoding: "utf-8" })
+    .stdout;
+
+const cloneDefinitelyTyped = () => {
+  if (fs.existsSync(DEFINITELY_TYPED_PATH)) return;
+  sh(
+    `git clone https://github.com/DefinitelyTyped/DefinitelyTyped ${DEFINITELY_TYPED_PATH}`
+  );
+};
+
+const createSandbox = (relativeName) => {
+  const sandboxPath = `${SANDBOX_PATH}/${relativeName}`;
+  sh(`rm -rf ${sandboxPath}`);
+  sh(`mkdir -p ${sandboxPath}`);
+  process.chdir(sandboxPath);
+};
+
+const compileContract = (relativeName, originalPackageEntry) => {
+  sh(
+    `cp ${DEFINITELY_TYPED_PATH}/types/${relativeName}/index.d.ts ${SANDBOX_PATH}/${relativeName}`
+  );
+  const { code } = compileContracts();
+  const entryFolder = path.dirname(originalPackageEntry);
+  const newPackageEntry = path.join(entryFolder, ORIGINAL_MODULE_FILE);
+  sh(`mv ${originalPackageEntry} ${newPackageEntry}`);
+  fs.writeFileSync(originalPackageEntry, code);
+};
+
+const downloadPackage = (relativeName) => {
+  const url = shString(`npm view ${relativeName} repository.url`)
+    ?.replace("git+ssh://git@", "https://")
+    ?.replace("git+https", "https")
+    ?.replace("git://", "https://");
+  if (!url) return null;
+  sh(`git clone ${url}`);
+  const dirs = fs
+    .readdirSync(process.cwd())
+    .map((el) => path.join(process.cwd(), el));
+  dirs.forEach((dir) => {
+    fs.copySync(dir, process.cwd());
+  });
+  return true;
+};
+
+const getPackageEntry = () => {
+  // eslint-disable-next-line import/no-dynamic-require, global-require
+  const json = require(path.join(process.cwd(), "package.json"));
+  return json.main ? path.join(process.cwd(), json.main) : null;
+};
+
+const skip = (packageName) =>
+  console.log(
+    `Something went wrong while trying to download the package ${packageName}, skipping`
+  );
+
+const installDependencies = () => sh(`npm install`);
+
+const runTests = () => sh(`npm run test --if-present`);
+
+const deleteDependencies = () => sh(`rm -rf node_modules`);
+
+const buildProject = () => sh(`npm run build --if-present`);
+
+const testPackage = (relativeName) => {
+  console.log(`# ${relativeName} {{{`);
+  createSandbox(relativeName);
+  const thePackage = downloadPackage(relativeName);
+  if (thePackage === null) return skip(relativeName);
+  const packageEntry = getPackageEntry();
+  if (packageEntry === null) return skip(relativeName);
+  installDependencies();
+  buildProject();
+  compileContract(relativeName, packageEntry);
+  runTests();
+  deleteDependencies();
+  return console.log(`# }}}`);
+};
+
+const main = () => {
+  cloneDefinitelyTyped();
+  const packageName = process.argv.slice(2)[0];
+  testPackage(packageName);
+};
+
+main();

@@ -1,17 +1,9 @@
 import template from "@babel/template";
 import * as t from "@babel/types";
 import { Statement } from "@babel/types";
-import path from "path";
-import { CompilerState, MainJson } from "./types";
+import { CompilerState } from "./types";
 
 export const REPLACEMENT_NAME = "__ORIGINAL_UNTYPED_MODULE__.js";
-
-const getRequirePath = (json: MainJson): string => {
-  const requireArray = json.main.split(path.sep);
-  requireArray.pop();
-  requireArray.push(REPLACEMENT_NAME);
-  return requireArray.join(path.sep);
-};
 
 const requireContractLibrary = (state: CompilerState): void => {
   const contractImport = template.ast(
@@ -25,7 +17,7 @@ const requireOriginalModule = (state: CompilerState): void => {
     `const %%identifier%% = require(%%source%%)`
   )({
     identifier: t.identifier("originalModule"),
-    source: t.stringLiteral(`./${getRequirePath(state.packageJson)}`),
+    source: t.stringLiteral(`./${REPLACEMENT_NAME}`),
   }) as Statement;
   state.contractAst.program.body.push(originalModuleImport);
 };

@@ -29,7 +29,7 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   test("Import paths work correctly when the package name is relative", () => {
     gotoFixture("relative-browser-or-node");
     expect(compileContracts().code).toMatch(
-      `= require("./lib/${REPLACEMENT_NAME}")`
+      `= require("./${REPLACEMENT_NAME}")`
     );
   });
   test("We can handle simple functions", () => {

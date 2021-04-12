@@ -3,7 +3,9 @@
 
 ### direnv ###
 .direnv
-.envrc
+workspaces/type-explorer/DefinitelyTyped
+workspaces/type-explorer/sandbox
+workspaces/type-explorer/results
 
 ### Node ###
 # Logs
