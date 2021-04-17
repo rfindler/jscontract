@@ -1,11 +1,13 @@
 import { NodePath } from "@babel/core";
-import { ExportNamedDeclaration } from "@babel/types";
+import { ExportNamedDeclaration, TSExportAssignment } from "@babel/types";
 import { CompilerState } from "../util/types";
 import traverse from "@babel/traverse";
 import handleExportNamedDeclaration from "./ExportNamedDeclaration";
+import handleTSExportAssignment from "./TSExportAssignment";
 
 const addContracts = (state: CompilerState): void => {
-  traverse(state.declarationAst, {
+  const { declarationAst } = state;
+  traverse(declarationAst, {
     enter(node) {
       switch (node.type) {
         case "ExportNamedDeclaration":
@@ -13,6 +15,12 @@ const addContracts = (state: CompilerState): void => {
             node as NodePath<ExportNamedDeclaration>,
             state
           );
+        case "TSExportAssignment": {
+          return handleTSExportAssignment(
+            node as NodePath<TSExportAssignment>,
+            state
+          );
+        }
         default:
           return;
       }

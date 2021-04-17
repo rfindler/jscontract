@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { Statement } from "@babel/types";
+import { Statement, Expression } from "@babel/types";
 import template from "@babel/template";
 
 export const ANY_CT = `CT.anyCT`;
@@ -10,7 +10,13 @@ interface FunctionContractElements {
   range: string;
 }
 
-const createFunctionCt = (contracts: FunctionContractElements) => {
+export const createAndCt = (...args: Expression[]): Expression => {
+  return template.expression(`CT.CTAnd(%%args%%)`)({ args });
+};
+
+export const createFunctionCt = (
+  contracts: FunctionContractElements
+): Expression => {
   return template.expression(`CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`)(
     {
       domain: t.arrayExpression(
