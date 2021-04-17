@@ -1,15 +1,25 @@
-import { TSTypeAnnotation } from "@babel/types";
+import template from "@babel/template";
+import * as t from "@babel/types";
+import { Expression, TSTypeAnnotation } from "@babel/types";
+import { makeCtExpression } from "./contractFactories";
+
+const buildArrayType = (annotation: TSTypeAnnotation) => {
+  return template.expression("CT.anyCT")({ CT: t.identifier("CT") });
+};
 
 const mapAnnotationToContractFunction = (
   annotation: TSTypeAnnotation
-): string => {
+): Expression => {
+  console.log(annotation.typeAnnotation.type);
   switch (annotation.typeAnnotation.type) {
     case "TSNumberKeyword":
-      return "CT.numberCT";
+      return makeCtExpression("CT.numberCT");
     case "TSBooleanKeyword":
-      return "CT.booleanCT";
+      return makeCtExpression("CT.booleanCT");
+    case "TSArrayType":
+      return buildArrayType(annotation);
     default:
-      return "CT.anyCT";
+      return template.expression("CT.anyCT")({ CT: t.identifier("CT") });
   }
 };
 

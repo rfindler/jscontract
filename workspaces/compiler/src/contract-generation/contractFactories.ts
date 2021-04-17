@@ -2,12 +2,14 @@ import * as t from "@babel/types";
 import { Statement, Expression } from "@babel/types";
 import template from "@babel/template";
 
-export const ANY_CT = `CT.anyCT`;
-export const NUMBER_CT = `CT.numberCT`;
+export const makeCtExpression = (name: string): Expression =>
+  template.expression(name)({ CT: t.identifier("CT") });
+
+export const makeAnyCt = (): Expression => makeCtExpression("CT.anyCT");
 
 interface FunctionContractElements {
-  domain: string[];
-  range: string;
+  domain: Expression[];
+  range: Expression;
 }
 
 export const createAndCt = (...args: Expression[]): Expression => {
@@ -19,18 +21,16 @@ export const createFunctionCt = (
 ): Expression => {
   return template.expression(`CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`)(
     {
-      domain: t.arrayExpression(
-        contracts.domain.map((paramContract) => t.identifier(paramContract))
-      ),
-      range: t.identifier(contracts.range),
+      domain: t.arrayExpression(contracts.domain),
+      range: contracts.range,
     }
   );
 };
 
 export interface FunctionExportElements {
   name: string;
-  domain: string[];
-  range: string;
+  domain: Expression[];
+  range: Expression;
 }
 
 export const exportFunctionCt = (

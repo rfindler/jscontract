@@ -1,4 +1,5 @@
 import { NodePath } from "@babel/core";
+import * as t from "@babel/types";
 import {
   TSExportAssignment,
   TSDeclareFunction,
@@ -8,6 +9,7 @@ import {
 import traverse from "@babel/traverse";
 import template from "@babel/template";
 import {
+  makeAnyCt,
   createAndCt,
   createFunctionCt,
 } from "../contract-generation/contractFactories";
@@ -37,7 +39,7 @@ const collectIdentifiers = (name: string, state: CompilerState) => {
       range:
         identifier?.returnType?.type === "TSTypeAnnotation"
           ? mapReturnType(identifier.returnType)
-          : `CT.anyCT`,
+          : makeAnyCt(),
     }))
     .map(createFunctionCt);
 };

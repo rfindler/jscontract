@@ -47,7 +47,7 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
       `CT.CTFunction(CT.trueCT, [], CT.booleanCT).wrap(originalModule.isJsDom);`
     );
   });
-  test.only("We can handle the abbrev package", () => {
+  test("We can handle the abbrev package", () => {
     gotoFixture("abbrev-js");
     const { code } = compileContracts();
     console.log(code);

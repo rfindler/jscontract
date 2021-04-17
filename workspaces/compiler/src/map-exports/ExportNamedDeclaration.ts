@@ -13,7 +13,7 @@ import {
 import { CompilerHandler } from "../util/types";
 import {
   exportFunctionCt,
-  ANY_CT,
+  makeAnyCt,
 } from "../contract-generation/contractFactories";
 import mapParamTypesToContracts from "../contract-generation/mapParamTypesToContracts";
 import mapAnnotationToContractFunction from "../contract-generation/mapAnnotationToContractFunction";
@@ -93,7 +93,7 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
   const range =
     node.returnType?.type === "TSTypeAnnotation"
       ? mapAnnotationToContractFunction(node.returnType)
-      : ANY_CT;
+      : makeAnyCt();
   state.contractAst.program.body.push(
     exportFunctionCt({ domain, range, name })
   );
