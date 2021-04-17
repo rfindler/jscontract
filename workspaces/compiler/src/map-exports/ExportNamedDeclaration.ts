@@ -15,8 +15,8 @@ import {
   exportFunctionCt,
   makeAnyCt,
 } from "../contract-generation/contractFactories";
-import mapParamTypesToContracts from "../contract-generation/mapParamTypesToContracts";
-import mapAnnotationToContractFunction from "../contract-generation/mapAnnotationToContractFunction";
+import mapParams from "../contract-generation/mapParams";
+import mapAnnotation from "../contract-generation/mapAnnotation";
 
 interface IdentifierWithType {
   node: Identifier;
@@ -89,10 +89,10 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
   if (!node?.id) return;
   const { name } = node.id;
   state.identifiers.push(name);
-  const domain = mapParamTypesToContracts(node.params);
+  const domain = mapParams(node.params);
   const range =
     node.returnType?.type === "TSTypeAnnotation"
-      ? mapAnnotationToContractFunction(node.returnType)
+      ? mapAnnotation(node.returnType)
       : makeAnyCt();
   state.contractAst.program.body.push(
     exportFunctionCt({ domain, range, name })

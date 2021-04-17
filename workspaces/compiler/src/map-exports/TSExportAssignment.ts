@@ -13,8 +13,8 @@ import {
   createAndCt,
   createFunctionCt,
 } from "../contract-generation/contractFactories";
-import mapParamTypes from "../contract-generation/mapParamTypesToContracts";
-import mapReturnType from "../contract-generation/mapAnnotationToContractFunction";
+import mapParamTypes from "../contract-generation/mapParams";
+import mapReturnType from "../contract-generation/mapAnnotation";
 import { CompilerState, CompilerHandler } from "../util/types";
 
 const collectIdentifiers = (name: string, state: CompilerState) => {

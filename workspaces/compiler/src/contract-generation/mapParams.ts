@@ -1,4 +1,3 @@
-import template from "@babel/template";
 import {
   Identifier,
   RestElement,
@@ -6,13 +5,13 @@ import {
   Pattern,
   Expression,
 } from "@babel/types";
-import mapAnnotationToContractFunction from "./mapAnnotationToContractFunction";
+import mapAnnotation from "./mapAnnotation";
 import { makeAnyCt } from "./contractFactories";
 
 const getIdentifierContract = (param: Identifier): Expression => {
   switch (param?.typeAnnotation?.type) {
     case "TSTypeAnnotation":
-      return mapAnnotationToContractFunction(param.typeAnnotation);
+      return mapAnnotation(param.typeAnnotation);
     default:
       return makeAnyCt();
   }
@@ -29,8 +28,8 @@ const getParameterContract = (param: ParameterChild): Expression => {
   }
 };
 
-const mapParamTypesToContracts = (params: ParameterChild[]): Expression[] => {
+const mapParams = (params: ParameterChild[]): Expression[] => {
   return params.map((param) => getParameterContract(param));
 };
 
-export default mapParamTypesToContracts;
+export default mapParams;
