@@ -1,10 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { MainJson } from "./types";
 
 export const EBADENTRY = `We cannot detect the entry point to this module.`;
 
-export const getPackageJson = () =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getPackageJson = (): any =>
   JSON.parse(
     fs.readFileSync(path.join(process.cwd(), "package.json"), "utf-8")
   );
@@ -12,13 +12,19 @@ export const getPackageJson = () =>
 const getTypes = () =>
   fs.readFileSync(path.join(process.cwd(), "index.d.ts"), "utf-8");
 
-export const readPackageFiles = () => {
+interface PackageFiles {
+  packageJson: {
+    main: string;
+  };
+  typeString: string;
+}
+
+export const readPackageFiles = (): PackageFiles => {
   const packageJson = getPackageJson();
   if (!packageJson.main) throw new Error(EBADENTRY);
   const typeString = getTypes();
-  const mainJson = packageJson as MainJson;
   return {
-    packageJson: mainJson,
+    packageJson,
     typeString,
   };
 };

@@ -1,6 +1,6 @@
-import { gotoFixture } from "./entry.test";
 import { compileContracts } from "./index";
-import { REPLACEMENT_NAME } from "./requires";
+import { gotoFixture } from "./util/entry.test";
+import { REPLACEMENT_NAME } from "./util/requires";
 
 describe("Simple packages", () => {
   test("Our compiler works on an empty package", () => {
@@ -42,6 +42,7 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   test("We can handle functions that don't take any arguments", () => {
     gotoFixture("browser-or-node");
     const { code } = compileContracts();
+    console.log(code);
     expect(code).toMatch(
       `CT.CTFunction(CT.trueCT, [], CT.booleanCT).wrap(originalModule.isJsDom);`
     );

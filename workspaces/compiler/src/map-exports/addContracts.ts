@@ -1,6 +1,6 @@
 import { NodePath } from "@babel/core";
 import { ExportNamedDeclaration } from "@babel/types";
-import { CompilerState } from "./types";
+import { CompilerState } from "../util/types";
 import traverse from "@babel/traverse";
 import handleExportNamedDeclaration from "./ExportNamedDeclaration";
 

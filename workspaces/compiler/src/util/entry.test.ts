@@ -1,9 +1,11 @@
 import path from "path";
 import { getPackageJson, EBADENTRY } from "./entry";
-import { compileContracts } from "./index";
+import { compileContracts } from "../index";
 
 export const gotoFixture = (packageName: string) =>
-  process.chdir(path.join(__dirname, "fixtures", packageName));
+  process.chdir(
+    path.resolve(path.join(__dirname, "..", "fixtures", packageName))
+  );
 
 beforeEach(() => {
   process.chdir(__dirname);

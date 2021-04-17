@@ -1,17 +1,24 @@
-import { readPackageFiles } from "./entry";
-import addContracts from "./addContracts";
+import { readPackageFiles } from "./util/entry";
+import addContracts from "./map-exports/addContracts";
 import { File } from "@babel/types";
 import generator from "@babel/generator";
-import { makeAst, getAst } from "./actions";
-import { requireDependencies, REPLACEMENT_NAME } from "./requires";
-import { exportContracts } from "./exports";
+import {
+  requireDependencies,
+  exportContracts,
+  REPLACEMENT_NAME,
+} from "./util/requires";
+import { parse } from "@babel/parser";
+import { CompilerOutput } from "./util/types";
 
 export const ORIGINAL_MODULE_FILE = REPLACEMENT_NAME;
 
-export const compileContracts = () => {
+export const compileContracts = (): CompilerOutput => {
   const { typeString, packageJson } = readPackageFiles();
-  const contractAst: File = makeAst();
-  const declarationAst: File = getAst(typeString);
+  const contractAst: File = parse(``);
+  const declarationAst: File = parse(typeString, {
+    plugins: ["typescript"],
+    sourceType: "module",
+  });
   const state = { contractAst, declarationAst, packageJson, identifiers: [] };
   requireDependencies(state);
   addContracts(state);

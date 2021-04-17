@@ -1,39 +1,44 @@
 import { NodePath } from "@babel/core";
+import * as t from "@babel/types";
+import template from "@babel/template";
 import {
   Identifier,
+  Statement,
   TSTypeAnnotation,
   ExportNamedDeclaration,
   TSDeclareFunction,
   VariableDeclaration,
   VariableDeclarator,
 } from "@babel/types";
-import { CompilerHandler } from "./types";
+import { CompilerHandler } from "../util/types";
 import {
-  makeFunctionCt,
-  makeAnyCt,
-  makeBooleanCt,
+  exportFunctionCt,
   ANY_CT,
-} from "./contractFactories";
-import mapParamTypesToContracts from "./mapParamTypesToContracts";
-import mapAnnotationToContractFunction from "./mapAnnotationToContractFunction";
+} from "../contract-generation/contractFactories";
+import mapParamTypesToContracts from "../contract-generation/mapParamTypesToContracts";
+import mapAnnotationToContractFunction from "../contract-generation/mapAnnotationToContractFunction";
 
 interface IdentifierWithType {
   node: Identifier;
   typeNode: TSTypeAnnotation;
 }
 
+const flatExportTypeMap: Record<string, string> = {
+  TSBooleanKeyword: "booleanCT",
+};
+
 const handleTSTypeAnnotation: CompilerHandler<IdentifierWithType> = (
   node,
   state
 ) => {
   const { node: identifier, typeNode } = node;
-  const body = state.contractAst.program.body;
-  switch (typeNode.typeAnnotation.type) {
-    case "TSBooleanKeyword":
-      return body.push(makeBooleanCt(identifier));
-    default:
-      return body.push(makeAnyCt(identifier));
-  }
+  state.contractAst.program.body.push(
+    template(`const %%name%% = CT.%%type%%.wrap(%%originalCode%%)`)({
+      name: t.identifier(identifier.name),
+      type: t.identifier(flatExportTypeMap[typeNode.type] || "anyCT"),
+      originalCode: t.identifier(`originalModule.${identifier.name}`),
+    }) as Statement
+  );
 };
 
 const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
@@ -47,7 +52,12 @@ const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
         state
       );
     default:
-      return body.push(makeAnyCt(node));
+      return body.push(
+        template(`const %%name%% = CT.anyCT.wrap(%%originalCode%%)`)({
+          name: t.identifier(name),
+          originalCode: t.identifier(`originalModule.${name}`),
+        }) as Statement
+      );
   }
 };
 
@@ -84,7 +94,9 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
     node.returnType?.type === "TSTypeAnnotation"
       ? mapAnnotationToContractFunction(node.returnType)
       : ANY_CT;
-  state.contractAst.program.body.push(makeFunctionCt({ domain, range, name }));
+  state.contractAst.program.body.push(
+    exportFunctionCt({ domain, range, name })
+  );
 };
 
 const handleExportNamedDeclaration: CompilerHandler<

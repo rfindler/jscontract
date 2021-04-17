@@ -26,3 +26,13 @@ export const requireDependencies = (state: CompilerState): void => {
   requireContractLibrary(state);
   requireOriginalModule(state);
 };
+
+export const exportContracts = (state: CompilerState): void => {
+  if (state.identifiers.length === 0) return;
+  state.contractAst.program.body.push(
+    template.ast(
+      `module.exports = { ${state.identifiers.join(", ")} }`
+    ) as Statement
+  );
+  return;
+};
