@@ -3,7 +3,7 @@ import {
   TSExportAssignment,
   TSDeclareFunction,
   Identifier,
-  Statement,
+  Expression,
 } from "@babel/types";
 import traverse from "@babel/traverse";
 import template from "@babel/template";
@@ -43,14 +43,17 @@ const collectIdentifiers = (name: string, state: CompilerState) => {
     .map(createFunctionCt);
 };
 
+const getContract = (exps: Expression[]): Expression | null => {
+  if (exps.length === 0) return null;
+  if (exps.length === 1) return exps[0];
+  return createAndCt(...exps);
+};
+
 const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
   state.identifiers.push(node.name);
   state.moduleExports = node.name;
-  const identifierUses = collectIdentifiers(node.name, state);
-  const contract =
-    identifierUses.length < 2
-      ? identifierUses[0]
-      : createAndCt(...identifierUses);
+  const contract = getContract(collectIdentifiers(node.name, state));
+  if (!contract) return;
   state.contractAst.program.body.push(
     template.statement(`const %%name%% = %%contract%%.wrap(%%originalCode%%);`)(
       {
