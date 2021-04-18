@@ -74,14 +74,14 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
     );
     expect(matchableCode).toMatch("module.exports = checksum");
   });
-  test.only("We can handle the archy package", () => {
-    gotoFixture("archy");
-    const { code } = compileContracts();
-    console.log(code);
-  });
-  // test("We can handle the argv package", () => {
-  //   gotoFixture("argv");
+  // test.only("We can handle the archy package", () => {
+  //   gotoFixture("archy");
   //   const { code } = compileContracts();
   //   console.log(code);
   // });
+  test.only("We can handle the argv package", () => {
+    gotoFixture("argv");
+    const { code } = compileContracts();
+    console.log(code);
+  });
 });

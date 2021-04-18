@@ -37,19 +37,30 @@ interface ContractIdentifiers {
   functions: Array<TSDeclareFunction>;
 }
 
+const isVariableDeclarator = (node: Node, name: string): boolean => {
+  if (node.type !== "VariableDeclarator") return false;
+  if (node.id.type !== "Identifier") return false;
+  return node.id.name === name;
+};
+
 const reduceDeclarations = (
   name: string,
   { declarationAst }: CompilerState
 ): ContractIdentifiers => {
   const identifiers: ContractIdentifiers = { functions: [], namespace: null };
+  const types: string[] = [];
   traverse(declarationAst, {
     enter({ node }) {
+      types.push(node.type);
       if (isFunctionType(node, name)) {
         identifiers.functions.push(node as TSDeclareFunction);
         return;
       }
       if (isNamespace(node, name)) {
         identifiers.namespace = node as TSModuleDeclaration;
+        return;
+      }
+      if (isVariableDeclarator(node, name)) {
         return;
       }
     },
