@@ -2,6 +2,7 @@ import { File } from "@babel/types";
 
 export interface CompilerState {
   identifiers: string[];
+  moduleExports?: string;
   contractAst: File;
   declarationAst: File;
   packageJson: {

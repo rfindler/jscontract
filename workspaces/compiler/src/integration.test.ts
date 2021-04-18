@@ -42,13 +42,28 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   test("We can handle functions that don't take any arguments", () => {
     gotoFixture("browser-or-node");
     const { code } = compileContracts();
-    console.log(code);
     expect(code).toMatch(
       `CT.CTFunction(CT.trueCT, [], CT.booleanCT).wrap(originalModule.isJsDom);`
     );
   });
   test("We can handle the abbrev package", () => {
     gotoFixture("abbrev-js");
+    const { code } = compileContracts();
+    const noLineBreaks = code.replace(/\n/gm, "").replace(/\s\s+/g, " ");
+    expect(noLineBreaks).toMatch("CT.CTAnd");
+    expect(noLineBreaks).toMatch("dotdotdot: true, contract: CT.stringCT");
+    expect(noLineBreaks).toMatch("CT.CTArray(CT.stringCT)");
+    expect(noLineBreaks).toMatch('contract: CT.stringCT, index: "string"');
+    expect(noLineBreaks).toMatch("module.exports = abbrev");
+  });
+  test("We can handle the Abs package", () => {
+    gotoFixture("abs");
+    const { code } = compileContracts();
+    expect(code).not.toMatch("CT.CTAnd");
+    expect(code).toMatch("[CT.stringCT], CT.stringCT");
+  });
+  test("We can handle the checksum package", () => {
+    gotoFixture("checksum");
     const { code } = compileContracts();
     console.log(code);
   });

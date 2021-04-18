@@ -1,5 +1,4 @@
 import { NodePath } from "@babel/core";
-import * as t from "@babel/types";
 import {
   TSExportAssignment,
   TSDeclareFunction,
@@ -46,11 +45,16 @@ const collectIdentifiers = (name: string, state: CompilerState) => {
 
 const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
   state.identifiers.push(node.name);
-  const contract = createAndCt(...collectIdentifiers(node.name, state));
+  state.moduleExports = node.name;
+  const identifierUses = collectIdentifiers(node.name, state);
+  const contract =
+    identifierUses.length < 2
+      ? identifierUses[0]
+      : createAndCt(...identifierUses);
   state.contractAst.program.body.push(
-    template(`const %%name%% = %%and%%.wrap(%%originalCode%%);`)({
+    template(`const %%name%% = %%contract%%.wrap(%%originalCode%%);`)({
       name: node.name,
-      and: contract,
+      contract,
       originalCode: `originalModule.${node.name}`,
     }) as Statement
   );
