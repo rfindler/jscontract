@@ -37,9 +37,11 @@ export const exportFunctionCt = (
   contracts: FunctionExportElements
 ): Statement => {
   const func = createFunctionCt(contracts);
-  return template(`const %%name%% = %%func%%.wrap(%%originalCode%%)`)({
-    name: t.identifier(contracts.name),
-    func,
-    originalCode: t.identifier(`originalModule.${contracts.name}`),
-  }) as Statement;
+  return template.statement(`const %%name%% = %%func%%.wrap(%%originalCode%%)`)(
+    {
+      name: t.identifier(contracts.name),
+      func,
+      originalCode: t.identifier(`originalModule.${contracts.name}`),
+    }
+  );
 };

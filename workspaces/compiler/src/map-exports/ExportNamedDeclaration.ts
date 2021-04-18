@@ -33,11 +33,11 @@ const handleTSTypeAnnotation: CompilerHandler<IdentifierWithType> = (
 ) => {
   const { node: identifier, typeNode } = node;
   state.contractAst.program.body.push(
-    template(`const %%name%% = CT.%%type%%.wrap(%%originalCode%%)`)({
+    template.statement(`const %%name%% = CT.%%type%%.wrap(%%originalCode%%)`)({
       name: t.identifier(identifier.name),
       type: t.identifier(flatExportTypeMap[typeNode.type] || "anyCT"),
       originalCode: t.identifier(`originalModule.${identifier.name}`),
-    }) as Statement
+    })
   );
 };
 
@@ -53,10 +53,10 @@ const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
       );
     default:
       return body.push(
-        template(`const %%name%% = CT.anyCT.wrap(%%originalCode%%)`)({
+        template.statement(`const %%name%% = CT.anyCT.wrap(%%originalCode%%)`)({
           name: t.identifier(name),
           originalCode: t.identifier(`originalModule.${name}`),
-        }) as Statement
+        })
       );
   }
 };

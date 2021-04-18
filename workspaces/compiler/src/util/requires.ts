@@ -1,14 +1,13 @@
 import template from "@babel/template";
 import * as t from "@babel/types";
-import { Statement } from "@babel/types";
 import { CompilerState } from "./types";
 
 export const REPLACEMENT_NAME = "__ORIGINAL_UNTYPED_MODULE__.js";
 
 const requireContractLibrary = (state: CompilerState): void => {
-  const contractImport = template.ast(
+  const contractImport = template.statement(
     `const CT = require('@jscontract/contract');`
-  ) as Statement;
+  )({ CT: t.identifier("CT") });
   state.contractAst.program.body.push(contractImport);
 };
 

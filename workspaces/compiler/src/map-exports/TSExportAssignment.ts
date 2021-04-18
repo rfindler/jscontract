@@ -52,11 +52,13 @@ const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
       ? identifierUses[0]
       : createAndCt(...identifierUses);
   state.contractAst.program.body.push(
-    template(`const %%name%% = %%contract%%.wrap(%%originalCode%%);`)({
-      name: node.name,
-      contract,
-      originalCode: `originalModule.${node.name}`,
-    }) as Statement
+    template.statement(`const %%name%% = %%contract%%.wrap(%%originalCode%%);`)(
+      {
+        name: node.name,
+        contract,
+        originalCode: `originalModule.${node.name}`,
+      }
+    )
   );
 };
 
