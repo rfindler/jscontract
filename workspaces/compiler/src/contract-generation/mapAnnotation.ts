@@ -7,8 +7,13 @@ import {
   TSTypeLiteral,
   TSIndexSignature,
   TSTypeReference,
+  TSQualifiedName,
 } from "@babel/types";
-import { makeCtExpression, makeAnyCt } from "./contractFactories";
+import {
+  makeCtExpression,
+  makeAnyCt,
+  reduceContracts,
+} from "./contractFactories";
 import { CompilerState } from "../util/types";
 
 const makeIndexContract = (index: TSIndexSignature, state: CompilerState) => {
@@ -40,17 +45,32 @@ const buildArrayType = (annotation: TSArrayType, state: CompilerState) =>
     arrayContract: mapType(annotation.elementType, state),
   });
 
+const buildQualifiedName = (
+  annotation: TSQualifiedName,
+  state: CompilerState
+): Expression => {
+  if (annotation.left.type !== "Identifier") return makeAnyCt();
+  if (annotation.right.type !== "Identifier") return makeAnyCt();
+  if (annotation.left?.name !== state.namespace?.name) return makeAnyCt();
+  const exps = state?.namespace?.contracts[annotation.right.name];
+  if (!exps) return makeAnyCt();
+  const contracts = reduceContracts(exps);
+  return contracts === null ? makeAnyCt() : contracts;
+};
+
 const buildTypeReference = (
   annotation: TSTypeReference,
   state: CompilerState
-) => {
-  console.log(state.namespace);
-  console.log(annotation.typeName);
-  return makeAnyCt();
+): Expression => {
+  switch (annotation.typeName.type) {
+    case "TSQualifiedName":
+      return buildQualifiedName(annotation.typeName, state);
+    default:
+      return makeAnyCt();
+  }
 };
 
 export const mapType = (type: TSType, state: CompilerState): Expression => {
-  // console.log(type.type);
   switch (type.type) {
     case "TSNumberKeyword":
       return makeCtExpression("CT.numberCT");

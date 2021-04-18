@@ -2,6 +2,9 @@ import { compileContracts } from "./index";
 import { gotoFixture } from "./util/entry.test";
 import { REPLACEMENT_NAME } from "./util/requires";
 
+const makeMatchable = (code: string): string =>
+  code.replace(/\n/gm, "").replace(/\s\s+/g, " ");
+
 describe("Simple packages", () => {
   test("Our compiler works on an empty package", () => {
     gotoFixture("the-empty-package");
@@ -49,12 +52,12 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   test("We can handle the abbrev package", () => {
     gotoFixture("abbrev-js");
     const { code } = compileContracts();
-    const noLineBreaks = code.replace(/\n/gm, "").replace(/\s\s+/g, " ");
-    expect(noLineBreaks).toMatch("CT.CTAnd");
-    expect(noLineBreaks).toMatch("dotdotdot: true, contract: CT.stringCT");
-    expect(noLineBreaks).toMatch("CT.CTArray(CT.stringCT)");
-    expect(noLineBreaks).toMatch('contract: CT.stringCT, index: "string"');
-    expect(noLineBreaks).toMatch("module.exports = abbrev");
+    const matchableCode = makeMatchable(code);
+    expect(matchableCode).toMatch("CT.CTAnd");
+    expect(matchableCode).toMatch("dotdotdot: true, contract: CT.stringCT");
+    expect(matchableCode).toMatch("CT.CTArray(CT.stringCT)");
+    expect(matchableCode).toMatch('contract: CT.stringCT, index: "string"');
+    expect(matchableCode).toMatch("module.exports = abbrev");
   });
   test("We can handle the Abs package", () => {
     gotoFixture("abs");
@@ -65,11 +68,17 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   test("We can handle the checksum package", () => {
     gotoFixture("checksum");
     const { code } = compileContracts();
+    const matchableCode = makeMatchable(code);
+    expect(matchableCode).toMatch(
+      "algorithm: { optional: true, contract: CT.stringCT }"
+    );
+    expect(matchableCode).toMatch("module.exports = checksum");
   });
-  // test("We can handle the archy package", () => {
-  //   gotoFixture("archy");
-  //   compileContracts();
-  // });
+  test.only("We can handle the archy package", () => {
+    gotoFixture("archy");
+    const { code } = compileContracts();
+    console.log(code);
+  });
   // test("We can handle the argv package", () => {
   //   gotoFixture("argv");
   //   const { code } = compileContracts();

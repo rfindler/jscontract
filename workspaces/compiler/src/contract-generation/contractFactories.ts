@@ -11,6 +11,12 @@ export const createAndCt = (...args: Expression[]): Expression => {
   return template.expression(`CT.CTAnd(%%args%%)`)({ args });
 };
 
+export const reduceContracts = (exps: Expression[]): Expression | null => {
+  if (exps.length === 0) return null;
+  if (exps.length === 1) return exps[0];
+  return createAndCt(...exps);
+};
+
 interface FunctionContractElements {
   domain: Expression[];
   range: Expression;

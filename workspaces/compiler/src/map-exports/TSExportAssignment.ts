@@ -10,8 +10,8 @@ import {
 import traverse from "@babel/traverse";
 import template from "@babel/template";
 import {
+  reduceContracts,
   makeAnyCt,
-  createAndCt,
   createFunctionCt,
 } from "../contract-generation/contractFactories";
 import mapParamTypes from "../contract-generation/mapParams";
@@ -122,19 +122,15 @@ const collectIdentifiers = (name: string, state: CompilerState) => {
   return { functions, namespaces };
 };
 
-const getContract = (exps: Expression[]): Expression | null => {
-  if (exps.length === 0) return null;
-  if (exps.length === 1) return exps[0];
-  return createAndCt(...exps);
-};
-
 const markModuleExports: CompilerHandler<Identifier> = (node, state) => {
   state.identifiers.push(node.name);
   state.moduleExports = node.name;
 };
 
 const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
-  const contract = getContract(collectIdentifiers(node.name, state).functions);
+  const contract = reduceContracts(
+    collectIdentifiers(node.name, state).functions
+  );
   if (!contract) return;
   markModuleExports(node, state);
   state.contractAst.program.body.push(
