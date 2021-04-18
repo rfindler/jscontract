@@ -64,15 +64,16 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   });
   test("We can handle the checksum package", () => {
     gotoFixture("checksum");
-    compileContracts();
-  });
-  test("We can handle the archy package", () => {
-    gotoFixture("archy");
-    compileContracts();
-  });
-  test.only("We can handle the argv package", () => {
-    gotoFixture("argv");
     const { code } = compileContracts();
     console.log(code);
   });
+  // test("We can handle the archy package", () => {
+  //   gotoFixture("archy");
+  //   compileContracts();
+  // });
+  // test("We can handle the argv package", () => {
+  //   gotoFixture("argv");
+  //   const { code } = compileContracts();
+  //   console.log(code);
+  // });
 });

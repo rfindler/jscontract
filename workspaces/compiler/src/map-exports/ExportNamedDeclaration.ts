@@ -3,7 +3,6 @@ import * as t from "@babel/types";
 import template from "@babel/template";
 import {
   Identifier,
-  Statement,
   TSTypeAnnotation,
   ExportNamedDeclaration,
   TSDeclareFunction,
