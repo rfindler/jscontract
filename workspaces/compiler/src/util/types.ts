@@ -3,7 +3,10 @@ import { File, Expression } from "@babel/types";
 export interface CompilerState {
   identifiers: string[];
   moduleExports?: string;
-  namespace?: Record<string, Expression>;
+  namespace?: {
+    name: string;
+    contracts: Record<string, Expression[]>;
+  };
   contractAst: File;
   declarationAst: File;
   packageJson: {

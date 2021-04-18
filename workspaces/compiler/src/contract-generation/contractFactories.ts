@@ -7,14 +7,14 @@ export const makeCtExpression = (name: string): Expression =>
 
 export const makeAnyCt = (): Expression => makeCtExpression("CT.anyCT");
 
+export const createAndCt = (...args: Expression[]): Expression => {
+  return template.expression(`CT.CTAnd(%%args%%)`)({ args });
+};
+
 interface FunctionContractElements {
   domain: Expression[];
   range: Expression;
 }
-
-export const createAndCt = (...args: Expression[]): Expression => {
-  return template.expression(`CT.CTAnd(%%args%%)`)({ args });
-};
 
 export const createFunctionCt = (
   contracts: FunctionContractElements
@@ -32,6 +32,49 @@ export interface FunctionExportElements {
   domain: Expression[];
   range: Expression;
 }
+
+export interface InterfaceContractPiece {
+  keyName: string;
+  contract: Expression;
+  optional: boolean;
+}
+
+const getInterfaceTemplate = (
+  interfacePieces: Record<string, InterfaceContractPiece>
+): string => {
+  const identifierNames = Object.keys(interfacePieces);
+  return `CT.CTObject({ ${identifierNames
+    .map((key) => `${key}: %%${key}%%`)
+    .join(", ")} })`;
+};
+
+const getInterfaceObject = (
+  interfacePieces: Record<string, InterfaceContractPiece>
+) => {
+  const identifierNames = Object.keys(interfacePieces);
+  return identifierNames.reduce(
+    (acc: Record<string, Expression>, el: string) => {
+      const piece = interfacePieces[el];
+      return {
+        ...acc,
+        [el]: piece.optional
+          ? template.expression(`{ optional: true, contract: %%contract%% }`)({
+              contract: piece.contract,
+            })
+          : piece.contract,
+      };
+    },
+    {}
+  );
+};
+
+export const buildInterfaceCt = (
+  interfacePieces: Record<string, InterfaceContractPiece>
+): Expression => {
+  const templateString = getInterfaceTemplate(interfacePieces);
+  const templateObject = getInterfaceObject(interfacePieces);
+  return template.expression(templateString)(templateObject);
+};
 
 export const exportFunctionCt = (
   contracts: FunctionExportElements

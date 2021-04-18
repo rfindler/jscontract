@@ -6,6 +6,7 @@ import {
   TSType,
   TSTypeLiteral,
   TSIndexSignature,
+  TSTypeReference,
 } from "@babel/types";
 import { makeCtExpression, makeAnyCt } from "./contractFactories";
 
@@ -38,7 +39,13 @@ const buildArrayType = (annotation: TSArrayType) =>
     arrayContract: mapType(annotation.elementType),
   });
 
+const buildTypeReference = (annotation: TSTypeReference) => {
+  console.log(annotation);
+  return makeAnyCt();
+};
+
 export const mapType = (type: TSType): Expression => {
+  console.log(type.type);
   switch (type.type) {
     case "TSNumberKeyword":
       return makeCtExpression("CT.numberCT");
@@ -50,6 +57,8 @@ export const mapType = (type: TSType): Expression => {
       return buildArrayType(type);
     case "TSTypeLiteral":
       return buildTypeLiteral(type);
+    case "TSTypeReference":
+      return buildTypeReference(type);
     default:
       return makeAnyCt();
   }

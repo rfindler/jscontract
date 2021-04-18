@@ -3,6 +3,7 @@ import {
   Node,
   TSExportAssignment,
   TSDeclareFunction,
+  TSInterfaceDeclaration,
   TSModuleDeclaration,
   Identifier,
   Expression,
@@ -15,14 +16,12 @@ import {
   createFunctionCt,
 } from "../contract-generation/contractFactories";
 import mapParamTypes from "../contract-generation/mapParams";
-import mapReturnType from "../contract-generation/mapAnnotation";
+import mapAnnotation from "../contract-generation/mapAnnotation";
+import {
+  getDeclarePieces,
+  getInterfacePieces,
+} from "../contract-generation/extractPieces";
 import { CompilerState, CompilerHandler } from "../util/types";
-
-/**
- * TODO:
- * - Compile everything in the body of the namespace as though it were a function.
- * - Check for the namespace information while compiling contracts.
- */
 
 const isFunctionType = (node: Node, name: string): boolean => {
   return node.type === "TSDeclareFunction" && node?.id?.name === name;
@@ -65,14 +64,60 @@ const getFunctionContracts = (types: TSDeclareFunction[]): Expression[] =>
       domain: mapParamTypes(identifier.params),
       range:
         identifier?.returnType?.type === "TSTypeAnnotation"
-          ? mapReturnType(identifier.returnType)
+          ? mapAnnotation(identifier.returnType)
           : makeAnyCt(),
     }))
     .map(createFunctionCt);
 
+interface ExtractorOutput {
+  name: string;
+  contract: Expression;
+}
+
+type Extractor<T> = (node: T) => ExtractorOutput | null;
+
+const makeExtractor = <T>(extractor: Extractor<T>): CompilerHandler<T> => {
+  const compilerHandler: CompilerHandler<T> = (node, state) => {
+    const pieces = extractor(node);
+    if (!pieces || !state.namespace) return;
+    const { name, contract } = pieces;
+    const contracts = state.namespace.contracts;
+    if (Array.isArray(contracts[pieces.name])) {
+      contracts[name].push(contract);
+    } else {
+      contracts[name] = [contract];
+    }
+  };
+  return compilerHandler;
+};
+
+const addNamespaceFunction = makeExtractor(getDeclarePieces);
+
+const addNamespaceInterface = makeExtractor(getInterfacePieces);
+
+const getNamespaceContracts: CompilerHandler<TSModuleDeclaration> = (
+  ns,
+  state
+): void => {
+  if (!Array.isArray(ns.body.body) || ns.id.type !== "Identifier") return;
+  state.namespace = { name: ns.id.name, contracts: {} };
+  ns.body.body.forEach((child) => {
+    switch (child.type) {
+      case "TSDeclareFunction":
+        return addNamespaceFunction(child, state);
+      case "TSInterfaceDeclaration":
+        return addNamespaceInterface(child, state);
+      default:
+        return;
+    }
+  });
+};
+
 const collectIdentifiers = (name: string, state: CompilerState) => {
-  const identifiers = reduceDeclarations(name, state);
-  return { functions: getFunctionContracts(identifiers.functions) };
+  const { functions: fns, namespace } = reduceDeclarations(name, state);
+  const namespaces = namespace ? getNamespaceContracts(namespace, state) : null;
+  const functions = getFunctionContracts(fns);
+  return { functions, namespaces };
 };
 
 const getContract = (exps: Expression[]): Expression | null => {
@@ -81,19 +126,20 @@ const getContract = (exps: Expression[]): Expression | null => {
   return createAndCt(...exps);
 };
 
-const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
+const markModuleExports: CompilerHandler<Identifier> = (node, state) => {
   state.identifiers.push(node.name);
   state.moduleExports = node.name;
+};
+
+const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
   const contract = getContract(collectIdentifiers(node.name, state).functions);
   if (!contract) return;
+  markModuleExports(node, state);
   state.contractAst.program.body.push(
-    template.statement(`const %%name%% = %%contract%%.wrap(%%originalCode%%);`)(
-      {
-        name: node.name,
-        contract,
-        originalCode: `originalModule.${node.name}`,
-      }
-    )
+    template.statement(`const %%name%% = %%contract%%.wrap(originalModule);`)({
+      name: node.name,
+      contract,
+    })
   );
 };
 

@@ -10,12 +10,8 @@ import {
   VariableDeclarator,
 } from "@babel/types";
 import { CompilerHandler } from "../util/types";
-import {
-  exportFunctionCt,
-  makeAnyCt,
-} from "../contract-generation/contractFactories";
-import mapParams from "../contract-generation/mapParams";
-import mapAnnotation from "../contract-generation/mapAnnotation";
+import { exportFunctionCt } from "../contract-generation/contractFactories";
+import { getDeclarePieces } from "../contract-generation/extractPieces";
 
 interface IdentifierWithType {
   node: Identifier;
@@ -85,14 +81,10 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
   node,
   state
 ) => {
-  if (!node?.id) return;
-  const { name } = node.id;
+  const pieces = getDeclarePieces(node);
+  if (!pieces) return;
+  const { name, domain, range } = pieces;
   state.identifiers.push(name);
-  const domain = mapParams(node.params);
-  const range =
-    node.returnType?.type === "TSTypeAnnotation"
-      ? mapAnnotation(node.returnType)
-      : makeAnyCt();
   state.contractAst.program.body.push(
     exportFunctionCt({ domain, range, name })
   );
