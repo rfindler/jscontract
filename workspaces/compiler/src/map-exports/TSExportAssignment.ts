@@ -3,7 +3,6 @@ import {
   Node,
   TSExportAssignment,
   TSDeclareFunction,
-  TSInterfaceDeclaration,
   TSModuleDeclaration,
   Identifier,
   Expression,
@@ -58,13 +57,16 @@ const reduceDeclarations = (
   return identifiers;
 };
 
-const getFunctionContracts = (types: TSDeclareFunction[]): Expression[] =>
+const getFunctionContracts = (
+  types: TSDeclareFunction[],
+  state: CompilerState
+): Expression[] =>
   types
     .map((identifier) => ({
-      domain: mapParamTypes(identifier.params),
+      domain: mapParamTypes(identifier.params, state),
       range:
         identifier?.returnType?.type === "TSTypeAnnotation"
-          ? mapAnnotation(identifier.returnType)
+          ? mapAnnotation(identifier.returnType, state)
           : makeAnyCt(),
     }))
     .map(createFunctionCt);
@@ -74,11 +76,11 @@ interface ExtractorOutput {
   contract: Expression;
 }
 
-type Extractor<T> = (node: T) => ExtractorOutput | null;
+type Extractor<T> = (node: T, state: CompilerState) => ExtractorOutput | null;
 
 const makeExtractor = <T>(extractor: Extractor<T>): CompilerHandler<T> => {
   const compilerHandler: CompilerHandler<T> = (node, state) => {
-    const pieces = extractor(node);
+    const pieces = extractor(node, state);
     if (!pieces || !state.namespace) return;
     const { name, contract } = pieces;
     const contracts = state.namespace.contracts;
@@ -116,7 +118,7 @@ const getNamespaceContracts: CompilerHandler<TSModuleDeclaration> = (
 const collectIdentifiers = (name: string, state: CompilerState) => {
   const { functions: fns, namespace } = reduceDeclarations(name, state);
   const namespaces = namespace ? getNamespaceContracts(namespace, state) : null;
-  const functions = getFunctionContracts(fns);
+  const functions = getFunctionContracts(fns, state);
   return { functions, namespaces };
 };
 

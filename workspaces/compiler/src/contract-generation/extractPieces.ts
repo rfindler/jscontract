@@ -16,6 +16,7 @@ import {
 } from "./contractFactories";
 import mapParams from "./mapParams";
 import mapAnnotation from "./mapAnnotation";
+import { CompilerState } from "../util/types";
 
 interface DeclarationPieces {
   name: string;
@@ -25,14 +26,15 @@ interface DeclarationPieces {
 }
 
 export const getDeclarePieces = (
-  node: TSDeclareFunction
+  node: TSDeclareFunction,
+  state: CompilerState
 ): DeclarationPieces | null => {
   if (!node?.id) return null;
   const { name } = node.id;
-  const domain = mapParams(node.params);
+  const domain = mapParams(node.params, state);
   const range =
     node.returnType?.type === "TSTypeAnnotation"
-      ? mapAnnotation(node.returnType)
+      ? mapAnnotation(node.returnType, state)
       : makeAnyCt();
   return { name, contract: createFunctionCt({ domain, range }), domain, range };
 };
@@ -50,22 +52,29 @@ type InterfaceChild =
   | TSPropertySignature;
 
 const handleTsPropertySignature = (
-  piece: InterfacePiece<TSPropertySignature>
+  piece: InterfacePiece<TSPropertySignature>,
+  state: CompilerState
 ): InterfaceContractPiece | null => {
   if (piece.child.key.type !== "Identifier" || !piece.child.typeAnnotation)
     return null;
   const keyName = piece.child.key.name;
-  const contract = mapAnnotation(piece.child.typeAnnotation);
+  const contract = mapAnnotation(piece.child.typeAnnotation, state);
   return { keyName, contract, optional: Boolean(piece.child.optional) };
 };
 
-const compileInterfaceChild = (piece: InterfacePiece<InterfaceChild>) => {
+const compileInterfaceChild = (
+  piece: InterfacePiece<InterfaceChild>,
+  state: CompilerState
+) => {
   switch (piece.child.type) {
     case "TSPropertySignature":
-      return handleTsPropertySignature({
-        name: piece.name,
-        child: piece.child,
-      });
+      return handleTsPropertySignature(
+        {
+          name: piece.name,
+          child: piece.child,
+        },
+        state
+      );
     default:
       return null;
   }
@@ -77,12 +86,13 @@ interface InterfacePieces {
 }
 
 export const getInterfacePieces = (
-  node: TSInterfaceDeclaration
+  node: TSInterfaceDeclaration,
+  state: CompilerState
 ): InterfacePieces => {
   const { name } = node.id;
   const interfacePieces: Record<string, InterfaceContractPiece> = {};
   node.body.body.forEach((child) => {
-    const childContract = compileInterfaceChild({ name, child });
+    const childContract = compileInterfaceChild({ name, child }, state);
     if (!childContract) return;
     interfacePieces[childContract.keyName] = childContract;
   });

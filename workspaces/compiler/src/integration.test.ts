@@ -62,10 +62,9 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
     expect(code).not.toMatch("CT.CTAnd");
     expect(code).toMatch("[CT.stringCT], CT.stringCT");
   });
-  test.only("We can handle the checksum package", () => {
+  test("We can handle the checksum package", () => {
     gotoFixture("checksum");
     const { code } = compileContracts();
-    console.log(code);
   });
   // test("We can handle the archy package", () => {
   //   gotoFixture("archy");

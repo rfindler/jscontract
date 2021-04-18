@@ -81,7 +81,7 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
   node,
   state
 ) => {
-  const pieces = getDeclarePieces(node);
+  const pieces = getDeclarePieces(node, state);
   if (!pieces) return;
   const { name, domain, range } = pieces;
   state.identifiers.push(name);
