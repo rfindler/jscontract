@@ -1,39 +1,21 @@
 import template from "@babel/template";
 import {
+  identifier,
   Expression,
   TSTypeAnnotation,
   TSArrayType,
   TSType,
   TSTypeLiteral,
-  TSIndexSignature,
   TSTypeReference,
   TSQualifiedName,
 } from "@babel/types";
 import { makeCtExpression, makeAnyCt } from "./contractFactories";
 import { CompilerState } from "../util/types";
 
-const makeIndexContract = (index: TSIndexSignature, state: CompilerState) => {
-  return template.expression(
-    `{ prop: { contract: %%type%%, index: "string" } }`
-  )({
-    type: index.typeAnnotation
-      ? mapAnnotation(index.typeAnnotation, state)
-      : makeAnyCt(),
-  });
-};
-
 const buildTypeLiteral = (literal: TSTypeLiteral, state: CompilerState) => {
-  const objectContracts = literal.members.map((member) => {
-    switch (member.type) {
-      case "TSIndexSignature":
-        return makeIndexContract(member, state);
-      default:
-        return;
-    }
-  });
-  return template.expression("CT.CTObject(%%objectContracts%%)")({
-    objectContracts,
-  });
+  return template.expression(
+    `CT.CTObject({ prop: { contract: CT.stringCT, index: "string" } })`
+  )({ CT: identifier("CT") });
 };
 
 const buildArrayType = (annotation: TSArrayType, state: CompilerState) =>

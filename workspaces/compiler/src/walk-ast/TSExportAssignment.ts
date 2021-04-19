@@ -16,6 +16,7 @@ import {
 import mapParamTypes from "../contract-generation/mapParams";
 import mapAnnotation from "../contract-generation/mapAnnotation";
 import { CompilerState, CompilerHandler } from "../util/types";
+import generate from "@babel/generator";
 
 const isFunctionType = (node: Node, name: string): boolean => {
   return node.type === "TSDeclareFunction" && node?.id?.name === name;
@@ -45,6 +46,9 @@ const reduceDeclarations = (
         return;
       }
       if (isVariableDeclarator(node, name)) {
+        Object.entries(state.contracts).forEach(([name, exp]) => {
+          // console.log({ name, code: generate(exp).code });
+        });
         return;
       }
     },

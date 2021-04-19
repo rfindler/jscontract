@@ -1,9 +1,16 @@
-import * as t from "@babel/types";
-import { Statement, Expression } from "@babel/types";
+import {
+  identifier,
+  arrayExpression,
+  Statement,
+  Expression,
+  TSPropertySignature,
+} from "@babel/types";
 import template from "@babel/template";
+import { CompilerState } from "../util/types";
+import mapAnnotation from "./mapAnnotation";
 
 export const makeCtExpression = (name: string): Expression =>
-  template.expression(name)({ CT: t.identifier("CT") });
+  template.expression(name)({ CT: identifier("CT") });
 
 export const makeAnyCt = (): Expression => makeCtExpression("CT.anyCT");
 
@@ -27,7 +34,7 @@ export const createFunctionCt = (
 ): Expression => {
   return template.expression(`CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`)(
     {
-      domain: t.arrayExpression(contracts.domain),
+      domain: arrayExpression(contracts.domain),
       range: contracts.range,
     }
   );
@@ -45,10 +52,7 @@ export interface InterfaceContractPiece {
   optional: boolean;
 }
 
-const getInterfaceTemplate = (
-  identifierNames: string[],
-  interfacePieces: Record<string, InterfaceContractPiece>
-): string => {
+const getInterfaceTemplate = (identifierNames: string[]): string => {
   return `CT.CTObject({ ${identifierNames
     .map((key) => `${key}: %%${key}%%`)
     .join(", ")} })`;
@@ -79,8 +83,8 @@ export const buildInterfaceCt = (
 ): Expression => {
   const identifierNames = Object.keys(interfacePieces);
   if (identifierNames.length === 0)
-    return template.expression(`CT.objectCT`)({ CT: t.identifier("CT") });
-  const templateString = getInterfaceTemplate(identifierNames, interfacePieces);
+    return template.expression(`CT.objectCT`)({ CT: identifier("CT") });
+  const templateString = getInterfaceTemplate(identifierNames);
   const templateObject = getInterfaceObject(identifierNames, interfacePieces);
   return template.expression(templateString)(templateObject);
 };
@@ -91,9 +95,23 @@ export const exportFunctionCt = (
   const func = createFunctionCt(contracts);
   return template.statement(`const %%name%% = %%func%%.wrap(%%originalCode%%)`)(
     {
-      name: t.identifier(contracts.name),
+      name: identifier(contracts.name),
       func,
-      originalCode: t.identifier(`originalModule.${contracts.name}`),
+      originalCode: identifier(`originalModule.${contracts.name}`),
     }
   );
+};
+
+export const makePropertyContract = (
+  property: TSPropertySignature,
+  state: CompilerState
+): Expression | null => {
+  if (property.key.type !== "Identifier" || !property.typeAnnotation)
+    return null;
+  const { name } = property.key;
+  const propType = mapAnnotation(property.typeAnnotation, state);
+  if (property.optional) {
+    return makeAnyCt();
+  }
+  return makeAnyCt();
 };

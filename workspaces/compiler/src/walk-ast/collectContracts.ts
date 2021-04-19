@@ -9,6 +9,7 @@ import {
 import {
   getDeclarePieces,
   getInterfacePieces,
+  getTypeAliasPieces,
 } from "../contract-generation/extractPieces";
 
 type RawContracts = Record<string, Expression[]>;
@@ -60,6 +61,8 @@ const addFunctionDeclaration = makeHandler(getDeclarePieces);
 
 const addInterface = makeHandler(getInterfacePieces);
 
+const addTypeAliasDeclaration = makeHandler(getTypeAliasPieces);
+
 const getRawContracts = (state: CompilerState): RawContracts => {
   const { declarationAst } = state;
   const rawContracts: RawContracts = {};
@@ -72,6 +75,8 @@ const getRawContracts = (state: CompilerState): RawContracts => {
           return addInterface(node.node, rawContracts, state);
         case "TSDeclareFunction":
           return addFunctionDeclaration(node.node, rawContracts, state);
+        case "TSTypeAliasDeclaration":
+          return addTypeAliasDeclaration(node.node, rawContracts, state);
       }
     },
   });

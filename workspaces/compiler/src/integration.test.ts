@@ -1,6 +1,7 @@
 import { compileContracts } from "./index";
 import { gotoFixture } from "./util/entry.test";
 import { REPLACEMENT_NAME } from "./util/requires";
+import generate from "@babel/generator";
 
 const makeMatchable = (code: string): string =>
   code.replace(/\n/gm, "").replace(/\s\s+/g, " ");
@@ -72,7 +73,6 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
     expect(matchableCode).toMatch(
       "algorithm: { optional: true, contract: CT.stringCT }"
     );
-    console.log(code);
     expect(matchableCode).toMatch("module.exports = checksum");
   });
   // test.only("We can handle the archy package", () => {
@@ -82,7 +82,7 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   // });
   test("We can handle the argv package", () => {
     gotoFixture("argv");
-    const { code } = compileContracts();
-    console.log(code);
+    const { contracts } = compileContracts();
+    console.log(generate(contracts.args).code);
   });
 });

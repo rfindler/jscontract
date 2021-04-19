@@ -1,5 +1,6 @@
 import {
   TSDeclareFunction,
+  TSTypeAliasDeclaration,
   TSInterfaceDeclaration,
   TSCallSignatureDeclaration,
   TSConstructSignatureDeclaration,
@@ -15,13 +16,18 @@ import {
   createFunctionCt,
 } from "./contractFactories";
 import mapParams from "./mapParams";
-import mapAnnotation from "./mapAnnotation";
+import mapAnnotation, { mapType } from "./mapAnnotation";
 import { CompilerState } from "../util/types";
 
 interface DeclarationPieces {
   name: string;
   domain: Expression[];
   range: Expression;
+  contract: Expression;
+}
+
+interface Pieces {
+  name: string;
   contract: Expression;
 }
 
@@ -80,15 +86,10 @@ const compileInterfaceChild = (
   }
 };
 
-interface InterfacePieces {
-  name: string;
-  contract: Expression;
-}
-
 export const getInterfacePieces = (
   node: TSInterfaceDeclaration,
   state: CompilerState
-): InterfacePieces => {
+): Pieces => {
   const { name } = node.id;
   const interfacePieces: Record<string, InterfaceContractPiece> = {};
   node.body.body.forEach((child) => {
@@ -97,4 +98,11 @@ export const getInterfacePieces = (
     interfacePieces[childContract.keyName] = childContract;
   });
   return { name, contract: buildInterfaceCt(interfacePieces) };
+};
+
+export const getTypeAliasPieces = (
+  node: TSTypeAliasDeclaration,
+  state: CompilerState
+): Pieces => {
+  return { name: node.id.name, contract: mapType(node.typeAnnotation, state) };
 };
