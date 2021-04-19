@@ -1,4 +1,5 @@
 import {
+  TSTypeLiteral,
   TSDeclareFunction,
   TSTypeAliasDeclaration,
   TSInterfaceDeclaration,
@@ -9,6 +10,7 @@ import {
   TSIndexSignature,
   Expression,
 } from "@babel/types";
+import template from "@babel/template";
 import {
   makeAnyCt,
   buildInterfaceCt,
@@ -45,11 +47,6 @@ export const getDeclarePieces = (
   return { name, contract: createFunctionCt({ domain, range }), domain, range };
 };
 
-interface InterfacePiece<T> {
-  child: T;
-  name: string;
-}
-
 type InterfaceChild =
   | TSCallSignatureDeclaration
   | TSConstructSignatureDeclaration
@@ -57,46 +54,58 @@ type InterfaceChild =
   | TSIndexSignature
   | TSPropertySignature;
 
+const handleTSIndexSignature = (
+  index: TSIndexSignature,
+  state: CompilerState
+): InterfaceContractPiece => ({
+  keyName: "prop",
+  contract: template.expression(`{ contract: %%contract%%, index: "string" }`)({
+    contract: mapAnnotation(index.typeAnnotation, state),
+  }),
+});
+
 const handleTsPropertySignature = (
-  piece: InterfacePiece<TSPropertySignature>,
+  piece: TSPropertySignature,
   state: CompilerState
 ): InterfaceContractPiece | null => {
-  if (piece.child.key.type !== "Identifier" || !piece.child.typeAnnotation)
-    return null;
-  const keyName = piece.child.key.name;
-  const contract = mapAnnotation(piece.child.typeAnnotation, state);
-  return { keyName, contract, optional: Boolean(piece.child.optional) };
+  if (piece.key.type !== "Identifier" || !piece.typeAnnotation) return null;
+  const keyName = piece.key.name;
+  const contract = mapAnnotation(piece.typeAnnotation, state);
+  return { keyName, contract, optional: Boolean(piece.optional) };
 };
 
-const compileInterfaceChild = (
-  piece: InterfacePiece<InterfaceChild>,
-  state: CompilerState
-) => {
-  switch (piece.child.type) {
+const compileInterfaceChild = (piece: InterfaceChild, state: CompilerState) => {
+  switch (piece.type) {
     case "TSPropertySignature":
-      return handleTsPropertySignature(
-        {
-          name: piece.name,
-          child: piece.child,
-        },
-        state
-      );
+      return handleTsPropertySignature(piece, state);
+    case "TSIndexSignature":
+      return handleTSIndexSignature(piece, state);
     default:
       return null;
   }
 };
+
+const getObjectRecord = (children: InterfaceChild[], state: CompilerState) => {
+  const interfacePieces: Record<string, InterfaceContractPiece> = {};
+  children.forEach((child) => {
+    const childContract = compileInterfaceChild(child, state);
+    if (!childContract) return;
+    interfacePieces[childContract.keyName] = childContract;
+  });
+  return interfacePieces;
+};
+
+export const buildLiteralObject = (
+  literal: TSTypeLiteral,
+  state: CompilerState
+): Expression => buildInterfaceCt(getObjectRecord(literal.members, state));
 
 export const getInterfacePieces = (
   node: TSInterfaceDeclaration,
   state: CompilerState
 ): Pieces => {
   const { name } = node.id;
-  const interfacePieces: Record<string, InterfaceContractPiece> = {};
-  node.body.body.forEach((child) => {
-    const childContract = compileInterfaceChild({ name, child }, state);
-    if (!childContract) return;
-    interfacePieces[childContract.keyName] = childContract;
-  });
+  const interfacePieces = getObjectRecord(node.body.body, state);
   return { name, contract: buildInterfaceCt(interfacePieces) };
 };
 

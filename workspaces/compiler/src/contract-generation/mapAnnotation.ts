@@ -7,15 +7,9 @@ import {
   TSTypeLiteral,
   TSTypeReference,
   TSQualifiedName,
-  TSIndexSignature,
-  TSPropertySignature,
-  TSTypeElement,
 } from "@babel/types";
-import {
-  buildInterfaceCt,
-  makeCtExpression,
-  makeAnyCt,
-} from "./contractFactories";
+import { buildLiteralObject } from "./extractPieces";
+import { makeCtExpression, makeAnyCt } from "./contractFactories";
 import { CompilerState } from "../util/types";
 
 const isLiteralObject = (literal: TSTypeLiteral): boolean => {
@@ -25,63 +19,6 @@ const isLiteralObject = (literal: TSTypeLiteral): boolean => {
       member.type === "TSPropertySignature"
   );
 };
-
-interface ObjectPiece {
-  keyName: string;
-  contract: Expression;
-  optional?: boolean;
-}
-
-const buildPropertySignature = (
-  property: TSPropertySignature,
-  state: CompilerState
-): ObjectPiece | null => {
-  if (property.key.type !== "Identifier") return null;
-  return {
-    keyName: property.key.name,
-    contract: mapAnnotation(property.typeAnnotation, state),
-    optional: Boolean(property.optional),
-  };
-};
-
-const buildIndexSignature = (
-  index: TSIndexSignature,
-  state: CompilerState
-): ObjectPiece | null => ({
-  keyName: "prop",
-  contract: template.expression(`{ contract: %%contract%%, index: "string" }`)({
-    contract: mapAnnotation(index.typeAnnotation, state),
-  }),
-});
-
-const toObjectPiece = (member: TSTypeElement, state: CompilerState) => {
-  return member.type === "TSIndexSignature"
-    ? buildIndexSignature(member, state)
-    : buildPropertySignature(member as TSPropertySignature, state);
-};
-
-const getObjectPieces = (
-  literal: TSTypeLiteral,
-  state: CompilerState
-): ObjectPiece[] =>
-  literal.members
-    .map((member) => toObjectPiece(member, state))
-    .filter((piece) => piece !== null) as ObjectPiece[];
-
-const getObjectRecord = (literal: TSTypeLiteral, state: CompilerState) => {
-  return getObjectPieces(literal, state).reduce(
-    (acc: Record<string, ObjectPiece>, el: ObjectPiece) => {
-      return {
-        ...acc,
-        [el.keyName]: el,
-      };
-    },
-    {}
-  );
-};
-
-const buildLiteralObject = (literal: TSTypeLiteral, state: CompilerState) =>
-  buildInterfaceCt(getObjectRecord(literal, state));
 
 const buildTypeLiteral = (literal: TSTypeLiteral, state: CompilerState) => {
   if (isLiteralObject(literal)) return buildLiteralObject(literal, state);
