@@ -1,5 +1,6 @@
 import template from "@babel/template";
 import {
+  Identifier,
   Expression,
   TSTypeAnnotation,
   TSArrayType,
@@ -37,6 +38,16 @@ const buildQualifiedName = (
   return state.contracts[annotation.right.name] || makeAnyCt();
 };
 
+const buildTypeIdentifier = (
+  annotation: Identifier,
+  state: CompilerState
+): Expression => {
+  console.log(annotation.name);
+  console.log(state.contracts);
+  console.log(state.contracts[annotation.name]);
+  return state.contracts[annotation.name] || makeAnyCt();
+};
+
 const buildTypeReference = (
   annotation: TSTypeReference,
   state: CompilerState
@@ -44,8 +55,8 @@ const buildTypeReference = (
   switch (annotation.typeName.type) {
     case "TSQualifiedName":
       return buildQualifiedName(annotation.typeName, state);
-    default:
-      return makeAnyCt();
+    case "Identifier":
+      return buildTypeIdentifier(annotation.typeName, state);
   }
 };
 

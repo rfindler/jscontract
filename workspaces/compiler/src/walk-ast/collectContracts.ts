@@ -53,6 +53,9 @@ const makeHandler = <T>(extractor: Extractor<T>): Handler<T> => {
     if (!pieces) return;
     const { name, contract } = pieces;
     pushOrCreate(contracts, name, contract);
+    const newContract = reduceContracts(contracts[name]);
+    if (!newContract) return;
+    state.contracts[name] = newContract;
   };
   return compilerHandler;
 };

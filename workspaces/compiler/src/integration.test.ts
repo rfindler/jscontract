@@ -80,9 +80,9 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   //   const { code } = compileContracts();
   //   console.log(code);
   // });
-  test("We can handle the argv package", () => {
+  test.only("We can handle the argv package", () => {
     gotoFixture("argv");
     const { contracts } = compileContracts();
-    console.log(generate(contracts.args).code);
+    console.log(generate(contracts.module).code);
   });
 });
