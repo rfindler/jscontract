@@ -3,7 +3,6 @@ import {
   Node,
   TSExportAssignment,
   TSDeclareFunction,
-  TSModuleDeclaration,
   Identifier,
   Expression,
 } from "@babel/types";
@@ -16,61 +15,7 @@ import {
 } from "../contract-generation/contractFactories";
 import mapParamTypes from "../contract-generation/mapParams";
 import mapAnnotation from "../contract-generation/mapAnnotation";
-import {
-  getDeclarePieces,
-  getInterfacePieces,
-} from "../contract-generation/extractPieces";
 import { CompilerState, CompilerHandler } from "../util/types";
-
-const isNamespace = (node: Node, name: string): boolean => {
-  if (node.type !== "TSModuleDeclaration") return false;
-  if (node.id.type !== "Identifier") return false;
-  return node.id.name === name;
-};
-
-interface ExtractorOutput {
-  name: string;
-  contract: Expression;
-}
-
-type Extractor<T> = (node: T, state: CompilerState) => ExtractorOutput | null;
-
-const makeExtractor = <T>(extractor: Extractor<T>): CompilerHandler<T> => {
-  const compilerHandler: CompilerHandler<T> = (node, state) => {
-    const pieces = extractor(node, state);
-    if (!pieces || !state.namespace) return;
-    const { name, contract } = pieces;
-    const contracts = state.namespace.contracts;
-    if (Array.isArray(contracts[pieces.name])) {
-      contracts[name].push(contract);
-    } else {
-      contracts[name] = [contract];
-    }
-  };
-  return compilerHandler;
-};
-
-const addNamespaceFunction = makeExtractor(getDeclarePieces);
-
-const addNamespaceInterface = makeExtractor(getInterfacePieces);
-
-const getNamespaceContracts: CompilerHandler<TSModuleDeclaration> = (
-  ns,
-  state
-): void => {
-  if (!Array.isArray(ns.body.body) || ns.id.type !== "Identifier") return;
-  state.namespace = { name: ns.id.name, contracts: {} };
-  ns.body.body.forEach((child) => {
-    switch (child.type) {
-      case "TSDeclareFunction":
-        return addNamespaceFunction(child, state);
-      case "TSInterfaceDeclaration":
-        return addNamespaceInterface(child, state);
-      default:
-        return;
-    }
-  });
-};
 
 const isFunctionType = (node: Node, name: string): boolean => {
   return node.type === "TSDeclareFunction" && node?.id?.name === name;
@@ -97,10 +42,6 @@ const reduceDeclarations = (
       types.push(node.type);
       if (isFunctionType(node, name)) {
         identifiers.functions.push(node as TSDeclareFunction);
-        return;
-      }
-      if (isNamespace(node, name)) {
-        getNamespaceContracts(node as TSModuleDeclaration, state);
         return;
       }
       if (isVariableDeclarator(node, name)) {

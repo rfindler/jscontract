@@ -8,10 +8,6 @@ export interface CompilerState {
     main: string;
   };
   moduleExports?: string;
-  namespace?: {
-    name: string;
-    contracts: Record<string, Expression[]>;
-  };
   contracts: Record<string, Expression>;
 }
 
