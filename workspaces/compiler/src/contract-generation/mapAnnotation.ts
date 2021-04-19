@@ -7,10 +7,16 @@ import {
   TSType,
   TSTypeLiteral,
   TSTypeReference,
+  TSFunctionType,
   TSQualifiedName,
 } from "@babel/types";
 import { buildLiteralObject } from "./extractPieces";
-import { makeCtExpression, makeAnyCt } from "./contractFactories";
+import mapParams from "./mapParams";
+import {
+  makeCtExpression,
+  makeAnyCt,
+  createFunctionCt,
+} from "./contractFactories";
 import { CompilerState } from "../util/types";
 
 const isLiteralObject = (literal: TSTypeLiteral): boolean => {
@@ -42,9 +48,6 @@ const buildTypeIdentifier = (
   annotation: Identifier,
   state: CompilerState
 ): Expression => {
-  console.log(annotation.name);
-  console.log(state.contracts);
-  console.log(state.contracts[annotation.name]);
   return state.contracts[annotation.name] || makeAnyCt();
 };
 
@@ -58,6 +61,18 @@ const buildTypeReference = (
     case "Identifier":
       return buildTypeIdentifier(annotation.typeName, state);
   }
+};
+
+const buildTSFunctionType = (
+  annotation: TSFunctionType,
+  state: CompilerState
+) => {
+  return (
+    createFunctionCt({
+      domain: mapParams(annotation.parameters, state),
+      range: mapAnnotation(annotation.typeAnnotation, state),
+    }) || makeAnyCt()
+  );
 };
 
 export const mapType = (type: TSType, state: CompilerState): Expression => {
@@ -74,6 +89,8 @@ export const mapType = (type: TSType, state: CompilerState): Expression => {
       return buildTypeLiteral(type, state);
     case "TSTypeReference":
       return buildTypeReference(type, state);
+    case "TSFunctionType":
+      return buildTSFunctionType(type, state);
     default:
       return makeAnyCt();
   }

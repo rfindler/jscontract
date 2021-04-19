@@ -75,14 +75,27 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
     );
     expect(matchableCode).toMatch("module.exports = checksum");
   });
-  // test.only("We can handle the archy package", () => {
-  //   gotoFixture("archy");
-  //   const { code } = compileContracts();
-  //   console.log(code);
-  // });
-  test.only("We can handle the argv package", () => {
+  test("We can handle the archy package", () => {
+    gotoFixture("archy");
+    const { code } = compileContracts();
+    const matchableCode = makeMatchable(code);
+    expect(matchableCode).toMatch(`{ optional: true, contract: CT.booleanCT }`);
+    expect(matchableCode).toMatch(
+      `CT.CTFunction(CT.trueCT, [CT.stringCT, CT.stringCT, CT.CTObject({ unicode: { optional: true, contract: CT.booleanCT }})`
+    );
+  });
+  test("We can handle the argv package", () => {
     gotoFixture("argv");
-    const { contracts } = compileContracts();
-    console.log(generate(contracts.module).code);
+    const { code } = compileContracts();
+    const matchableCode = makeMatchable(code);
+    expect(matchableCode).toMatch(`module.exports = argv`);
+  });
+  test("We can handle the 7zip-min package", () => {
+    gotoFixture("7zip-min");
+    const { code } = compileContracts();
+    const matchableCode = makeMatchable(code);
+    expect(matchableCode).toMatch(
+      `module.exports = { unpack, pack, list, cmd}`
+    );
   });
 });

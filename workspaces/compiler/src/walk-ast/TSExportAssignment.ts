@@ -3,6 +3,7 @@ import {
   Node,
   TSExportAssignment,
   TSDeclareFunction,
+  VariableDeclarator,
   Identifier,
   Expression,
 } from "@babel/types";
@@ -16,7 +17,6 @@ import {
 import mapParamTypes from "../contract-generation/mapParams";
 import mapAnnotation from "../contract-generation/mapAnnotation";
 import { CompilerState, CompilerHandler } from "../util/types";
-import generate from "@babel/generator";
 
 const isFunctionType = (node: Node, name: string): boolean => {
   return node.type === "TSDeclareFunction" && node?.id?.name === name;
@@ -25,12 +25,6 @@ const isFunctionType = (node: Node, name: string): boolean => {
 interface ContractIdentifiers {
   functions: Array<TSDeclareFunction>;
 }
-
-const isVariableDeclarator = (node: Node, name: string): boolean => {
-  if (node.type !== "VariableDeclarator") return false;
-  if (node.id.type !== "Identifier") return false;
-  return node.id.name === name;
-};
 
 const reduceDeclarations = (
   name: string,
@@ -43,12 +37,6 @@ const reduceDeclarations = (
       types.push(node.type);
       if (isFunctionType(node, name)) {
         identifiers.functions.push(node as TSDeclareFunction);
-        return;
-      }
-      if (isVariableDeclarator(node, name)) {
-        Object.entries(state.contracts).forEach(([name, exp]) => {
-          // console.log({ name, code: generate(exp).code });
-        });
         return;
       }
     },
@@ -82,9 +70,8 @@ const markModuleExports: CompilerHandler<Identifier> = (node, state) => {
 };
 
 const handleIdentifier: CompilerHandler<Identifier> = (node, state) => {
-  const contract = reduceContracts(
-    collectIdentifiers(node.name, state).functions
-  );
+  const { functions } = collectIdentifiers(node.name, state);
+  const contract = reduceContracts(functions) || state.contracts[node.name];
   if (!contract) return;
   markModuleExports(node, state);
   state.contractAst.program.body.push(

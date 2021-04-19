@@ -10,7 +10,6 @@ import {
   VariableDeclarator,
 } from "@babel/types";
 import { CompilerHandler } from "../util/types";
-import { exportFunctionCt } from "../contract-generation/contractFactories";
 import { getDeclarePieces } from "../contract-generation/extractPieces";
 
 interface IdentifierWithType {
@@ -83,10 +82,16 @@ const handleTSDeclareFunction: CompilerHandler<TSDeclareFunction> = (
 ) => {
   const pieces = getDeclarePieces(node, state);
   if (!pieces) return;
-  const { name, domain, range } = pieces;
+  const { name } = pieces;
+  if (state.identifiers.includes(name)) return;
   state.identifiers.push(name);
   state.contractAst.program.body.push(
-    exportFunctionCt({ domain, range, name })
+    template.statement(
+      `const %%name%% = %%contract%%.wrap(originalModule.%%name%%)`
+    )({
+      name: t.identifier(name),
+      contract: state.contracts[name],
+    })
   );
 };
 

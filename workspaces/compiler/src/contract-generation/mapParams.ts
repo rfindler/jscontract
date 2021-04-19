@@ -16,12 +16,8 @@ const getIdentifierContract = (
   param: Identifier,
   state: CompilerState
 ): Expression => {
-  switch (param?.typeAnnotation?.type) {
-    case "TSTypeAnnotation":
-      return mapAnnotation(param.typeAnnotation, state);
-    default:
-      return makeAnyCt();
-  }
+  if (param?.typeAnnotation?.type !== "TSTypeAnnotation") return makeAnyCt();
+  return mapAnnotation(param.typeAnnotation, state);
 };
 
 const getRestArrayType = (aType: TSTypeAnnotation): TSType | null => {
