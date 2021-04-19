@@ -49,19 +49,19 @@ export interface FunctionExportElements {
 export interface InterfaceContractPiece {
   keyName: string;
   contract: Expression;
-  optional: boolean;
+  optional?: boolean;
 }
 
-const getInterfaceTemplate = (identifierNames: string[]): string => {
+export const getInterfaceTemplate = (identifierNames: string[]): string => {
   return `CT.CTObject({ ${identifierNames
     .map((key) => `${key}: %%${key}%%`)
     .join(", ")} })`;
 };
 
-const getInterfaceObject = (
+export const getInterfaceObject = (
   identifierNames: string[],
   interfacePieces: Record<string, InterfaceContractPiece>
-) => {
+): Record<string, Expression> => {
   return identifierNames.reduce(
     (acc: Record<string, Expression>, el: string) => {
       const piece = interfacePieces[el];
@@ -100,18 +100,4 @@ export const exportFunctionCt = (
       originalCode: identifier(`originalModule.${contracts.name}`),
     }
   );
-};
-
-export const makePropertyContract = (
-  property: TSPropertySignature,
-  state: CompilerState
-): Expression | null => {
-  if (property.key.type !== "Identifier" || !property.typeAnnotation)
-    return null;
-  const { name } = property.key;
-  const propType = mapAnnotation(property.typeAnnotation, state);
-  if (property.optional) {
-    return makeAnyCt();
-  }
-  return makeAnyCt();
 };
