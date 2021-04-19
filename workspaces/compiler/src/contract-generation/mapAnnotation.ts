@@ -9,11 +9,7 @@ import {
   TSTypeReference,
   TSQualifiedName,
 } from "@babel/types";
-import {
-  makeCtExpression,
-  makeAnyCt,
-  reduceContracts,
-} from "./contractFactories";
+import { makeCtExpression, makeAnyCt } from "./contractFactories";
 import { CompilerState } from "../util/types";
 
 const makeIndexContract = (index: TSIndexSignature, state: CompilerState) => {
@@ -49,13 +45,7 @@ const buildQualifiedName = (
   annotation: TSQualifiedName,
   state: CompilerState
 ): Expression => {
-  if (annotation.left.type !== "Identifier") return makeAnyCt();
-  if (annotation.right.type !== "Identifier") return makeAnyCt();
-  if (annotation.left?.name !== state.namespace?.name) return makeAnyCt();
-  const exps = state?.namespace?.contracts[annotation.right.name];
-  if (!exps) return makeAnyCt();
-  const contracts = reduceContracts(exps);
-  return contracts === null ? makeAnyCt() : contracts;
+  return state.contracts[annotation.right.name] || makeAnyCt();
 };
 
 const buildTypeReference = (

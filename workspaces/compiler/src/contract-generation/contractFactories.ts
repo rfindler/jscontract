@@ -46,18 +46,18 @@ export interface InterfaceContractPiece {
 }
 
 const getInterfaceTemplate = (
+  identifierNames: string[],
   interfacePieces: Record<string, InterfaceContractPiece>
 ): string => {
-  const identifierNames = Object.keys(interfacePieces);
   return `CT.CTObject({ ${identifierNames
     .map((key) => `${key}: %%${key}%%`)
     .join(", ")} })`;
 };
 
 const getInterfaceObject = (
+  identifierNames: string[],
   interfacePieces: Record<string, InterfaceContractPiece>
 ) => {
-  const identifierNames = Object.keys(interfacePieces);
   return identifierNames.reduce(
     (acc: Record<string, Expression>, el: string) => {
       const piece = interfacePieces[el];
@@ -77,8 +77,11 @@ const getInterfaceObject = (
 export const buildInterfaceCt = (
   interfacePieces: Record<string, InterfaceContractPiece>
 ): Expression => {
-  const templateString = getInterfaceTemplate(interfacePieces);
-  const templateObject = getInterfaceObject(interfacePieces);
+  const identifierNames = Object.keys(interfacePieces);
+  if (identifierNames.length === 0)
+    return template.expression(`CT.objectCT`)({ CT: t.identifier("CT") });
+  const templateString = getInterfaceTemplate(identifierNames, interfacePieces);
+  const templateObject = getInterfaceObject(identifierNames, interfacePieces);
   return template.expression(templateString)(templateObject);
 };
 

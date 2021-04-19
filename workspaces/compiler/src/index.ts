@@ -1,5 +1,6 @@
 import { readPackageFiles } from "./util/entry";
-import addContracts from "./map-exports/addContracts";
+import addContracts from "./walk-ast/addContracts";
+import collectContracts from "./walk-ast/collectContracts";
 import { File } from "@babel/types";
 import generator from "@babel/generator";
 import {
@@ -19,8 +20,15 @@ export const compileContracts = (): CompilerOutput => {
     plugins: ["typescript"],
     sourceType: "module",
   });
-  const state = { contractAst, declarationAst, packageJson, identifiers: [] };
+  const state = {
+    contractAst,
+    declarationAst,
+    packageJson,
+    identifiers: [],
+    contracts: {},
+  };
   requireDependencies(state);
+  collectContracts(state);
   addContracts(state);
   exportContracts(state);
   const { code } = generator(contractAst);

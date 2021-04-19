@@ -72,6 +72,7 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
     expect(matchableCode).toMatch(
       "algorithm: { optional: true, contract: CT.stringCT }"
     );
+    console.log(code);
     expect(matchableCode).toMatch("module.exports = checksum");
   });
   // test.only("We can handle the archy package", () => {
@@ -79,7 +80,7 @@ const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js");`
   //   const { code } = compileContracts();
   //   console.log(code);
   // });
-  test.only("We can handle the argv package", () => {
+  test("We can handle the argv package", () => {
     gotoFixture("argv");
     const { code } = compileContracts();
     console.log(code);
