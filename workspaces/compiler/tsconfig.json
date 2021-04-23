@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/node14",
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/fixtures", "src/**/*.spec.ts", "src/**/*.test.ts"],
+  "include": ["compiler.ts"],
+  "exclude": ["node_modules"],
   "compilerOptions": {
     "outDir": "dist",
     "esModuleInterop": true,

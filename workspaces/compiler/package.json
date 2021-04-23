@@ -2,7 +2,7 @@
   "name": "@jscontract/compiler",
   "version": "1.0.0",
   "description": "Compile TypeScript into JavaScript with contracts.",
-  "main": "dist/index.js",
+  "main": "dist/compiler.js",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
