@@ -11,7 +11,7 @@ const fail = (el: any) => {
 };
 // }}}
 
-// Parse the Types into an AST {{{
+// Parse the Type Declarations into an AST {{{
 const readTypesFromFile = (): string =>
   fs.readFileSync(path.join(process.cwd(), "index.d.ts"), "utf-8");
 
@@ -22,7 +22,7 @@ const getAst = (code: string): t.File =>
   });
 // }}}
 
-// Parse the AST into Contract Tokens {{{
+// Map the AST into Contract Tokens {{{
 type ContractHint = "flat" | "function" | "object";
 
 interface FunctionSyntax {
@@ -40,7 +40,7 @@ interface TypescriptType {
 interface ContractToken {
   name: string;
   type: TypescriptType | null;
-  isExported: boolean;
+  isSubExport: boolean;
   isMainExport: boolean;
 }
 
@@ -88,7 +88,7 @@ const tokenMap: Record<string, TokenHandler> = {
   TSExportAssignment(el: t.TSExportAssignment) {
     if (el.expression.type !== "Identifier") return [];
     const { name } = el.expression;
-    return [{ name, type: null, isExported: false, isMainExport: true }];
+    return [{ name, type: null, isSubExport: false, isMainExport: true }];
   },
   TSModuleBlock(el: t.TSModuleBlock) {
     return reduceTokens(el.body);
@@ -107,7 +107,7 @@ const tokenMap: Record<string, TokenHandler> = {
       {
         name,
         type: { hint: "object", syntax },
-        isExported: false,
+        isSubExport: false,
         isMainExport: false,
       },
     ];
@@ -124,7 +124,7 @@ const tokenMap: Record<string, TokenHandler> = {
       {
         name,
         type: { hint: "function", syntax },
-        isExported: false,
+        isSubExport: false,
         isMainExport: false,
       },
     ];
@@ -135,7 +135,7 @@ const tokenMap: Record<string, TokenHandler> = {
     if (tokens.length === 0) return [];
     if (tokens.length > 1) return fail(tokens);
     const statement = tokens[0];
-    return [{ ...statement, isExported: true }];
+    return [{ ...statement, isSubExport: true }];
   },
   VariableDeclaration(el: t.VariableDeclaration) {
     if (el.declarations.length !== 1) return fail(el);
@@ -154,7 +154,7 @@ const tokenMap: Record<string, TokenHandler> = {
       {
         name,
         type: { syntax, hint: "flat" },
-        isExported: false,
+        isSubExport: false,
         isMainExport: false,
       },
     ];
@@ -184,6 +184,70 @@ const getContractTokens = (el: t.Node): ContractToken[] => {
 // }}}
 
 // Construct a Graph from the Tokens {{{
+interface ContractNode {
+  name: string;
+  dependencies: string[];
+  types: TypescriptType[];
+  isSubExport: boolean;
+  isMainExport: boolean;
+}
+
+type ContractGraph = Record<string, ContractNode>;
+
+const getReferenceDeps = (ref: t.TSTypeReference): string => {
+  const loop = (curType: t.TSEntityName | t.Identifier): string => {
+    if (curType.type === "Identifier") return curType.name;
+    const { left, right } = curType;
+    return `${loop(left)}.${right.name}`;
+  };
+  return loop(ref.typeName);
+};
+
+const getDeps = (type: t.TSType): string[] => {
+  if (type.type === "TSTypeReference") {
+    return [getReferenceDeps(type)];
+  }
+  return [];
+};
+
+const getTypeDependencies = (type: TypescriptType): string[] => {
+  if (type.hint === "flat") return getDeps(type.syntax as t.TSType);
+  if (type.hint === "function") {
+    const syntax = type.syntax as FunctionSyntax;
+    return [
+      ...syntax.domain.flatMap((stx) => getDeps(stx)),
+      ...getDeps(syntax.range),
+    ];
+  }
+  const syntax = type.syntax as InterfaceType;
+  return Object.values(syntax).flatMap((type) => getDeps(type));
+};
+
+const getDependencies = (types: TypescriptType[]): string[] =>
+  Array.from(new Set(types.flatMap(getTypeDependencies)));
+
+const buildNode = (nodeName: string, tokens: ContractToken[]): ContractNode => {
+  const nodeTokens = tokens.filter((token) => token.name === nodeName);
+  const isSubExport = nodeTokens.some((token) => token.isSubExport);
+  const isMainExport = nodeTokens.some((token) => token.isMainExport);
+  const types = nodeTokens
+    .filter((token) => token.type !== null)
+    .map((token) => token.type) as TypescriptType[];
+  return {
+    name: nodeName,
+    isSubExport,
+    isMainExport,
+    types,
+    dependencies: getDependencies(types),
+  };
+};
+
+const getContractGraph = (tokens: ContractToken[]): ContractGraph => {
+  const names = Array.from(new Set(tokens.map((token) => token.name)));
+  return names.reduce((acc: ContractGraph, el) => {
+    return { ...acc, [el]: buildNode(el, tokens) };
+  }, {});
+};
 // }}}
 
 // Transform the Graph into an AST {{{
@@ -192,7 +256,8 @@ const getContractTokens = (el: t.Node): ContractToken[] => {
 const compile = (code: string): string => {
   const ast = getAst(code);
   const tokens = getContractTokens(ast);
-  console.log(tokens);
+  const graph = getContractGraph(tokens);
+  console.log(graph);
   return code;
 };
 

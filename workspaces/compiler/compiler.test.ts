@@ -20,4 +20,8 @@ describe("Our compiler", () => {
     gotoFixture("checksum");
     compile();
   });
+  test("Works on the archy package", () => {
+    gotoFixture("archy");
+    compile();
+  });
 });
