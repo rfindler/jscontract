@@ -2,12 +2,42 @@ import fs from "fs";
 import path from "path";
 import { parse } from "@babel/parser";
 import * as t from "@babel/types";
+import generate from "@babel/generator";
 
 // Util {{{
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fail = (el: any) => {
   console.error(el);
   throw new Error("UNEXPECTED ELEMENT");
+};
+
+interface GraphNode {
+  name: string;
+  dependencies: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [otherProperty: string]: any;
+}
+
+type Graph = Record<string, GraphNode>;
+
+const getNextIndex = (values: GraphNode[], output: GraphNode[]): number => {
+  const index = values.findIndex((node) =>
+    node.dependencies.every((dependency) =>
+      output.some((val) => val.name === dependency)
+    )
+  );
+  if (index >= 0) return index;
+  throw new Error("ERROR: CYCLE IN TYPES DETECTED");
+};
+
+export const orderGraphNodes = (graph: Graph): GraphNode[] => {
+  const output: GraphNode[] = [];
+  const values = Object.values(graph);
+  while (values.length > 0) {
+    const [element] = values.splice(getNextIndex(values, output), 1);
+    output.push(element);
+  }
+  return output;
 };
 // }}}
 
@@ -242,23 +272,49 @@ const buildNode = (nodeName: string, tokens: ContractToken[]): ContractNode => {
   };
 };
 
+const fixGraphDependencies = (graph: ContractGraph): ContractGraph => {
+  const nameList = Object.keys(graph);
+  const nameSet = new Set(nameList);
+  return Object.entries(graph).reduce((acc, [name, node]) => {
+    return {
+      ...acc,
+      [name]: {
+        ...node,
+        dependencies: node.dependencies.map((dep) => {
+          if (nameSet.has(dep)) return dep;
+          const realName = nameList.find((name) => name.endsWith(dep));
+          if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
+          return realName;
+        }),
+      },
+    };
+  }, {});
+};
+
 const getContractGraph = (tokens: ContractToken[]): ContractGraph => {
   const names = Array.from(new Set(tokens.map((token) => token.name)));
-  return names.reduce((acc: ContractGraph, el) => {
-    return { ...acc, [el]: buildNode(el, tokens) };
-  }, {});
+  return fixGraphDependencies(
+    names.reduce((acc: ContractGraph, el) => {
+      return { ...acc, [el]: buildNode(el, tokens) };
+    }, {})
+  );
 };
 // }}}
 
 // Transform the Graph into an AST {{{
+const getContractAst = (graph: ContractGraph): t.File => {
+  const statements = orderGraphNodes(graph);
+  console.log(statements);
+  return parse("");
+};
 // }}}
 
 const compile = (code: string): string => {
-  const ast = getAst(code);
-  const tokens = getContractTokens(ast);
+  const declarationAst = getAst(code);
+  const tokens = getContractTokens(declarationAst);
   const graph = getContractGraph(tokens);
-  console.log(graph);
-  return code;
+  const contractAst = getContractAst(graph);
+  return generate(contractAst).code;
 };
 
 const compileContracts = (): string => compile(readTypesFromFile());
