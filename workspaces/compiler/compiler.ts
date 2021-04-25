@@ -371,11 +371,32 @@ const getReferenceDeps = (ref: t.TSTypeReference): string => {
   return getTypeName(ref.typeName);
 };
 
-const getDeps = (type: t.TSType): string[] => {
-  if (type.type === "TSTypeReference") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DepMapper = Record<string, (el: any) => string[]>;
+
+const depMap: DepMapper = {
+  TSTypeReference(type: t.TSTypeReference) {
     return [getReferenceDeps(type)];
-  }
-  return [];
+  },
+  TSFunctionType(type: t.TSFunctionType) {
+    if (!type.typeAnnotation) return [];
+    return getTypeDependencies({
+      hint: "function",
+      syntax: {
+        domain: getParameterTypes(type.parameters),
+        range: type.typeAnnotation.typeAnnotation,
+      },
+    });
+  },
+  TSArrayType(type: t.TSArrayType) {
+    return getTypeDependencies({ hint: "flat", syntax: type.elementType });
+  },
+};
+
+const getDeps = (type: t.TSType): string[] => {
+  const fn = depMap[type.type];
+  if (!fn) return [];
+  return fn(type);
 };
 
 const getTypeDependencies = (type: TypescriptType): string[] => {
@@ -435,10 +456,9 @@ const fixDependencyNames = (graph: ContractGraph): ContractGraph => {
       .map((dep) => {
         if (nameSet.has(dep)) return dep;
         const realName = nameList.find((name) => name.endsWith(dep));
-        if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
         return realName;
       })
-      .filter((dep) => dep !== node.name);
+      .filter((dep) => dep && dep !== node.name);
     return {
       ...acc,
       [name]: {

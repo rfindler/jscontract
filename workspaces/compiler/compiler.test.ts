@@ -111,6 +111,13 @@ describe("Our compiler", () => {
     expect(code).toMatch(`CT.CTRec`);
     expect(code).toMatch(`contract: typeFunctionContract`);
   });
+  test("Works on the 7zip-min package", () => {
+    gotoFixture("7zip-min");
+    const code = compileContracts();
+    const resultPosition = code.indexOf("ResultContract");
+    const listPosition = code.indexOf("listContract");
+    expect(resultPosition).toBeLessThan(listPosition);
+  });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();
