@@ -83,16 +83,45 @@ describe("Our compiler", () => {
     gotoFixture("missing-types");
     expect(() => compileContracts()).toThrow("ENOENT");
   });
-  test("Succeeds on a super basic package", () => {
-    gotoFixture("constants");
-    compile();
+  test("Succeeds with abbrev", () => {
+    gotoFixture("abbrev-js");
+    const code = compileContracts();
+    expect(code).toMatch(`dotdotdot: true`);
+    expect(code).toMatch(
+      `module.exports = abbrevContract.wrap(originalModule)`
+    );
   });
   test("Works on the checksum package", () => {
     gotoFixture("checksum");
-    compile();
+    compileContracts();
   });
   test("Works on the archy package", () => {
     gotoFixture("archy");
-    compile();
+    compileContracts();
+  });
+  test("Succeeds with some constants", () => {
+    gotoFixture("constants");
+    const code = compileContracts();
+    expect(code).toMatch(`const CT = require('@jscontract/contract')`);
+    expect(code).toMatch(
+      `const originalModule = require('./__ORIGINAL_UNTYPED_MODULE__.js')`
+    );
+    expect(code).toMatch(`const numContract = CT.numberCT`);
+    expect(code).toMatch(`const strContract = CT.stringCT`);
+    expect(code).toMatch(`const nilContract = CT.nullCT`);
+    expect(code).toMatch(`const boolContract = CT.booleanCT`);
+    expect(code).toMatch(`module.exports = {}`);
+    expect(code).toMatch(
+      `module.exports.num = numContract.wrap(originalModule.num)`
+    );
+    expect(code).toMatch(
+      `module.exports.str = strContract.wrap(originalModule.str)`
+    );
+    expect(code).toMatch(
+      `module.exports.nil = nilContract.wrap(originalModule.nil)`
+    );
+    expect(code).toMatch(
+      `module.exports.bool = boolContract.wrap(originalModule.bool)`
+    );
   });
 });

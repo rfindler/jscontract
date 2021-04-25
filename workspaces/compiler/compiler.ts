@@ -3,6 +3,7 @@ import path from "path";
 import { parse } from "@babel/parser";
 import * as t from "@babel/types";
 import generate from "@babel/generator";
+import template from "@babel/template";
 
 // Util {{{
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,16 +56,31 @@ const getAst = (code: string): t.File =>
 // Map the AST into Contract Tokens {{{
 type ContractHint = "flat" | "function" | "object";
 
+interface FunctionParameter {
+  type: t.TSType;
+  isRestParameter: boolean;
+}
+
 interface FunctionSyntax {
-  domain: t.TSType[];
+  domain: FunctionParameter[];
   range: t.TSType;
 }
 
-type InterfaceType = Record<string, t.TSType>;
+interface ObjectChunk {
+  type: t.TSType;
+  isIndex: boolean;
+}
+
+type ObjectRecord = Record<string, ObjectChunk>;
+
+interface ObjectSyntax {
+  types: ObjectRecord;
+  recurseOn: string | null;
+}
 
 interface TypescriptType {
   hint: ContractHint;
-  syntax: FunctionSyntax | InterfaceType | t.TSType;
+  syntax: FunctionSyntax | ObjectSyntax | t.TSType;
 }
 
 interface ContractToken {
@@ -89,8 +105,13 @@ const getParameterType = (el: ParameterChild): t.TSType =>
     ? el.typeAnnotation.typeAnnotation
     : t.tsAnyKeyword();
 
-const getParameterTypes = (els: ParameterChild[]): t.TSType[] =>
-  els.map((el) => getParameterType(el));
+const getParameterTypes = (els: ParameterChild[]): FunctionParameter[] =>
+  els.map((el) => {
+    return {
+      type: getParameterType(el),
+      isRestParameter: el.type === "RestElement",
+    };
+  });
 
 type InterfaceChild =
   | t.TSPropertySignature
@@ -99,13 +120,13 @@ type InterfaceChild =
   | t.TSConstructSignatureDeclaration
   | t.TSMethodSignature;
 
-const getInterfaceTypes = (els: InterfaceChild[]): Record<string, t.TSType> => {
-  return els.reduce((acc: Record<string, t.TSType>, el) => {
+const getObjectTypes = (els: InterfaceChild[]): ObjectRecord => {
+  return els.reduce((acc: ObjectRecord, el) => {
     if (el.type === "TSPropertySignature" && el.key.type === "Identifier") {
       const name = el.key.name;
       const type = el?.typeAnnotation?.typeAnnotation;
       if (!type) return acc;
-      return { ...acc, [name]: type };
+      return { ...acc, [name]: { type, isIndex: false } };
     }
     return acc;
   }, {});
@@ -132,11 +153,11 @@ const tokenMap: Record<string, TokenHandler> = {
   TSInterfaceDeclaration(el: t.TSInterfaceDeclaration) {
     const name = el.id.name;
     const { body } = el.body;
-    const syntax = getInterfaceTypes(body);
+    const types = getObjectTypes(body);
     return [
       {
         name,
-        type: { hint: "object", syntax },
+        type: { hint: "object", syntax: { types, recurseOn: name } },
         isSubExport: false,
         isMainExport: false,
       },
@@ -197,23 +218,13 @@ const noToken = (_: t.Node) => [];
 const reduceTokens = (l: t.Statement[]) =>
   l.reduce((acc: ContractToken[], el) => acc.concat(getContractTokens(el)), []);
 
-/**
- * If you're adding another handler to the map above, I suggest
- * inserting this statement into the middle of the function below:
- *
- * if (!tokenMap[el.type]) console.log(el.type);
- *
- * This will print out whichever parts of TypeScript's syntax we're
- * not handling yet.
- */
 const getContractTokens = (el: t.Node): ContractToken[] => {
   const fn = tokenMap[el.type] || noToken;
   return fn(el);
 };
-
 // }}}
 
-// Construct a Graph from the Tokens {{{
+// Construct an Environment from the Tokens {{{
 interface ContractNode {
   name: string;
   dependencies: string[];
@@ -245,12 +256,12 @@ const getTypeDependencies = (type: TypescriptType): string[] => {
   if (type.hint === "function") {
     const syntax = type.syntax as FunctionSyntax;
     return [
-      ...syntax.domain.flatMap((stx) => getDeps(stx)),
+      ...syntax.domain.flatMap((stx) => getDeps(stx.type)),
       ...getDeps(syntax.range),
     ];
   }
-  const syntax = type.syntax as InterfaceType;
-  return Object.values(syntax).flatMap((type) => getDeps(type));
+  const syntax = type.syntax as ObjectSyntax;
+  return Object.values(syntax.types).flatMap((type) => getDeps(type.type));
 };
 
 const getDependencies = (types: TypescriptType[]): string[] =>
@@ -276,16 +287,19 @@ const fixGraphDependencies = (graph: ContractGraph): ContractGraph => {
   const nameList = Object.keys(graph);
   const nameSet = new Set(nameList);
   return Object.entries(graph).reduce((acc, [name, node]) => {
+    const dependencies = node.dependencies.map((dep) => {
+      if (nameSet.has(dep)) return dep;
+      const realName = nameList.find((name) => name.endsWith(dep));
+      if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
+      return realName;
+    });
+    const isSubExport = node.isSubExport;
     return {
       ...acc,
       [name]: {
         ...node,
-        dependencies: node.dependencies.map((dep) => {
-          if (nameSet.has(dep)) return dep;
-          const realName = nameList.find((name) => name.endsWith(dep));
-          if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
-          return realName;
-        }),
+        dependencies,
+        isSubExport,
       },
     };
   }, {});
@@ -301,11 +315,179 @@ const getContractGraph = (tokens: ContractToken[]): ContractGraph => {
 };
 // }}}
 
-// Transform the Graph into an AST {{{
+// Transform the Environment into an AST {{{
+
+// Boundary Management - Exports, Requires {{{
+const getFinalName = (name: string): string =>
+  name.includes(".") ? name.replace(".", "___") : name;
+
+const getContractName = (name: string): string =>
+  `${getFinalName(name)}Contract`;
+
+const requireContractLibrary = (): t.Statement[] => [
+  template.statement(`const CT = require('@jscontract/contract')`)({
+    CT: t.identifier("CT"),
+  }),
+  template.statement(
+    `const originalModule = require('./__ORIGINAL_UNTYPED_MODULE__.js')`
+  )(),
+];
+
+const getModuleExports = (nodes: ContractNode[]): t.Statement => {
+  const mainExport = nodes.find((node) => node.isMainExport);
+  return mainExport
+    ? template.statement(`module.exports = %%contract%%.wrap(originalModule)`)({
+        contract: getContractName(mainExport.name),
+      })
+    : template.statement(`module.exports = {}`)({});
+};
+
+const getSubExport = (node: ContractNode): t.Statement =>
+  template.statement(
+    `module.exports.%%name%% = %%contract%%.wrap(originalModule.%%name%%)`
+  )({
+    name: node.name,
+    contract: getContractName(node.name),
+  });
+
+const exportContracts = (nodes: ContractNode[]): t.Statement[] => {
+  const moduleExports = getModuleExports(nodes);
+  const subExports = nodes.filter((node) => node.isSubExport).map(getSubExport);
+  return [moduleExports, ...subExports];
+};
+// }}}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const makeAnyCt = (_?: t.TSType) =>
+  template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
+
+const makeCtExpression = (name: string): t.Expression =>
+  template.expression(name)({ CT: t.identifier("CT") });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FlatContractMap = Record<string, (type?: any) => t.Expression>;
+
+const isLiteralObject = (literal: t.TSTypeLiteral): boolean => {
+  return literal.members.every(
+    (member) =>
+      member.type === "TSIndexSignature" ||
+      member.type === "TSPropertySignature"
+  );
+};
+
+const addIndexSignature = (
+  acc: ObjectRecord,
+  el: t.TSIndexSignature
+): ObjectRecord => {
+  const { name } = el.parameters[0];
+  const type = el.typeAnnotation?.typeAnnotation || t.tsAnyKeyword();
+  return { ...acc, [name]: { type, isIndex: true } };
+};
+
+const makeObjectLiteral = (lit: t.TSTypeLiteral): t.Expression | null => {
+  if (!isLiteralObject(lit)) return null;
+  const object: ObjectRecord = lit.members.reduce((acc, el) => {
+    if (el.type === "TSIndexSignature") return addIndexSignature(acc, el);
+    return acc;
+  }, {});
+  return mapObject({ types: object, recurseOn: null });
+};
+
+const flatContractMap: FlatContractMap = {
+  TSNumberKeyword() {
+    return makeCtExpression("CT.numberCT");
+  },
+  TSBooleanKeyword() {
+    return makeCtExpression("CT.booleanCT");
+  },
+  TSStringKeyword() {
+    return makeCtExpression("CT.stringCT");
+  },
+  TSNullKeyword() {
+    return makeCtExpression("CT.nullCT");
+  },
+  TSTypeLiteral(lit: t.TSTypeLiteral) {
+    return makeObjectLiteral(lit) || makeAnyCt();
+  },
+  TSArrayType(arr: t.TSArrayType) {
+    return template.expression(`CT.CTArray(%%contract%%)`)({
+      contract: mapFlat(arr.elementType),
+    });
+  },
+};
+
+const mapFlat = (type: t.TSType): t.Expression => {
+  const fn = flatContractMap[type.type] || makeAnyCt;
+  // if (!flatContractMap[type.type]) {
+  //   console.log(type.type);
+  // }
+  return fn(type);
+};
+
+const mapDomain = (
+  domain: FunctionParameter[]
+): t.Expression[] | t.Expression => {
+  if (domain.length <= 0) return template.expression("[]")();
+  return domain.map((el) =>
+    el.isRestParameter
+      ? template.expression(`{ contract: %%contract%%, dotdotdot: true }`)({
+          contract: mapFlat(el.type),
+        })
+      : mapFlat(el.type)
+  );
+};
+
+const mapFunction = (stx: FunctionSyntax) => {
+  return template.expression(`CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`)(
+    {
+      domain: mapDomain(stx.domain),
+      range: mapFlat(stx.range),
+    }
+  );
+};
+
+const mapObject = (stx: ObjectSyntax) => {
+  return makeAnyCt();
+};
+
+const mapType = (type: TypescriptType): t.Expression => {
+  if (type.hint === "flat") return mapFlat(type.syntax as t.TSType);
+  if (type.hint === "function")
+    return mapFunction(type.syntax as FunctionSyntax);
+  return mapObject(type.syntax as ObjectSyntax);
+};
+
+const mapAndContract = (types: TypescriptType[]): t.Expression =>
+  template.expression(`CT.CTAnd(%%contracts%%)`)({
+    contracts: types.map(mapType),
+  });
+
+const buildContract = (node: ContractNode): t.Expression => {
+  if (node.types.length === 0) return makeAnyCt();
+  if (node.types.length === 1) return mapType(node.types[0]);
+  return mapAndContract(node.types);
+};
+
+const reduceNode = (node: ContractNode): t.Statement =>
+  template.statement(`const %%name%% = %%contract%%`)({
+    name: getContractName(node.name),
+    contract: buildContract(node),
+  });
+
+const compileTypes = (nodes: ContractNode[]): t.Statement[] => {
+  return nodes.map(reduceNode);
+};
+
 const getContractAst = (graph: ContractGraph): t.File => {
-  const statements = orderGraphNodes(graph);
-  console.log(statements);
-  return parse("");
+  const ast = parse("");
+  const statements = orderGraphNodes(graph) as ContractNode[];
+  const contractStatements = compileTypes(statements);
+  ast.program.body = [
+    ...requireContractLibrary(),
+    ...contractStatements,
+    ...exportContracts(statements),
+  ];
+  return ast;
 };
 // }}}
 
