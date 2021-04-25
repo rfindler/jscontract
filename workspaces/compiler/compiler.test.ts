@@ -99,6 +99,11 @@ describe("Our compiler", () => {
     gotoFixture("archy");
     compileContracts();
   });
+  // test("Works on the argv package", () => {
+  //   gotoFixture("argv");
+  //   const code = compileContracts();
+  //   console.log(code);
+  // });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();
