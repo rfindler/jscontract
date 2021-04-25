@@ -93,17 +93,22 @@ describe("Our compiler", () => {
   });
   test("Works on the checksum package", () => {
     gotoFixture("checksum");
-    compileContracts();
+    const code = compile();
+    expect(code).toMatch(
+      `{ algorithm: { contract: CT.stringCT, optional: true }`
+    );
   });
   test("Works on the archy package", () => {
     gotoFixture("archy");
-    compileContracts();
+    const code = compile();
+    expect(code).toMatch(`CT.CTRec(() => CT.CTObject`);
+    expect(code).toMatch(`[DataContract`);
   });
-  // test("Works on the argv package", () => {
-  //   gotoFixture("argv");
-  //   const code = compileContracts();
-  //   console.log(code);
-  // });
+  test("Works on the argv package", () => {
+    gotoFixture("argv");
+    // const code = compileContracts();
+    // console.log(code);
+  });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();

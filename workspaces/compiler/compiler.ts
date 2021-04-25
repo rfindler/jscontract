@@ -98,9 +98,6 @@ interface ContractToken {
   isMainExport: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TokenHandler = (el: any) => ContractToken[];
-
 type ParameterChild =
   | t.Identifier
   | t.RestElement
@@ -177,9 +174,26 @@ const checkRecursive = (name: string, types: ObjectRecord): boolean => {
   return Object.entries(types).some((entry) => isRecursiveChunk(name, entry));
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TokenHandler = (el: any) => ContractToken[];
+
 const tokenMap: Record<string, TokenHandler> = {
   File(el: t.File): ContractToken[] {
     return reduceTokens(el.program.body);
+  },
+  TSTypeAliasDeclaration(el: t.TSTypeAliasDeclaration) {
+    const { name } = el.id;
+    const typeAnnotation = el.typeAnnotation;
+    if (!t.isTSType(typeAnnotation)) return [];
+    const type = typeAnnotation as t.TSType;
+    return [
+      {
+        name,
+        type: { hint: "flat", syntax: type },
+        isSubExport: false,
+        isMainExport: false,
+      },
+    ];
   },
   TSExportAssignment(el: t.TSExportAssignment) {
     if (el.expression.type !== "Identifier") return [];
@@ -330,12 +344,14 @@ const fixDependencyNames = (graph: ContractGraph): ContractGraph => {
   const nameList = Object.keys(graph);
   const nameSet = new Set(nameList);
   return Object.entries(graph).reduce((acc, [name, node]) => {
-    const dependencies = node.dependencies.map((dep) => {
-      if (nameSet.has(dep)) return dep;
-      const realName = nameList.find((name) => name.endsWith(dep));
-      if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
-      return realName;
-    });
+    const dependencies = node.dependencies
+      .map((dep) => {
+        if (nameSet.has(dep)) return dep;
+        const realName = nameList.find((name) => name.endsWith(dep));
+        if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
+        return realName;
+      })
+      .filter((dep) => dep !== node.name);
     return {
       ...acc,
       [name]: {
