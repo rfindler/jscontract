@@ -467,16 +467,20 @@ const getFinalName = (name: string): string =>
     ? name.substring(name.lastIndexOf(".") + 1, name.length)
     : name;
 
-const getContractName = (name: string): string =>
-  `${getFinalName(name)}Contract`;
+const getContractName = (name: string): string => {
+  if (name === "Error") return "CT.errorCT";
+  return `${getFinalName(name)}Contract`;
+};
+
+export const ORIGINAL_MODULE_FILE = "./__ORIGINAL_UNTYPED_MODULE__.js";
 
 const requireContractLibrary = (): t.Statement[] => [
   template.statement(`const CT = require('@jscontract/contract')`)({
     CT: t.identifier("CT"),
   }),
-  template.statement(
-    `const originalModule = require('./__ORIGINAL_UNTYPED_MODULE__.js')`
-  )(),
+  template.statement(`const originalModule = require(%%replacementName%%)`)({
+    replacementName: t.stringLiteral(ORIGINAL_MODULE_FILE),
+  }),
 ];
 
 const getModuleExports = (nodes: ContractNode[]): t.Statement => {
@@ -552,10 +556,9 @@ const flatContractMap: FlatContractMap = {
     });
   },
   TSTypeLiteral(type: t.TSTypeLiteral) {
-    return (
-      mapObject({ isRecursive: false, types: makeObjectLiteral(type) }) ||
-      makeAnyCt()
-    );
+    if (isLiteralObject(type))
+      return mapObject({ isRecursive: false, types: makeObjectLiteral(type) });
+    return makeAnyCt();
   },
 };
 

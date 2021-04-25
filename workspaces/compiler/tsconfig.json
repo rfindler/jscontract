@@ -9,6 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
+    "declaration": true,
     "noImplicitAny": true
   }
 }

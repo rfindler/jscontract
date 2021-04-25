@@ -97,6 +97,7 @@ describe("Our compiler", () => {
     expect(code).toMatch(
       `{ algorithm: { contract: CT.stringCT, optional: true, }`
     );
+    expect(code).not.toMatch("ErrorContract");
   });
   test("Works on the archy package", () => {
     gotoFixture("archy");

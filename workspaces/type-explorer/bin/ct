@@ -5,7 +5,7 @@ const fs = require("fs-extra");
 const childProcess = require("child_process");
 const {
   ORIGINAL_MODULE_FILE,
-  compileContracts,
+  default: compileContracts,
 } = require("@jscontract/compiler");
 
 const DEFINITELY_TYPED_PATH = path.resolve(
@@ -38,7 +38,7 @@ const compileContract = (relativeName, originalPackageEntry) => {
   sh(
     `cp ${DEFINITELY_TYPED_PATH}/types/${relativeName}/index.d.ts ${SANDBOX_PATH}/${relativeName}`
   );
-  const { code } = compileContracts();
+  const code = compileContracts();
   const entryFolder = path.dirname(originalPackageEntry);
   const newPackageEntry = path.join(entryFolder, ORIGINAL_MODULE_FILE);
   sh(`mv ${originalPackageEntry} ${newPackageEntry}`);
@@ -98,6 +98,7 @@ const testPackage = (relativeName) => {
 const main = () => {
   cloneDefinitelyTyped();
   const packageName = process.argv.slice(2)[0];
+  if (!packageName) return;
   testPackage(packageName);
 };
 
