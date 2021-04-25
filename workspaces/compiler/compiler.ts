@@ -4,8 +4,22 @@ import { parse } from "@babel/parser";
 import * as t from "@babel/types";
 import generate from "@babel/generator";
 import template from "@babel/template";
+import prettier from "prettier";
 
 // Util {{{
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const readTypesFromFile = (): string =>
+  fs.readFileSync(path.join(process.cwd(), "index.d.ts"), "utf-8");
+
+const getAst = (code: string): t.File =>
+  parse(code, {
+    plugins: ["typescript"],
+    sourceType: "module",
+  });
+
+const getCode = (ast: t.File): string =>
+  prettier.format(generate(ast).code, { parser: "babel" });
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fail = (el: any) => {
   console.error(el);
@@ -85,17 +99,6 @@ const makeObjectLiteral = (lit: t.TSTypeLiteral): ObjectRecord => {
   }, {});
   return object;
 };
-// }}}
-
-// Parse the Type Declarations into an AST {{{
-const readTypesFromFile = (): string =>
-  fs.readFileSync(path.join(process.cwd(), "index.d.ts"), "utf-8");
-
-const getAst = (code: string): t.File =>
-  parse(code, {
-    plugins: ["typescript"],
-    sourceType: "module",
-  });
 // }}}
 
 // Map the AST into Contract Tokens {{{
@@ -698,7 +701,7 @@ const compile = (code: string): string => {
   const tokens = getContractTokens(declarationAst);
   const graph = getContractGraph(tokens);
   const contractAst = getContractAst(graph);
-  return generate(contractAst).code;
+  return getCode(contractAst);
 };
 
 const compileContracts = (): string => compile(readTypesFromFile());

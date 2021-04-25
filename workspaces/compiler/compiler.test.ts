@@ -95,26 +95,27 @@ describe("Our compiler", () => {
     gotoFixture("checksum");
     const code = compile();
     expect(code).toMatch(
-      `{ algorithm: { contract: CT.stringCT, optional: true }`
+      `{ algorithm: { contract: CT.stringCT, optional: true, }`
     );
   });
   test("Works on the archy package", () => {
     gotoFixture("archy");
     const code = compile();
     expect(code).toMatch(`CT.CTRec(() => CT.CTObject`);
-    expect(code).toMatch(`[DataContract`);
+    expect(code).toMatch(`[ DataContract`);
   });
   test("Works on the argv package", () => {
     gotoFixture("argv");
     const code = compileContracts();
-    console.log(code);
+    expect(code).toMatch(`CT.CTRec`);
+    expect(code).toMatch(`contract: typeFunctionContract`);
   });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();
-    expect(code).toMatch(`const CT = require('@jscontract/contract')`);
+    expect(code).toMatch(`const CT = require("@jscontract/contract")`);
     expect(code).toMatch(
-      `const originalModule = require('./__ORIGINAL_UNTYPED_MODULE__.js')`
+      `const originalModule = require("./__ORIGINAL_UNTYPED_MODULE__.js")`
     );
     expect(code).toMatch(`const numContract = CT.numberCT`);
     expect(code).toMatch(`const strContract = CT.stringCT`);
