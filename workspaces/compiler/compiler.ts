@@ -46,6 +46,45 @@ const getTypeName = (curType: t.TSEntityName | t.Identifier): string => {
   const { left, right } = curType;
   return `${getTypeName(left)}.${right.name}`;
 };
+
+const isLiteralObject = (literal: t.TSTypeLiteral): boolean => {
+  return literal.members.every(
+    (member) =>
+      member.type === "TSIndexSignature" ||
+      member.type === "TSPropertySignature"
+  );
+};
+
+const addIndexSignature = (
+  acc: ObjectRecord,
+  el: t.TSIndexSignature
+): ObjectRecord => {
+  const { name } = el.parameters[0];
+  const type = el.typeAnnotation?.typeAnnotation || t.tsAnyKeyword();
+  return { ...acc, [name]: { type, isIndex: true, isOptional: false } };
+};
+
+const addPropertySignature = (
+  acc: ObjectRecord,
+  el: t.TSPropertySignature
+): ObjectRecord => {
+  if (el.key.type !== "Identifier") return acc;
+  const type = el?.typeAnnotation?.typeAnnotation;
+  if (!type) return acc;
+  return {
+    ...acc,
+    [el.key.name]: { type, isOptional: Boolean(el.optional), isIndex: false },
+  };
+};
+
+const makeObjectLiteral = (lit: t.TSTypeLiteral): ObjectRecord => {
+  const object: ObjectRecord = lit.members.reduce((acc, el) => {
+    if (el.type === "TSIndexSignature") return addIndexSignature(acc, el);
+    if (el.type === "TSPropertySignature") return addPropertySignature(acc, el);
+    return acc;
+  }, {});
+  return object;
+};
 // }}}
 
 // Parse the Type Declarations into an AST {{{
@@ -60,8 +99,6 @@ const getAst = (code: string): t.File =>
 // }}}
 
 // Map the AST into Contract Tokens {{{
-type ContractHint = "flat" | "function" | "object";
-
 interface FunctionParameter {
   type: t.TSType;
   isRestParameter: boolean;
@@ -86,10 +123,25 @@ interface ObjectSyntax {
   isRecursive: boolean;
 }
 
-interface TypescriptType {
-  hint: ContractHint;
-  syntax: FunctionSyntax | ObjectSyntax | t.TSType;
+interface FlatTypescriptType {
+  hint: "flat";
+  syntax: t.TSType;
 }
+
+interface ObjectTypescriptType {
+  hint: "object";
+  syntax: ObjectSyntax;
+}
+
+interface FunctionTypescriptType {
+  hint: "function";
+  syntax: FunctionSyntax;
+}
+
+type TypescriptType =
+  | FlatTypescriptType
+  | ObjectTypescriptType
+  | FunctionTypescriptType;
 
 interface ContractToken {
   name: string;
@@ -149,6 +201,11 @@ const typeContainsName = (name: string, chunk: ObjectChunk) => {
         const typeName = getTypeName(type.typeName);
         return typeName === name;
       },
+      TSFunctionType(type: t.TSFunctionType) {
+        const { typeAnnotation } = type;
+        if (typeAnnotation && loop(typeAnnotation.typeAnnotation)) return true;
+        return false;
+      },
       TSArrayType(type: t.TSArrayType) {
         return loop(type.elementType);
       },
@@ -174,6 +231,16 @@ const checkRecursive = (name: string, types: ObjectRecord): boolean => {
   return Object.entries(types).some((entry) => isRecursiveChunk(name, entry));
 };
 
+const getTypeToken = (name: string, type: t.TSType): TypescriptType => {
+  if (type.type !== "TSTypeLiteral") return { hint: "flat", syntax: type };
+  if (!isLiteralObject(type)) return { hint: "flat", syntax: type };
+  const types = makeObjectLiteral(type);
+  return {
+    hint: "object",
+    syntax: { types, isRecursive: checkRecursive(name, types) },
+  };
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TokenHandler = (el: any) => ContractToken[];
 
@@ -189,7 +256,7 @@ const tokenMap: Record<string, TokenHandler> = {
     return [
       {
         name,
-        type: { hint: "flat", syntax: type },
+        type: getTypeToken(name, type),
         isSubExport: false,
         isMainExport: false,
       },
@@ -266,7 +333,7 @@ const tokenMap: Record<string, TokenHandler> = {
     return [
       {
         name,
-        type: { syntax, hint: "flat" },
+        type: getTypeToken(name, syntax),
         isSubExport: false,
         isMainExport: false,
       },
@@ -324,18 +391,35 @@ const getTypeDependencies = (type: TypescriptType): string[] => {
 const getDependencies = (types: TypescriptType[]): string[] =>
   Array.from(new Set(types.flatMap(getTypeDependencies)));
 
+const getNodeTypes = (tokens: ContractToken[]): TypescriptType[] => {
+  const baseTypes = tokens
+    .filter((token) => token.type !== null)
+    .map((token) => token.type) as TypescriptType[];
+  return baseTypes;
+};
+
+const filterRedundantTypes = (
+  name: string,
+  types: TypescriptType[]
+): TypescriptType[] => {
+  return types.filter((type) => {
+    if (type.hint !== "flat") return true;
+    if (type.syntax.type !== "TSTypeReference") return true;
+    const contractName = getContractName(getTypeName(type.syntax.typeName));
+    return contractName !== getContractName(name);
+  });
+};
+
 const buildNode = (nodeName: string, tokens: ContractToken[]): ContractNode => {
   const nodeTokens = tokens.filter((token) => token.name === nodeName);
   const isSubExport = nodeTokens.some((token) => token.isSubExport);
   const isMainExport = nodeTokens.some((token) => token.isMainExport);
-  const types = nodeTokens
-    .filter((token) => token.type !== null)
-    .map((token) => token.type) as TypescriptType[];
+  const types = getNodeTypes(nodeTokens);
   return {
     name: nodeName,
     isSubExport,
     isMainExport,
-    types,
+    types: filterRedundantTypes(nodeName, types),
     dependencies: getDependencies(types),
   };
 };
@@ -424,32 +508,6 @@ const makeAnyCt = (_?: t.TSType) =>
 const makeCtExpression = (name: string): t.Expression =>
   template.expression(name)({ CT: t.identifier("CT") });
 
-const isLiteralObject = (literal: t.TSTypeLiteral): boolean => {
-  return literal.members.every(
-    (member) =>
-      member.type === "TSIndexSignature" ||
-      member.type === "TSPropertySignature"
-  );
-};
-
-const addIndexSignature = (
-  acc: ObjectRecord,
-  el: t.TSIndexSignature
-): ObjectRecord => {
-  const { name } = el.parameters[0];
-  const type = el.typeAnnotation?.typeAnnotation || t.tsAnyKeyword();
-  return { ...acc, [name]: { type, isIndex: true, isOptional: false } };
-};
-
-const makeObjectLiteral = (lit: t.TSTypeLiteral): t.Expression | null => {
-  if (!isLiteralObject(lit)) return null;
-  const object: ObjectRecord = lit.members.reduce((acc, el) => {
-    if (el.type === "TSIndexSignature") return addIndexSignature(acc, el);
-    return acc;
-  }, {});
-  return mapObject({ types: object, isRecursive: false });
-};
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FlatContractMap = Record<string, (type?: any) => t.Expression>;
 
@@ -465,9 +523,6 @@ const flatContractMap: FlatContractMap = {
   },
   TSNullKeyword() {
     return makeCtExpression("CT.nullCT");
-  },
-  TSTypeLiteral(lit: t.TSTypeLiteral) {
-    return makeObjectLiteral(lit) || makeAnyCt();
   },
   TSArrayType(arr: t.TSArrayType) {
     return template.expression(`CT.CTArray(%%contract%%)`)({
@@ -486,6 +541,18 @@ const flatContractMap: FlatContractMap = {
     return template.expression(`CT.CTOr(%%types%%)`)({
       types: union.types.map(mapFlat),
     });
+  },
+  TSFunctionType(type: t.TSFunctionType) {
+    return mapFunction({
+      domain: getParameterTypes(type.parameters),
+      range: type.typeAnnotation?.typeAnnotation || t.tsAnyKeyword(),
+    });
+  },
+  TSTypeLiteral(type: t.TSTypeLiteral) {
+    return (
+      mapObject({ isRecursive: false, types: makeObjectLiteral(type) }) ||
+      makeAnyCt()
+    );
   },
 };
 
@@ -587,10 +654,9 @@ const mapObject = (stx: ObjectSyntax) => {
 };
 
 const mapType = (type: TypescriptType): t.Expression => {
-  if (type.hint === "flat") return mapFlat(type.syntax as t.TSType);
-  if (type.hint === "function")
-    return mapFunction(type.syntax as FunctionSyntax);
-  return mapObject(type.syntax as ObjectSyntax);
+  if (type.hint === "flat") return mapFlat(type.syntax);
+  if (type.hint === "function") return mapFunction(type.syntax);
+  return mapObject(type.syntax);
 };
 
 const mapAndContract = (types: TypescriptType[]): t.Expression =>

@@ -106,8 +106,8 @@ describe("Our compiler", () => {
   });
   test("Works on the argv package", () => {
     gotoFixture("argv");
-    // const code = compileContracts();
-    // console.log(code);
+    const code = compileContracts();
+    console.log(code);
   });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
