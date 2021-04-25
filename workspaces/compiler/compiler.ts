@@ -283,6 +283,17 @@ const buildNode = (nodeName: string, tokens: ContractToken[]): ContractNode => {
   };
 };
 
+/**
+ * Because we get the dependencies for every type by walking through the AST
+ * of its signature, in-scope dependencies within a namespace won't be
+ * prefixed - e.g., `myNamespace.AwesomeType` will only show up as `AwesomeType`
+ * in the dependency list. Those outliers will break the code that we use
+ * to order the nodes in our graph in such a way that compiling each node into
+ * a contract will produce valid JavaScript.
+ *
+ * To solve this problem, we scan for those outliers and add the prefix back in
+ * right here.
+ */
 const fixGraphDependencies = (graph: ContractGraph): ContractGraph => {
   const nameList = Object.keys(graph);
   const nameSet = new Set(nameList);
@@ -293,13 +304,11 @@ const fixGraphDependencies = (graph: ContractGraph): ContractGraph => {
       if (!realName) throw new Error(`UNIDENTIFIED TYPE REFERENCE ${dep}`);
       return realName;
     });
-    const isSubExport = node.isSubExport;
     return {
       ...acc,
       [name]: {
         ...node,
         dependencies,
-        isSubExport,
       },
     };
   }, {});
@@ -357,131 +366,141 @@ const exportContracts = (nodes: ContractNode[]): t.Statement[] => {
 };
 // }}}
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const makeAnyCt = (_?: t.TSType) =>
-  template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
+// Map Node to Contract {{{
+const makeReduceNode = (env: ContractGraph) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const makeAnyCt = (_?: t.TSType) =>
+    template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
 
-const makeCtExpression = (name: string): t.Expression =>
-  template.expression(name)({ CT: t.identifier("CT") });
+  const makeCtExpression = (name: string): t.Expression =>
+    template.expression(name)({ CT: t.identifier("CT") });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FlatContractMap = Record<string, (type?: any) => t.Expression>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type FlatContractMap = Record<string, (type?: any) => t.Expression>;
 
-const isLiteralObject = (literal: t.TSTypeLiteral): boolean => {
-  return literal.members.every(
-    (member) =>
-      member.type === "TSIndexSignature" ||
-      member.type === "TSPropertySignature"
-  );
-};
+  const isLiteralObject = (literal: t.TSTypeLiteral): boolean => {
+    return literal.members.every(
+      (member) =>
+        member.type === "TSIndexSignature" ||
+        member.type === "TSPropertySignature"
+    );
+  };
 
-const addIndexSignature = (
-  acc: ObjectRecord,
-  el: t.TSIndexSignature
-): ObjectRecord => {
-  const { name } = el.parameters[0];
-  const type = el.typeAnnotation?.typeAnnotation || t.tsAnyKeyword();
-  return { ...acc, [name]: { type, isIndex: true } };
-};
+  const addIndexSignature = (
+    acc: ObjectRecord,
+    el: t.TSIndexSignature
+  ): ObjectRecord => {
+    const { name } = el.parameters[0];
+    const type = el.typeAnnotation?.typeAnnotation || t.tsAnyKeyword();
+    return { ...acc, [name]: { type, isIndex: true } };
+  };
 
-const makeObjectLiteral = (lit: t.TSTypeLiteral): t.Expression | null => {
-  if (!isLiteralObject(lit)) return null;
-  const object: ObjectRecord = lit.members.reduce((acc, el) => {
-    if (el.type === "TSIndexSignature") return addIndexSignature(acc, el);
-    return acc;
-  }, {});
-  return mapObject({ types: object, recurseOn: null });
-};
+  const makeObjectLiteral = (lit: t.TSTypeLiteral): t.Expression | null => {
+    if (!isLiteralObject(lit)) return null;
+    const object: ObjectRecord = lit.members.reduce((acc, el) => {
+      if (el.type === "TSIndexSignature") return addIndexSignature(acc, el);
+      return acc;
+    }, {});
+    return mapObject({ types: object, recurseOn: null });
+  };
 
-const flatContractMap: FlatContractMap = {
-  TSNumberKeyword() {
-    return makeCtExpression("CT.numberCT");
-  },
-  TSBooleanKeyword() {
-    return makeCtExpression("CT.booleanCT");
-  },
-  TSStringKeyword() {
-    return makeCtExpression("CT.stringCT");
-  },
-  TSNullKeyword() {
-    return makeCtExpression("CT.nullCT");
-  },
-  TSTypeLiteral(lit: t.TSTypeLiteral) {
-    return makeObjectLiteral(lit) || makeAnyCt();
-  },
-  TSArrayType(arr: t.TSArrayType) {
-    return template.expression(`CT.CTArray(%%contract%%)`)({
-      contract: mapFlat(arr.elementType),
-    });
-  },
-};
+  const flatContractMap: FlatContractMap = {
+    TSNumberKeyword() {
+      return makeCtExpression("CT.numberCT");
+    },
+    TSBooleanKeyword() {
+      return makeCtExpression("CT.booleanCT");
+    },
+    TSStringKeyword() {
+      return makeCtExpression("CT.stringCT");
+    },
+    TSNullKeyword() {
+      return makeCtExpression("CT.nullCT");
+    },
+    TSTypeLiteral(lit: t.TSTypeLiteral) {
+      return makeObjectLiteral(lit) || makeAnyCt();
+    },
+    TSArrayType(arr: t.TSArrayType) {
+      return template.expression(`CT.CTArray(%%contract%%)`)({
+        contract: mapFlat(arr.elementType),
+      });
+    },
+  };
 
-const mapFlat = (type: t.TSType): t.Expression => {
-  const fn = flatContractMap[type.type] || makeAnyCt;
-  // if (!flatContractMap[type.type]) {
-  //   console.log(type.type);
-  // }
-  return fn(type);
-};
+  const mapFlat = (type: t.TSType): t.Expression => {
+    const fn = flatContractMap[type.type] || makeAnyCt;
+    // if (!flatContractMap[type.type]) {
+    //   console.log(type.type);
+    // }
+    return fn(type);
+  };
 
-const mapDomain = (
-  domain: FunctionParameter[]
-): t.Expression[] | t.Expression => {
-  if (domain.length <= 0) return template.expression("[]")();
-  return domain.map((el) =>
-    el.isRestParameter
-      ? template.expression(`{ contract: %%contract%%, dotdotdot: true }`)({
-          contract: mapFlat(el.type),
-        })
-      : mapFlat(el.type)
-  );
-};
+  const mapDomain = (
+    domain: FunctionParameter[]
+  ): t.Expression[] | t.Expression => {
+    if (domain.length <= 0) return template.expression("[]")();
+    return domain.map((el) =>
+      el.isRestParameter
+        ? template.expression(`{ contract: %%contract%%, dotdotdot: true }`)({
+            contract: mapFlat(el.type),
+          })
+        : mapFlat(el.type)
+    );
+  };
 
-const mapFunction = (stx: FunctionSyntax) => {
-  return template.expression(`CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`)(
-    {
+  const mapFunction = (stx: FunctionSyntax) => {
+    return template.expression(
+      `CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`
+    )({
       domain: mapDomain(stx.domain),
       range: mapFlat(stx.range),
-    }
-  );
+    });
+  };
+
+  const mapObject = (stx: ObjectSyntax) => {
+    return makeAnyCt();
+  };
+
+  const mapType = (type: TypescriptType): t.Expression => {
+    if (type.hint === "flat") return mapFlat(type.syntax as t.TSType);
+    if (type.hint === "function")
+      return mapFunction(type.syntax as FunctionSyntax);
+    return mapObject(type.syntax as ObjectSyntax);
+  };
+
+  const mapAndContract = (types: TypescriptType[]): t.Expression =>
+    template.expression(`CT.CTAnd(%%contracts%%)`)({
+      contracts: types.map(mapType),
+    });
+
+  const buildContract = (node: ContractNode): t.Expression => {
+    if (node.types.length === 0) return makeAnyCt();
+    if (node.types.length === 1) return mapType(node.types[0]);
+    return mapAndContract(node.types);
+  };
+
+  const reduceNode = (node: ContractNode): t.Statement =>
+    template.statement(`const %%name%% = %%contract%%`)({
+      name: getContractName(node.name),
+      contract: buildContract(node),
+    });
+
+  return reduceNode;
 };
+// }}}
 
-const mapObject = (stx: ObjectSyntax) => {
-  return makeAnyCt();
-};
-
-const mapType = (type: TypescriptType): t.Expression => {
-  if (type.hint === "flat") return mapFlat(type.syntax as t.TSType);
-  if (type.hint === "function")
-    return mapFunction(type.syntax as FunctionSyntax);
-  return mapObject(type.syntax as ObjectSyntax);
-};
-
-const mapAndContract = (types: TypescriptType[]): t.Expression =>
-  template.expression(`CT.CTAnd(%%contracts%%)`)({
-    contracts: types.map(mapType),
-  });
-
-const buildContract = (node: ContractNode): t.Expression => {
-  if (node.types.length === 0) return makeAnyCt();
-  if (node.types.length === 1) return mapType(node.types[0]);
-  return mapAndContract(node.types);
-};
-
-const reduceNode = (node: ContractNode): t.Statement =>
-  template.statement(`const %%name%% = %%contract%%`)({
-    name: getContractName(node.name),
-    contract: buildContract(node),
-  });
-
-const compileTypes = (nodes: ContractNode[]): t.Statement[] => {
+const compileTypes = (
+  nodes: ContractNode[],
+  graph: ContractGraph
+): t.Statement[] => {
+  const reduceNode = makeReduceNode(graph);
   return nodes.map(reduceNode);
 };
 
 const getContractAst = (graph: ContractGraph): t.File => {
   const ast = parse("");
   const statements = orderGraphNodes(graph) as ContractNode[];
-  const contractStatements = compileTypes(statements);
+  const contractStatements = compileTypes(statements, graph);
   ast.program.body = [
     ...requireContractLibrary(),
     ...contractStatements,
