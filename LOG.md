@@ -1,1 +1,13 @@
 - Tue Apr 20 09:34:40 AM CDT 2021 - Checksum
+
+- Tue Tue Apr 27 20:01:17 UTC 2021
+  - Attempted to run every package on DefinitelyTyped through the Compiler. VPS ran out of disk space
+  - base-64 - Untyped JavaScript is much more lax (accepts null and undefined)
+  - urlparser - Untyped JavaScript doesn't put all the keys on the field
+  - audiosprite - TypeError: Wrong argument count 3/2; issue with Contracts or compiler?
+  - abs - All tests pass!
+  - classify-poetry - All tests pass!
+  - Thoughts:
+    - Readonly array?
+    - Promises?
+    - Finding errors automatically?

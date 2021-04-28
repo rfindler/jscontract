@@ -208,6 +208,7 @@ function CTFunction(self, domain, range) {
                 );
             }
           else if (args.length >= minarity && args.length <= maxarity) {
+            console.log("this is", this);
             return ri_wrapper.ctor(
               target.apply(si_wrapper.ctor(this), map2opt(args, dis, disk))
             );
