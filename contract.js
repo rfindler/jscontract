@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Thu Feb 20 20:41:32 2020 (serrano)                */
+/*    Last change :  Fri Apr 30 08:32:40 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -188,19 +188,19 @@ function CTFunction( self, domain, range ) {
 	       if( args.length === arity ) 
 		  switch( args.length ) {
 		     case 0:
-			return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), undefined ) );
+			return ri_wrapper.ctor( target.call( si_wrapper.ctor( self ), undefined ) );
 		     case 1:
-			return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ), di0_wrapper.ctor( args[ 0 ] ) ) );
+			return ri_wrapper.ctor( target.call( si_wrapper.ctor( self ), di0_wrapper.ctor( args[ 0 ] ) ) );
 		     case 2:
-		      return ri_wrapper.ctor( target.call( si_wrapper.ctor( this ),
+		      return ri_wrapper.ctor( target.call( si_wrapper.ctor( self ),
                                                            di0_wrapper.ctor( args[ 0 ] ),
                                                            di1_wrapper.ctor( args[ 1 ] ) ) );
 		     default:
-			return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2fix( args, dis, disk ) ) );
+			return ri_wrapper.ctor( target.apply( si_wrapper.ctor( self ), map2fix( args, dis, disk ) ) );
 		  } else if( args.length >= minarity && args.length <= maxarity ) {
-		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2opt( args, dis, disk ) ) );
+		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( self ), map2opt( args, dis, disk ) ) );
 		  } else if( args.length >= minarity && maxarity === Number.MIN_SAFE_INTEGER ) {
-		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2dotdotdot( args, dis, disk ) ) );
+		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( self ), map2dotdotdot( args, dis, disk ) ) );
 		  } else {
                       return signal_contract_violation(
                           target,
@@ -274,7 +274,7 @@ function CTFunctionOpt( self, domain, range ) {
 	    	     	"Wrong number of argument " + args.length + "/" + domain.length 
 	    	     	+ ": " + info );
       	       	  } else {
-		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( this ), map2opt( args, dis, disk ) ) );
+		     return ri_wrapper.ctor( target.apply( si_wrapper.ctor( self ), map2opt( args, dis, disk ) ) );
 		  }
 	       }
 	    }
@@ -375,7 +375,8 @@ function CTFunctionD( domain, range , info_indy ) {
 
 			// skiped the post-condition contract (for now); it would be something like
 			// ri[ rik ].ctor(<<result>>)
-			return target.apply(this, wrapped_args);
+			// MS 30apr2021: I think it is incorrect not to apply any contract to self
+			return target.apply( self, wrapped_args );
 	       	    }
 		}
 	    }
@@ -531,6 +532,7 @@ function CTAnd( ...args ) {
                           const ei = argcs[ i ].wrapper( blame_objects[ i ] );
                           wrapped_target = ei[kt].ctor( wrapped_target );
                       }
+		      // MS 30apr2021: is it correct not to apply any contract to self?
                       return wrapped_target.apply( self, target_args );
                   }
               }

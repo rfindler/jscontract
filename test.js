@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
-/*    Last change :  Fri Apr 30 07:18:13 2021 (serrano)                */
+/*    Last change :  Fri Apr 30 08:34:33 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
@@ -176,7 +176,7 @@ assert.throws( () => {
       const o1 = new CTOR( 1 );
       
       return CTOR.prototype.getX.apply( o1, [ 1 ] ) === 1;
-}(), "ctmethod.3");
+}, "ctmethod.3");
  
 assert.throws( () => {
       function CTOR( x ) { this.x = x; }
@@ -187,7 +187,7 @@ assert.throws( () => {
       const o1 = new CTOR( 1 );
       
       return CTOR.prototype.getX.call( o1, 1 ) === 1;
-}(), "ctmethod.4");
+}, "ctmethod.4");
  
 assert.throws( () => {
       function CTOR( x ) { this.x = x; }
@@ -198,7 +198,30 @@ assert.throws( () => {
       const o1 = new CTOR( 1 );
       
       return CTOR.prototype.getX.call( o1, "not-a-number" ) === 1;
-}(), "ctmethod.5");
+}, "ctmethod.5");
+ 
+assert.ok( (() => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( CT.CTObject( {x: CT.isNumber, getX: CT.isFunction}), [], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 );
+      
+      return o1.getX() === 1 && CTOR.prototype.getX.apply( o1, [] ) === 1;
+})(), "ctmethod.6");
+ 
+assert.throws( () => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( CT.CTObject( {x: CT.isNumber, getX: CT.isFunction}), [], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 );
+      o1.y = 32;
+      
+      return o1.getX() === 1 && CTOR.prototype.getX.apply( o1, [] ) === 1;
+}, "ctmethod.7");
  
 /*
  * CTFunctionD
