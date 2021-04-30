@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
-/*    Last change :  Fri Apr 30 08:34:33 2021 (serrano)                */
+/*    Last change :  Fri Apr 30 08:58:30 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
@@ -547,3 +547,30 @@ assert.throws( (() => {
     const wf = plus_ctc.wrap(f);
     wf(1,"2")
 }), /Predicate `isBoolean' not satisfied for value `2'.*\n.*blaming: neg/, "ctand.6");
+
+
+/*
+ * Promise
+ */
+assert.ok( (() => {
+   function open( string ) {
+      return new Promise( function( res, rej ) {
+	 if( string.length > 0 ) {
+	    res( string );
+	 } else {
+	    rej( string );
+	 }
+      } );
+   }
+
+   const openCT = CT.CTFunction( CT.trueCT, [ CT.isString ],
+      CT.CTPromise( CT.isString, CT.isNumber ) );
+   const ctopen = openCT.wrap( open );
+
+   const x = ctopen( "foo" );
+   console.log("hi " + x);
+   x.then( v => console.log( "res=", v ) ); // ok
+
+   ctopen( "" ).then( v => 0, v => console.log( "rej=", v ) ); // wrong		
+})(), "promise.1" )
+ 

@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Fri Apr 30 08:32:40 2021 (serrano)                */
+/*    Last change :  Fri Apr 30 08:56:22 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -800,6 +800,23 @@ function CTCoerce( obj, who ) {
 }
 
 /*---------------------------------------------------------------------*/
+/*    CTPromise ...                                                    */
+/*---------------------------------------------------------------------*/
+function CTPromise( resolved , rejected ) {
+    const this_promise_rec = CTRec (() => this_contract) ;
+    const then_arg1 = CTFunction ( trueCT , [ resolved ] , trueCT );
+    const then_arg2 = { contract : CTFunction ( trueCT , [ rejected ] , trueCT ) ,
+                        optional : true };
+    const then_method = CTFunction ( trueCT ,
+       [ then_arg1 , then_arg2 ] ,
+       this_promise_rec );
+    const this_contract = CTObject ( {
+        then : then_method
+    } )
+    return this_contract
+}
+
+/*---------------------------------------------------------------------*/
 /*    Blame Objects                                                    */
 /*---------------------------------------------------------------------*/
 
@@ -930,6 +947,7 @@ exports.CTRec = CTRec;
 exports.CTFunction = CTFunction;
 exports.CTFunctionOpt = CTFunctionOpt;
 exports.CTFunctionD = CTFunctionD;
+exports.CTPromise = CTPromise;
 exports.CTArray = CTArray;
 exports.CTFlat = CTFlat;
 
