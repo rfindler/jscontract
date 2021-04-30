@@ -1,5 +1,5 @@
 
-var argv = require( './argv_ct.js' );
+var argv = require( '../argv_ct.js' );
 
 argv.option({
     name: 'option',

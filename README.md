@@ -29,16 +29,26 @@ argct ::=
   | { contract: ccontract, dotdotdot: boolean }
     // this alternative can appear at most once
 
-TsToC
-=====
+
+Testing the contract implementation
+===================================
+
+```shell
+nodejs ./test.js
+```
+
+TsToC (TypeScript-to-contract)
+==============================
 
 TsToC is the TypeScript-to-Contract translator. As of 10 feb 2021,
 it translates a TypeScript file declaration (a `.d.ts` file) into
 JavaScript contracts. It requires `tsc` to be installed on the host.
+Example:
 
 ```shell
-cd test/abbrev
-nodejs ../../tools/tstoc.js argv.d.ts > abbrev.ct.js
+cd test/argv
+nodejs ../../tools/tstoc.js index.d.ts argv.js > argv.ct.js
+NODE_PATH=../..:$NODE_PATH nodejs test/test.js
 ```
 
 The following URL help developing (and probably fixing) `tstoc`:

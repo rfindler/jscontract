@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano & robby findler                    */
 /*    Creation    :  Fri Feb 12 14:32:28 2021                          */
-/*    Last change :  Fri Mar 26 15:54:16 2021 (serrano)                */
+/*    Last change :  Fri Apr 30 06:57:51 2021 (serrano)                */
 /*    Copyright   :  2021 manuel serrano & robby finder                */
 /*    -------------------------------------------------------------    */
 /*    TypeScript declaration to Contract                               */
@@ -15,11 +15,10 @@
 /*---------------------------------------------------------------------*/
 /*    module                                                           */
 /*---------------------------------------------------------------------*/
-import { readFileSync } from "fs";
-import * as path from "path";
 const ts = require( "typescript" );
-/* import * as _ts from "typescript";                                  */
-/*                                                                     */
+const fs = require( "fs" );
+const readFileSync = fs.readFileSync;
+const path = require( "path" );
 /* const ts = _ts.default;                                             */
 
 /*---------------------------------------------------------------------*/
@@ -31,6 +30,10 @@ const options = {
    autorequire: true,
    contractjs: "contract.js"
 };
+
+if( fs.existsSync( "./package.json" ) ) {
+   Object.assign( options, JSON.parse( fs.readFileSync('./package.json' ) ) );
+}
 
 /*---------------------------------------------------------------------*/
 /*    builtinTypes                                                     */
@@ -392,7 +395,7 @@ function sigCT( node, env ) {
 	 return `"${nameToString( param.name )}": { contract: ${ct}, index: "${typeName( param.type, env )}"  }`;
 	 
       default:
-	 return "sigCT" + ts.SyntaxKind[ node.type ];
+	 return "sigCT" + ts.SyntaxKind[ node.kind ];
    }
 }
 
@@ -401,12 +404,18 @@ function sigCT( node, env ) {
 /*    -------------------------------------------------------------    */
 /*    Try to guess a good "require" for that module.                   */
 /*---------------------------------------------------------------------*/
-function autorequire( file ) {
-   if( file === "index.d.ts" ) {
+function autorequire( pkg, file ) {
+   if( pkg ) { 
+      const basename = path.basename( process.cwd() );
+      console.log( `const ${basename} = require( "./${pkg}" );` );
+   } else if( !options.require && file === "index.d.ts" ) {
       const basename = path.basename( process.cwd() );
       console.log( `const ${basename} = require( "./index.js" );` );
+   } else if( options.require ) {
+      const basename = path.basename( process.cwd() );
+      console.log( `const ${basename} = require( "${options.require}" );` );
    } else {
-      const basename = file.replace( /d.ts$/, "" );
+      const basename = file.replace( /.d.ts$/, "" );
       console.log( `const ${basename} = require( "./${basename}.js" );` );
    }
 }
@@ -415,10 +424,11 @@ function autorequire( file ) {
 /*    main ...                                                         */
 /*---------------------------------------------------------------------*/
 function main() {
-   const files = process.argv.slice( 2 );
-   const program = ts.createProgram( files, options );
+   const [ , , src, pkg ] = process.argv;
+   const program = ts.createProgram( [ src ], options );
    let checker = program.getTypeChecker();
-   const file = program.getSourceFile( files[ 0 ] );
+   const file = program.getSourceFile( src );
+   
    const prog = new Module( "", file.file );
    
    ts.forEachChild( file, n => CT( n, {}, prog ) );
@@ -428,7 +438,7 @@ function main() {
    
    console.log( "" );
    console.log( `const CT = require( "${options.contractjs}" );` );
-   if( options.autorequire ) autorequire( file.fileName );
+   if( options.autorequire ) autorequire( pkg, file.fileName );
    console.log( "" );
 
    prog.out( "" );

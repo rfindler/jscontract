@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
-/*    Last change :  Thu Feb 20 20:59:41 2020 (serrano)                */
+/*    Last change :  Fri Apr 30 07:18:13 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
@@ -141,6 +141,65 @@ assert.throws( () => {
     CT.CTFunction(not_a_contract,[true],true);
 }, /CTFunction: not a contract/, "ctfunction.arg2-check");
 
+/*
+ * CTFMethod
+ */
+assert.ok( (() => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( true, [], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 ), o2 = new CTOR( 2 );
+      
+      return o1.getX() === 1 && o2.getX() === 2;
+})(), "ctmethod.1");
+ 
+assert.ok( (() => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( true, [], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 ), o2 = new CTOR( 2 );
+      
+      return CTOR.prototype.getX.apply( o1, [] ) === 1
+	 && CTOR.prototype.getX.apply( o2, [] ) === 2;
+})(), "ctmethod.2");
+ 
+assert.throws( () => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( true, [], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 );
+      
+      return CTOR.prototype.getX.apply( o1, [ 1 ] ) === 1;
+}(), "ctmethod.3");
+ 
+assert.throws( () => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( true, [], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 );
+      
+      return CTOR.prototype.getX.call( o1, 1 ) === 1;
+}(), "ctmethod.4");
+ 
+assert.throws( () => {
+      function CTOR( x ) { this.x = x; }
+      function getX() { return this.x; }
+
+      CTOR.prototype.getX = CT.CTFunction( true, [ CT.isNumber ], CT.isNumber ).wrap( getX );
+
+      const o1 = new CTOR( 1 );
+      
+      return CTOR.prototype.getX.call( o1, "not-a-number" ) === 1;
+}(), "ctmethod.5");
+ 
 /*
  * CTFunctionD
  */
