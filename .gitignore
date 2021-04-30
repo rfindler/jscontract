@@ -1,1 +1,4 @@
 *~
+test/abbrev/abbrev.ct.js
+test/archy/index.ct.js
+test/argv/argv.ct.js
