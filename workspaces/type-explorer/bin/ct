@@ -92,6 +92,8 @@ const testPackage = (relativeName) => {
   compileContract(relativeName, packageEntry);
   runTests();
   deleteDependencies();
+  process.chdir('..');
+  sh(`rm -rf ${relativeName}`);
   return console.log(`# }}}`);
 };
 
