@@ -65,4 +65,5 @@
           - Can see roughly how to add, but not sure whether we want to improve the contract library work.
     - Can we add a readonly array contract (e.g., enforce "This array is only meant to be read to")?
     - Promise contracts? (Challenging for reasons listed)
+    - Generating code to play with the contracts?
     - Can we do class contracts?
