@@ -111,23 +111,23 @@ function CTFunction( self, domain, range ) {
       throw new TypeError( "Illegal domain: " + domain );
    }
    
-   const coerced_args = domain.map( p => {
+    const coerced_args = domain.map( (p , index) => {
         if( typeof p === "object" && ("contract" in p) ) {
 	    minarity -= 1;
 	    if( p.dotdotdot ) maxarity = Number.MIN_SAFE_INTEGER;
 
 	    return {
-	       contract: CTCoerce( p.contract, "CTFunction" ), 
+	       contract: CTCoerce( p.contract, "CTFunction, argument " + (index+1) ), 
 	       dotdotdot: p.dotdotdot,
 	       optional: p.optional 
 	    }
       	 } else {
-	    return { contract: CTCoerce( p, "CTFunction" ) };
+	    return { contract: CTCoerce( p, "CTFunction, argument " + (index+1) ) };
       	 } 
       } );
    
-   const coerced_si = CTCoerce( self, "CTFunction" );
-   const coerced_ri = CTCoerce( range, "CTFunction" );
+   const coerced_si = CTCoerce( self, "CTFunction, self argument" );
+   const coerced_ri = CTCoerce( range, "CTFunction, range" );
       
    function map2fix( args, domain, key ) {
       let len = args.length;
@@ -254,9 +254,9 @@ function CTFunctionOpt( self, domain, range ) {
    if( !(domain instanceof Array) ) {
       throw new TypeError( "Illegal domain: " + domain );
    } else {
-      const coerced_si = CTCoerce( self, "CTFunction" );
-      const coerced_dis = domain.map( d => CTCoerce( d, "CTFunction" ) );
-      const coerced_ri = CTCoerce( range, "CTFunction" );
+      const coerced_si = CTCoerce( self, "CTFunction, self argument" );
+       const coerced_dis = domain.map( (d, index) => CTCoerce( d, "CTFunction, argument " + (index+1) ) );
+      const coerced_ri = CTCoerce( range, "CTFunction, range " );
       
       return new CT( firstOrder, function( infot, infof ) {
          const si = coerced_si.wrapper( infot, infof );
@@ -323,9 +323,9 @@ function CTFunctionD( domain, range , info_indy ) {
     for( let i = 0; i < domain.length; i++ ) {
 	const d = domain[i];
 	if (!d.dep)
-            domain_ctcs[i] = CTCoerce(d.ctc , "CTFunctionD");
+            domain_ctcs[i] = CTCoerce(d.ctc , "CTFunctionD, argument " + (i+1));
     }
-    const range_ctc = CTCoerce(range , "CTFunctionD");
+    const range_ctc = CTCoerce(range , "CTFunctionD, range");
 
     return new CT( firstOrder, function( blame_object ) {
 

@@ -133,13 +133,13 @@ assert.ok( (() => {
 // check errors happen at the right time
 assert.throws( () => {
     CT.CTFunction(true,[not_a_contract],true);
-}, /CTFunction: not a contract/, "ctfunction.arg1-check");
+}, /CTFunction, argument 1: not a contract/, "ctfunction.arg1-check");
 assert.throws( () => {
     CT.CTFunction(true,[true],not_a_contract);
-}, /CTFunction: not a contract/, "ctfunction.arg2-check");
+}, /CTFunction, range: not a contract/, "ctfunction.arg2-check");
 assert.throws( () => {
     CT.CTFunction(not_a_contract,[true],true);
-}, /CTFunction: not a contract/, "ctfunction.arg2-check");
+}, /CTFunction, self argument: not a contract/, "ctfunction.arg2-check");
 
 /*
  * CTFMethod
@@ -288,10 +288,10 @@ assert.ok( (() => {
 // check errors happen at the right time
 assert.throws( () => {
     CT.CTFunctionD([{name : "x", ctc : not_a_contract}],CT.isString);
-}, /CTFunctionD: not a contract/, "ctfunctiond.arg-check");
+}, /CTFunctionD, argument 1: not a contract/, "ctfunctiond.arg-check");
 assert.throws( () => {
     CT.CTFunctionD([{name : "x", ctc : CT.isString}], not_a_contract);
-}, /CTFunctionD: not a contract/, "ctfunctiond.rng-check");
+}, /CTFunctionD, range: not a contract/, "ctfunctiond.rng-check");
 
 /*
  * CTOr
@@ -552,6 +552,8 @@ assert.throws( (() => {
 /*
  * Promise
  */
+// NB: this test case fails because we do not yet understand how to
+// add contracts to promises, so leave it at the end of the file
 assert.ok( (() => {
    function open( string ) {
       return new Promise( function( res, rej ) {
@@ -573,4 +575,4 @@ assert.ok( (() => {
 
    ctopen( "" ).then( v => 0, v => console.log( "rej=", v ) ); // wrong		
 })(), "promise.1" )
- 
+
