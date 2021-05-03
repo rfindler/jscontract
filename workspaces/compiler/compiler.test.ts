@@ -85,8 +85,8 @@ describe("Our compiler", () => {
   });
   test("Succeeds with abbrev", () => {
     gotoFixture("abbrev-js");
-    const code = compileContracts();
-    expect(code).toMatch(`dotdotdot: true`);
+    const code = compile();
+    expect(code).toMatch(`contract: CT.stringCT, dotdotdot: true`);
     expect(code).toMatch(
       `module.exports = abbrevContract.wrap(originalModule)`
     );

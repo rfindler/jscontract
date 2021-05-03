@@ -588,8 +588,10 @@ const mapFlat = (type: t.TSType): t.Expression => {
 };
 
 const makeRestParameter = (rest: t.TSType): t.Expression => {
+  if (rest.type !== "TSArrayType")
+    return template.expression(`{ contract: CT.anyCT, dotdotdot: true }`)({});
   return template.expression(`{ contract: %%contract%%, dotdotdot: true }`)({
-    contract: mapFlat(rest),
+    contract: mapFlat(rest.elementType),
   });
 };
 

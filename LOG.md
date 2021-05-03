@@ -11,3 +11,58 @@
     - Readonly array?
     - Promises?
     - Finding errors automatically?
+- Mon May 3 07:56:24 AM CDT 2021
+  - Added garbage collection to script; we now delete the code after the fact.
+  - Packages with potential issues:
+    - blocked-at
+    - checksum
+    - coffeeify
+    - colornames
+    - commondir
+    - config
+    - contains-path
+    - cssbeautify
+    - cwd
+    - dashify
+    - deasync
+    - defaults-deep
+    - ellipsize
+    - event-loop-lag
+    - events
+    - falafel
+    - field
+    - filesize-parser
+    - find-exec
+    - form-urlencoded
+    - git-diff
+    - git-url-parse
+    - git-user-email
+    - git-username
+    - github-url-to-object
+    - global-modules-path
+    - graygelf
+    - group-array
+    - gtmetrix
+    - hex-rgba
+    - hex2dec
+    - hh-mm-ss
+    - html-truncate
+  - Themes:
+    - TypeScript and JavaScript have different semantics
+      - See `filesize-parser`; has the same problem as base-64
+    - Not all test failures are problems!
+      - Example: `dashify` test fails because the _error message_ is different
+        - Same with several other packages in the list
+    - Function arity
+      - See `global-modules-path`; some of the tests feed too many arguments intot he functions. JavaScript ignores, TypeScript prevents; is that a problem?
+  - Potential next steps:
+    - Add statistics gathering to the script?
+      - For each package, report:
+        - Can we download it successfully?
+        - Can we compile the index.d.ts file into contracts?
+        - Can we run the tests using the contracts?
+        - Do the tests succeed?
+          - Can see roughly how to add, but not sure whether we want to improve the contract library work.
+    - Can we add a readonly array contract (e.g., enforce "This array is only meant to be read to")?
+    - Promise contracts? (Challenging for reasons listed)
+    - Can we do class contracts?
