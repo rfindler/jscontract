@@ -1,107 +1,159 @@
-#!/usr/bin/env node
-/* eslint-disable no-console */
-const path = require("path");
-const fs = require("fs-extra");
-const childProcess = require("child_process");
-const {
-  ORIGINAL_MODULE_FILE,
-  default: compileContracts,
-} = require("@jscontract/compiler");
+#!/usr/bin/env bash
 
-const DEFINITELY_TYPED_PATH = path.resolve(
-  path.join(__dirname, "..", "DefinitelyTyped")
-);
-const SANDBOX_PATH = path.resolve(path.join(__dirname, "..", "sandbox"));
+# Toplevel paths
+TOPLEVEL_DIR="$(dirname "$(realpath "$(dirname "${BASH_SOURCE[0]}")")")"
 
-const sh = (command) =>
-  childProcess.spawnSync(command, [], { shell: true, stdio: "inherit" });
+# Source code messages {{{
+succeed_contract() {
+  printf "ECONTRACTSUCCESS: We compiled this project into contracts, and the tests all passed.\n"
+  exit 0;
+}
 
-const shString = (command) =>
-  childProcess.spawnSync(command, [], { shell: true, encoding: "utf-8" })
-    .stdout;
+succeed_check() {
+  printf "ECHECKSUCCESS: Our compiler can target this package."
+  exit 0;
+}
 
-const cloneDefinitelyTyped = () => {
-  if (fs.existsSync(DEFINITELY_TYPED_PATH)) return;
-  sh(
-    `git clone https://github.com/DefinitelyTyped/DefinitelyTyped ${DEFINITELY_TYPED_PATH}`
-  );
-};
+fail_sandbox() {
+  printf "%s" "ESANDBOX: Could not create sandbox.\n";
+  exit 1
+}
 
-const createSandbox = (relativeName) => {
-  const sandboxPath = `${SANDBOX_PATH}/${relativeName}`;
-  sh(`rm -rf ${sandboxPath}`);
-  sh(`mkdir -p ${sandboxPath}`);
-  process.chdir(sandboxPath);
-};
+fail_source_code() {
+  printf "ESOURCECODE: Could not download the source code for %s\n" "$1"
+  exit 2
+}
 
-const compileContract = (relativeName, originalPackageEntry) => {
-  sh(
-    `cp ${DEFINITELY_TYPED_PATH}/types/${relativeName}/index.d.ts ${SANDBOX_PATH}/${relativeName}`
-  );
-  const code = compileContracts();
-  const entryFolder = path.dirname(originalPackageEntry);
-  const newPackageEntry = path.join(entryFolder, ORIGINAL_MODULE_FILE);
-  sh(`mv ${originalPackageEntry} ${newPackageEntry}`);
-  fs.writeFileSync(originalPackageEntry, code);
-};
+fail_no_tests() {
+  printf "ENOTESTS: Could not find tests for %s\n" "$1"
+  exit 3
+}
 
-const downloadPackage = (relativeName) => {
-  const url = shString(`npm view ${relativeName} repository.url`)
-    ?.replace("git+ssh://git@", "https://")
-    ?.replace("git+https", "https")
-    ?.replace("git://", "https://");
-  if (!url) return null;
-  sh(`git clone ${url}`);
-  const dirs = fs
-    .readdirSync(process.cwd())
-    .map((el) => path.join(process.cwd(), el));
-  dirs.forEach((dir) => {
-    fs.copySync(dir, process.cwd());
-  });
-  return true;
-};
+fail_bad_tests() {
+  printf "EBADTESTS: The tests for this package fail even without compiling contracts.\n"
+  exit 4
+}
 
-const getPackageEntry = () => {
-  // eslint-disable-next-line import/no-dynamic-require, global-require
-  const json = require(path.join(process.cwd(), "package.json"));
-  return json.main ? path.join(process.cwd(), json.main) : null;
-};
+contract_failure() {
+  printf "ECONTRACTFAILURE: We compiled the project into contracts, and some of the tests failed.\n";
+  exit 5
+}
 
-const skip = (packageName) =>
-  console.log(
-    `Something went wrong while trying to download the package ${packageName}, skipping`
-  );
+fail_types_missing() {
+  printf "ETYPESMISSING: The types for this package are missing.\n";
+  exit 6
+}
 
-const installDependencies = () => sh(`npm install`);
+fail_type_complexity() {
+  printf "ETYPECOMPLEXITY: The types for this package are too long.\n";
+  exit 7
+}
 
-const runTests = () => sh(`npm run test --if-present`);
+fail_no_main() {
+  printf "ENOMAIN: This package has no main entry.\n"; 
+  exit 8
+}
+# }}}
 
-const deleteDependencies = () => sh(`rm -rf node_modules`);
+# Helpers {{{
+clone_definitely_typed() {
+  if [ ! -d "$TOPLEVEL_DIR/DefinitelyTyped" ]; then
+    git clone https://github.com/DefinitelyTyped/DefinitelyTyped "$TOPLEVEL_DIR/DefinitelyTyped"
+  fi
+}
 
-const buildProject = () => sh(`npm run build --if-present`);
+run_compiler() {
+  node "$(dirname "$TOPLEVEL_DIR")"/compiler/dist/compiler.js
+}
 
-const testPackage = (relativeName) => {
-  console.log(`# ${relativeName} {{{`);
-  createSandbox(relativeName);
-  const thePackage = downloadPackage(relativeName);
-  if (thePackage === null) return skip(relativeName);
-  const packageEntry = getPackageEntry();
-  if (packageEntry === null) return skip(relativeName);
-  installDependencies();
-  buildProject();
-  compileContract(relativeName, packageEntry);
-  runTests();
-  deleteDependencies();
-  process.chdir('..');
-  sh(`rm -rf ${relativeName}`);
-  return console.log(`# }}}`);
-};
+create_sandbox() {
+  rm -rf "$TOPLEVEL_DIR"/sandbox/"${1:?}"
+  mkdir -p "$TOPLEVEL_DIR"/sandbox/"${1:?}"
+  cd "$TOPLEVEL_DIR"/sandbox/"${1:?}" || fail_sandbox;
+}
 
-const main = () => {
-  cloneDefinitelyTyped();
-  const packageName = process.argv.slice(2)[0];
-  if (!packageName) return;
-  testPackage(packageName);
-};
+download_package() {
+  if ! git clone https://"$(npm view "$1" repository.url | grep -o "github.com.*")" "$1"; then
+    fail_source_code "$@"
+  fi
+}
 
-main();
+run_build() {
+  if [ "$(jq <"$PWD"/package.json ".scripts.build" | xargs)" != "null" ]; then
+    npm run build
+  fi
+}
+
+copy_files() {
+  shopt -s dotglob
+  mv "$PWD"/"$1"/* "$PWD"
+  shopt -u dotglob
+  rm -d "$PWD"/"$1"
+}
+
+get_package() {
+  download_package "$@";
+  copy_files "$@"
+}
+
+check_main() {
+  if [ "null" = "$(jq <"$pwd"/package.json ".main")" ]; then
+    fail_no_main;
+  fi
+}
+
+check_vanilla_package() {
+  check_main;
+  npm install;
+  if [ -z "$(jq <"$PWD"/package.json ".scripts.test")" ]; then
+    fail_no_tests "$@"
+  fi
+  run_build;
+  if ! npm test; then
+    fail_bad_tests "$@"
+  fi
+}
+
+check_contract_package() {
+  npm install;
+  run_build;
+  if npm test; then
+    succeed_contract
+  else
+    contract_failure
+  fi
+}
+
+check_type_complexity() {
+  cp "$TOPLEVEL_DIR/DefinitelyTyped/types/$1/index.d.ts" "$PWD"
+  if [ "$(wc -l index.d.ts | grep -oP '\d+')" -gt 200 ]; then
+    fail_type_complexity;
+  fi
+}
+
+compile_contracts() {
+  cp "$TOPLEVEL_DIR/DefinitelyTyped/types/$1/index.d.ts" "$PWD"
+  # mv "$(jq <"$PWD"/package.json ".main")" ""
+  run_compiler &> "$(jq <"$PWD"/package.json ".scripts.test")"
+}
+# }}}
+
+# Main Functions {{{ 
+do_check() {
+  create_sandbox "$@";
+  get_package "$@";
+  check_vanilla_package "$@";
+  check_type_complexity "$@";
+  succeed_check;
+}
+
+do_contract() {
+  clone_definitely_typed;
+  create_sandbox "$@";
+  get_package "$@";
+  compile_contracts "$@";
+  check_contract_package;
+}
+# }}}
+
+do_check "$@";

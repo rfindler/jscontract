@@ -732,3 +732,7 @@ const compile = (code: string): string => {
 const compileContracts = (): string => compile(readTypesFromFile());
 
 export default compileContracts;
+
+if (require.main === module) {
+  console.log(compileContracts());
+}

@@ -49,12 +49,13 @@
     - html-truncate
   - Themes:
     - TypeScript and JavaScript have different semantics
-      - See `filesize-parser`; has the same problem as base-64
+      - See `filesize-parser`; has the same problem as base-64 (the JavaScript tests for wacky inputs; the TypeScript types dissallow them)
     - Not all test failures are problems!
       - Example: `dashify` test fails because the _error message_ is different
         - Same with several other packages in the list
+        - Automatically detects defensive programming
     - Function arity
-      - See `global-modules-path`; some of the tests feed too many arguments intot he functions. JavaScript ignores, TypeScript prevents; is that a problem?
+      - See `global-modules-path`; some of the tests feed too many arguments into the functions. JavaScript ignores, TypeScript prevents; is that a problem?
   - Potential next steps:
     - Add statistics gathering to the script?
       - For each package, report:
