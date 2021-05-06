@@ -487,10 +487,13 @@ const getFinalName = (name: string): string =>
     ? name.substring(name.lastIndexOf(".") + 1, name.length)
     : name;
 
-const getContractName = (name: string): string => {
-  if (name === "Error") return "CT.errorCT";
-  return `${getFinalName(name)}Contract`;
+const SpecialContractNames: Record<string, string> = {
+  Error: "CT.errorCT",
+  ArrayBuffer: "CT.arrayBufferCT",
 };
+
+const getContractName = (name: string): string =>
+  SpecialContractNames[name] || `${getFinalName(name)}Contract`;
 
 export const ORIGINAL_MODULE_FILE = "./__ORIGINAL_UNTYPED_MODULE__.js";
 

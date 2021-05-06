@@ -118,6 +118,11 @@ describe("Our compiler", () => {
     const listPosition = code.indexOf("listContract");
     expect(resultPosition).toBeLessThan(listPosition);
   });
+  test("Works on the base64-arraybuffer", () => {
+    gotoFixture("base64-arraybuffer");
+    const code = compileContracts();
+    expect(code).toMatch(`CT.arrayBufferCT`);
+  });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();

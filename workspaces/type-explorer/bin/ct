@@ -140,11 +140,17 @@ check_type_complexity() {
 }
 
 get_main() {
-  jq <"$PWD"/package.json ".main" | sed 's/"//g'
+  CUR_NAME="$(jq <"$PWD"/package.json ".main" | sed 's/"//g')"
+  if [[ $CUR_NAME == ".js" ]]; then
+    printf "%s" "$CUR_NAME"
+  else 
+    printf "%s" "$CUR_NAME".js
+  fi
 }
 
 JS_CODE="let path = require('path'); let json = require('./package.json').main; let parts = json.split(path.sep); parts[parts.length - 1] = '__ORIGINAL_UNTYPED_MODULE__.js'; process.stdout.write(parts.join(path.sep));"
 move_main() {
+  get_main
   if [ -f "$(get_main)" ]; then
     mv "$(get_main)" "$(node -e "$JS_CODE")"
   elif [ -f "$(get_main)".js ]; then
@@ -179,4 +185,4 @@ do_contract() {
 }
 # }}}
 
-do_check "$@";
+do_contract "$@";

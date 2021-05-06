@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+TOPLEVEL_DIR="$(dirname "$(realpath "$(dirname "${BASH_SOURCE[0]}")")")"
+cd "$TOPLEVEL_DIR"/results || exit 1
+rg --color never "ECHECKSUCCESS" | sed '/^#/d' | awk -F":" '{print $1}' > "$TOPLEVEL_DIR"/packages
+while IFS="" read -r p || [ -n "$p" ]
+do
+  printf '%s: %s\n' "$(wc -l "$TOPLEVEL_DIR"/DefinitelyTyped/types/"$p"/index.d.ts | cut -d' ' -f1)" "$p"
+done < "$TOPLEVEL_DIR"/packages > "$TOPLEVEL_DIR"/package-counts
+sort -h "$TOPLEVEL_DIR"/package-counts > "$TOPLEVEL_DIR"/packages
+rm "$TOPLEVEL_DIR"/package-counts

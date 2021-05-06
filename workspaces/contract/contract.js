@@ -208,7 +208,6 @@ function CTFunction(self, domain, range) {
                 );
             }
           else if (args.length >= minarity && args.length <= maxarity) {
-            console.log("this is", this);
             return ri_wrapper.ctor(
               target.apply(si_wrapper.ctor(this), map2opt(args, dis, disk))
             );
@@ -995,6 +994,7 @@ const trueCT = new CTFlat((o) => true);
 const undefinedCT = new CTFlat(isUndefined);
 const nullCT = new CTFlat(isNull);
 const errorCT = new CTFlat(isError);
+const arrayBufferCT = new CTFlat((x) => x instanceof ArrayBuffer);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1009,6 +1009,7 @@ exports.undefinedCT = undefinedCT;
 exports.errorCT = errorCT;
 exports.numberCT = numberCT;
 exports.nullCT = nullCT;
+exports.arrayBufferCT = arrayBufferCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

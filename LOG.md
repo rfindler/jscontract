@@ -68,3 +68,9 @@
     - Promise contracts? (Challenging for reasons listed)
     - Generating code to play with the contracts?
     - Can we do class contracts?
+
+Thu May 6 03:14:56 PM CDT 2021
+
+- Adds sorting and filtering; at "G" in the alphabet, reduced the possible set of candidates from ~2000 to ~400
+  - Whittle those down to start making meaningful improvements to the compiler by sorting by type length
+- Adds priority script - whittles down to specific places to start improving the compiler

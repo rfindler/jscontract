@@ -644,5 +644,8 @@ describe("Our contract library", () => {
     expect(CT.isObject(null)).toBe(false);
     expect(() => CT.numberCT.wrap(3)).not.toThrow();
     expect(() => CT.nullCT.wrap(null)).not.toThrow();
+    expect(() => {
+      CT.arrayBufferCT.wrap(new ArrayBuffer());
+    }).not.toThrow();
   });
 });
