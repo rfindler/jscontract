@@ -53,6 +53,11 @@ fail_no_main() {
   printf "ENOMAIN: This package has no main entry.\n"; 
   exit 8
 }
+
+fail_missing_main() {
+  printf "EMISSINGMAIN: This package has a main entry, but we can't find it.\n";
+  exit 9
+}
 # }}}
 
 # Helpers {{{
@@ -97,7 +102,7 @@ get_package() {
 }
 
 check_main() {
-  if [ "null" = "$(jq <"$pwd"/package.json ".main")" ]; then
+  if [ "null" = "$(jq <"$PWD"/package.json ".main")" ]; then
     fail_no_main;
   fi
 }
@@ -125,25 +130,43 @@ check_contract_package() {
 }
 
 check_type_complexity() {
-  cp "$TOPLEVEL_DIR/DefinitelyTyped/types/$1/index.d.ts" "$PWD"
+  if ! cp "$TOPLEVEL_DIR/DefinitelyTyped/types/$1/index.d.ts" "$PWD"; then
+    fail_types_missing;
+  fi
   if [ "$(wc -l index.d.ts | grep -oP '\d+')" -gt 200 ]; then
     fail_type_complexity;
+  fi
+  rm "$PWD"/index.d.ts
+}
+
+get_main() {
+  jq <"$PWD"/package.json ".main" | sed 's/"//g'
+}
+
+JS_CODE="let path = require('path'); let json = require('./package.json').main; let parts = json.split(path.sep); parts[parts.length - 1] = '__ORIGINAL_UNTYPED_MODULE__.js'; process.stdout.write(parts.join(path.sep));"
+move_main() {
+  if [ -f "$(get_main)" ]; then
+    mv "$(get_main)" "$(node -e "$JS_CODE")"
+  elif [ -f "$(get_main)".js ]; then
+    mv "$(get_main)".js "$(node -e "$JS_CODE")"
+  else
+    fail_missing_main
   fi
 }
 
 compile_contracts() {
   cp "$TOPLEVEL_DIR/DefinitelyTyped/types/$1/index.d.ts" "$PWD"
-  # mv "$(jq <"$PWD"/package.json ".main")" ""
-  run_compiler &> "$(jq <"$PWD"/package.json ".scripts.test")"
+  move_main;
+  run_compiler &> "$(get_main)"
 }
 # }}}
 
 # Main Functions {{{ 
 do_check() {
+  check_type_complexity "$@";
   create_sandbox "$@";
   get_package "$@";
   check_vanilla_package "$@";
-  check_type_complexity "$@";
   succeed_check;
 }
 
