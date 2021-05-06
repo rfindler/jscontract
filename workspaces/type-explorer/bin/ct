@@ -133,7 +133,7 @@ check_type_complexity() {
   if ! cp "$TOPLEVEL_DIR/DefinitelyTyped/types/$1/index.d.ts" "$PWD"; then
     fail_types_missing;
   fi
-  if [ "$(wc -l index.d.ts | grep -oP '\d+')" -gt 200 ]; then
+  if [ "$(wc -l index.d.ts | grep -oP '\d+')" -gt 150 ]; then
     fail_type_complexity;
   fi
   rm "$PWD"/index.d.ts
