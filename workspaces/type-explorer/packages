@@ -1,30 +1,30 @@
-6: admin-check
-6: babel-plugin-react-pug
-6: collections
-6: floreal
-7: add-zero
-7: axios-case-converter
-7: base64-arraybuffer
-7: boolify-string
-7: browser-extname
-7: b-spline
-7: checkstyle-formatter
-7: deep-freeze-strict
-7: dir-resolve
-7: document-ready
-7: domexception
-7: edmonds-blossom
-8: array-initial
-8: arr-diff
-8: arr-union
-8: bcp-47-match
-8: blacklist
-8: brace-expansion
-8: clamp
-8: combinations
-8: common-prefix
-8: compare-function
-8: compute-argmax
+6: admin-check - FAILURE: Needs promise contracts.
+6: babel-plugin-react-pug - FAILURE: Package is broken
+6: collections - SUCCESS
+6: floreal - FAILURE: Package is broken
+7: add-zero - SUCCESS
+7: axios-case-converter - FAILURE
+7: base64-arraybuffer - SUCCESS
+7: boolify-string -  SUCCESS
+7: browser-extname - SUCCESS
+7: b-spline - FAILURE: Generic contracts (is this even possible???)
+7: checkstyle-formatter - FAILURE: Compiled contracts don't correspond to the linting rules
+7: deep-freeze-strict - FAILURE: Generic contracts
+7: dir-resolve - SUCCESS
+7: document-ready - FAILURE: Compiled contracts don't correspond to the linting rules
+7: domexception - SUCCESS
+7: edmonds-blossom - FAILURE: Types don't reflect the hidden class that leaks out of the package
+8: array-initial - FAILURE: How do we do array-like contracts?
+8: arr-diff - FAILURE: Generic contracts.
+8: arr-union - FAILURE: Types don't export everything that the JavaScript does.
+8: bcp-47-match - FAILURE: Broken package
+8: blacklist - FAILURE: linting error
+8: brace-expansion - FAILURE
+8: clamp - SUCCESS
+8: combinations - GENERICS
+8: common-prefix - FAILURE - ReadonlyArrayContracts
+8: compare-function - FAILURE - Generics
+8: compute-argmax - EMISSINGMAIN
 8: compute-stdev
 8: contentful-resolve-response
 8: data-driven

@@ -74,3 +74,9 @@ Thu May 6 03:14:56 PM CDT 2021
 - Adds sorting and filtering; at "G" in the alphabet, reduced the possible set of candidates from ~2000 to ~400
   - Whittle those down to start making meaningful improvements to the compiler by sorting by type length
 - Adds priority script - whittles down to specific places to start improving the compiler
+- How do we compile:
+  - Generic contracts?
+  - ArrayLike contracts?
+  - Promise contracts?
+  - Class contracts?
+  - How do we handle when the type definitions don't export some of the features in the module being tested?
