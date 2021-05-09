@@ -521,7 +521,13 @@ function CTAnd( ...args ) {
     for ( let i = 0; i < args.length; ++i ) {
         argcs[i] = CTCoerce( args[ i ] , "CTAnd" );
     }
-    return new CT( x => lc.firstOrder( x ) && rc.firstOrder( x ),
+    return new CT( x => {
+        for ( let i = 0; i < argcs.length; ++i ) {
+            if (! argcs[i].firstOrder( x ))
+                return false;
+        }
+        return true;
+    },
       function( blame_object ) {
 	  function mkWrapper( blame_object, kt ) {
               const handler = {

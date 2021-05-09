@@ -548,6 +548,13 @@ assert.throws( (() => {
     wf(1,"2")
 }), /Predicate `isBoolean' not satisfied for value `2'.*\n.*blaming: neg/, "ctand.6");
 
+assert.ok( (() => {
+    const even_pos = CT.CTAnd((x) => x%2 == 0, (x) => x > 0);
+    const odd_neg  = CT.CTAnd((x) => x%2 != 0, (x) => x < 0);
+    const even_pos_or_odd_neg = CT.CTOr(even_pos, odd_neg);
+    return 22 == even_pos_or_odd_neg.wrap(22) &&
+           -3 == even_pos_or_odd_neg.wrap(-3);
+})(), "ctand.7")
 
 /*
  * Promise
