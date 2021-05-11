@@ -569,6 +569,7 @@ assert.ok( (() => {
  */
 // NB: this test case fails because we do not yet understand how to
 // add contracts to promises, so leave it at the end of the file
+console.log("\nstarting failing test\n");
 assert.ok( (() => {
    function open( string ) {
       return new Promise( function( res, rej ) {
