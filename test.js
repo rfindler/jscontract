@@ -549,11 +549,19 @@ assert.throws( (() => {
 }), /Predicate `isBoolean' not satisfied for value `2'.*\n.*blaming: neg/, "ctand.6");
 
 assert.ok( (() => {
-    const even_pos = CT.CTAnd((x) => x%2 == 0, (x) => x > 0);
-    const odd_neg  = CT.CTAnd((x) => x%2 != 0, (x) => x < 0);
-    const even_pos_or_odd_neg = CT.CTOr(even_pos, odd_neg);
-    return 22 == even_pos_or_odd_neg.wrap(22) &&
-           -3 == even_pos_or_odd_neg.wrap(-3);
+    function even(x) {return x%2 == 0; }
+    function pos(x) {return x > 0; }
+    function odd(x) {return x%2 != 0; }
+    function neg(x) {return x < 0; }
+    const even_to_even_and_pos_to_pos = CT.CTAnd(CT.CTFunction(CT.trueCT, [even], even),
+                                                 CT.CTFunction(CT.trueCT, [pos], pos));
+    const odd_to_odd_and_neg_to_neg = CT.CTAnd(CT.CTFunction(CT.trueCT, [odd], odd),
+                                               CT.CTFunction(CT.trueCT, [neg], neg));
+    const ee_a_pp_or_oo_a_nn = CT.CTOr(even_to_even_and_pos_to_pos, odd_to_odd_and_neg_to_neg);
+
+    function id(x) { return x; }
+    const f = ee_a_pp_or_oo_a_nn.wrap(id);
+    return 22 == f(22);
 })(), "ctand.7")
 
 /*
