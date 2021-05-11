@@ -471,6 +471,9 @@ assert.ok( (() => {
 })(),"ctarray.4")
 // check errors happen at the right time
 assert.throws( () => {
+    CT.CTArray(CT.isNumber, {immutable : true}).wrap([11,22])[0] = 11;
+},/blaming: neg/, "ctarray.5")
+assert.throws( () => {
     CT.CTArray(not_a_contract);
 }, /CTArray: not a contract/, "ctarray.arg-check");
 

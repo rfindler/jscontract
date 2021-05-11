@@ -596,11 +596,13 @@ function CTOr( left, right ) {
 /*---------------------------------------------------------------------*/
 /*    CTArray ...                                                      */
 /*---------------------------------------------------------------------*/
-function CTArray( element ) {
+function CTArray( element , options ) {
    function firstOrder( x ) {
       return x instanceof Array;
    }
    
+   const immutable = typeof options == "object" && (!(!options.immutable));
+
    const element_ctc = CTCoerce( element,  "CTArray" );
    
    return new CT( firstOrder,
@@ -617,6 +619,17 @@ function CTArray( element ) {
 	    	  }
 	       },
 	       set: function( target, prop, newval ) {
+                  if (immutable) {
+                      return signal_contract_violation(
+                          // we're supposed to return true here
+                          // after the mutation goes through,
+                          // but we still reject the mutation
+                          // becuase we return without updating the array.
+                          // is this correct?
+                          true,
+                          blame_swap(blame_object),
+                          "Cannot mutate immutable array");
+                  }
 	    	  if( prop.match( /^[0-9]+$/ ) ) {
                      target[ prop ] = ei[ kf ].ctor( newval );
             	  } else {
