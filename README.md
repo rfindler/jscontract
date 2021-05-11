@@ -38,18 +38,3 @@ blame_object) -- our sibling in the or/and
 neg_state: same as pos_state
 }
 INVARIANT: (dead != false) <=> (pos_state != false) or (neg_state != false)
-
-## TsToC
-
-TsToC is the TypeScript-to-Contract translator. As of 10 feb 2021,
-it translates a TypeScript file declaration (a `.d.ts` file) into
-JavaScript contracts. It requires `tsc` to be installed on the host.
-
-```shell
-nodejs ../../tools/tstoc.js argv.d.ts
-```
-
-The following URL help developing (and probably fixing) `tstoc`:
-
-[https://ts-ast-viewer.com](ast viewer)
-[https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API](api)

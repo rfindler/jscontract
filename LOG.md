@@ -80,3 +80,12 @@ Thu May 6 03:14:56 PM CDT 2021
   - Promise contracts?
   - Class contracts?
   - How do we handle when the type definitions don't export some of the features in the module being tested?
+
+Mon May 10 11:26:40 AM CDT 2021
+
+- Why replacing the code directly instead of changing the entry point of lib is hard:
+  - Have to crawl through all the code in the package to figure out where the functions are defined; no easy way
+  - Have to handle inlining the dependency of the contract library (not just one file per-ce)
+- Potentially useful idea:
+  - Contract annotations on network and database calls? Add lib. as part of build process and get contracts for free?
+  - Gradual typing + gradual contracts...
