@@ -1016,7 +1016,7 @@ function throw_contract_violation(pos, message) {
 /*    predicates ...                                                   */
 /*---------------------------------------------------------------------*/
 function isObject(o) {
-  return typeof o === "object";
+  return typeof o === "object" && o !== null;
 }
 function isFunction(o) {
   return typeof o === "function";
@@ -1059,6 +1059,7 @@ exports.stringCT = stringCT;
 exports.trueCT = trueCT;
 exports.undefinedCT = undefinedCT;
 exports.errorCT = errorCT;
+exports.numberCT = numberCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

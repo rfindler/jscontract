@@ -997,6 +997,57 @@ assert.ok(
 );
 
 /*
+ * Minor bugfixes
+ */
+assert.ok(CT.numberCT.wrap(5));
+assert.throws(() => {
+  CT.numberCT.wrap("hello");
+});
+assert.throws(() => {
+  CT.objectCT.wrap(null);
+});
+
+/*
+ * ArrayLike contracts using CTObject
+ */
+assert.ok(
+  (() => {
+    const arrayLikeCT = CT.CTObject({
+      length: CT.isNumber,
+      prop: { contract: CT.isString, index: "string" },
+    });
+    return arrayLikeCT.wrap({ length: 1, 0: "hello" });
+  })()
+);
+
+assert.throws(() => {
+  const arrayLikeCT = CT.CTObject({
+    length: CT.isNumber,
+    prop: { contract: CT.isString, index: "string" },
+  });
+  const x = arrayLikeCT.wrap({ length: "hi", 0: 5 });
+  return x.length;
+});
+
+assert.throws(() => {
+  const arrayLikeCT = CT.CTObject({
+    length: CT.isNumber,
+    prop: { contract: CT.isString, index: "string" },
+  });
+  const x = arrayLikeCT.wrap({ length: "hi", 0: 5 });
+  return x.length;
+});
+
+assert.throws(() => {
+  const arrayLikeCT = CT.CTObject({
+    length: CT.isNumber,
+    prop: { contract: CT.isString, index: "string" },
+  });
+  const x = arrayLikeCT.wrap({ length: 20, 0: 5 });
+  return x[0];
+});
+
+/*
  * Promise
  */
 // NB: this test case fails because we do not yet understand how to
