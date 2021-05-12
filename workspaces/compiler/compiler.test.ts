@@ -128,6 +128,9 @@ describe("Our compiler", () => {
     const code = compile();
     expect(code).toMatch(`CT.numberCT, { immutable: true,`);
     expect(code).toMatch(
+      `const MyGenericContract = CT.CTFunction(CT.trueCT, [CT.anyCT], CT.nullCT);`
+    );
+    expect(code).toMatch(
       `{ length: CT.numberCT, prop: { contract: CT.stringCT, index: "string"`
     );
   });

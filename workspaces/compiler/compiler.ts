@@ -531,228 +531,247 @@ const exportContracts = (nodes: ContractNode[]): t.Statement[] => {
 // }}}
 
 // Map Node to Contract {{{
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const makeAnyCt = (_?: t.TSType) =>
-  template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
+const makeReduceNode = (env: ContractGraph) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleUnknownReference = (ref: t.TSTypeReference) => {
+    const typeName = getTypeName(ref.typeName);
+    return env[typeName] || SpecialContractNames[typeName]
+      ? template.expression(`%%name%%`)({
+          name: getContractName(typeName),
+        })
+      : makeAnyCt();
+  };
 
-const makeCtExpression = (name: string): t.Expression =>
-  template.expression(name)({ CT: t.identifier("CT") });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const makeAnyCt = (_?: t.TSType) =>
+    template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FlatContractMap = Record<string, (type?: any) => t.Expression>;
+  const makeCtExpression = (name: string): t.Expression =>
+    template.expression(name)({ CT: t.identifier("CT") });
 
-const handleUnknownReference = (ref: t.TSTypeReference) => {
-  return template.expression(`%%name%%`)({
-    name: getContractName(getTypeName(ref.typeName)),
-  });
-};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type FlatContractMap = Record<string, (type?: any) => t.Expression>;
 
-const handleArrayReference = (ref: t.TSTypeReference) => {
-  const params = ref?.typeParameters?.params;
-  if (!Array.isArray(params)) {
-    throw new Error("Cannot compile array!");
-  }
-  return template.expression(`CT.CTArray(%%contract%%)`)({
-    contract: params.map((param) => mapFlat(param)),
-  });
-};
-
-const handleArrayLikeReference = (ref: t.TSTypeReference) => {
-  const params = ref?.typeParameters?.params;
-  if (!Array.isArray(params)) {
-    throw new Error("Cannot compile array like!");
-  }
-  return template.expression(
-    `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
-  )({
-    contract:
-      params.length === 1
-        ? mapFlat(params[0])
-        : template.expression(`CT.CTOr(%%ors%%)`)({
-            ors: params.map((param) => mapFlat(param)),
-          }),
-  });
-};
-
-const refIsA = (ref: t.TSTypeReference, name: string): boolean => {
-  if (ref?.typeName?.type !== "Identifier") return false;
-  return ref.typeName.name === name;
-};
-
-const flatContractMap: FlatContractMap = {
-  TSNumberKeyword() {
-    return makeCtExpression("CT.numberCT");
-  },
-  TSBooleanKeyword() {
-    return makeCtExpression("CT.booleanCT");
-  },
-  TSStringKeyword() {
-    return makeCtExpression("CT.stringCT");
-  },
-  TSNullKeyword() {
-    return makeCtExpression("CT.nullCT");
-  },
-  TSArrayType(arr: t.TSArrayType) {
+  const handleArrayReference = (ref: t.TSTypeReference) => {
+    const params = ref?.typeParameters?.params;
+    if (!Array.isArray(params)) {
+      throw new Error("Cannot compile array!");
+    }
     return template.expression(`CT.CTArray(%%contract%%)`)({
-      contract: mapFlat(arr.elementType),
+      contract: params.map((param) => mapFlat(param)),
     });
-  },
-  TSTypeReference(ref: t.TSTypeReference) {
-    if (refIsA(ref, "Array")) return handleArrayReference(ref);
-    if (refIsA(ref, "ArrayLike")) return handleArrayLikeReference(ref);
-    return handleUnknownReference(ref);
-  },
-  TSParenthesizedType(paren: t.TSParenthesizedType) {
-    return mapFlat(paren.typeAnnotation);
-  },
-  TSUnionType(union: t.TSUnionType) {
-    return template.expression(`CT.CTOr(%%types%%)`)({
-      types: union.types.map(mapFlat),
+  };
+
+  const handleArrayLikeReference = (ref: t.TSTypeReference) => {
+    const params = ref?.typeParameters?.params;
+    if (!Array.isArray(params)) {
+      throw new Error("Cannot compile array like!");
+    }
+    return template.expression(
+      `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
+    )({
+      contract:
+        params.length === 1
+          ? mapFlat(params[0])
+          : template.expression(`CT.CTOr(%%ors%%)`)({
+              ors: params.map((param) => mapFlat(param)),
+            }),
     });
-  },
-  TSFunctionType(type: t.TSFunctionType) {
-    return mapFunction({
-      domain: getParameterTypes(type.parameters),
-      range: type.typeAnnotation?.typeAnnotation || t.tsAnyKeyword(),
+  };
+
+  const refIsA = (ref: t.TSTypeReference, name: string): boolean => {
+    if (ref?.typeName?.type !== "Identifier") return false;
+    return ref.typeName.name === name;
+  };
+
+  const flatContractMap: FlatContractMap = {
+    TSNumberKeyword() {
+      return makeCtExpression("CT.numberCT");
+    },
+    TSBooleanKeyword() {
+      return makeCtExpression("CT.booleanCT");
+    },
+    TSStringKeyword() {
+      return makeCtExpression("CT.stringCT");
+    },
+    TSNullKeyword() {
+      return makeCtExpression("CT.nullCT");
+    },
+    TSArrayType(arr: t.TSArrayType) {
+      return template.expression(`CT.CTArray(%%contract%%)`)({
+        contract: mapFlat(arr.elementType),
+      });
+    },
+    TSTypeReference(ref: t.TSTypeReference) {
+      if (refIsA(ref, "Array")) return handleArrayReference(ref);
+      if (refIsA(ref, "ArrayLike")) return handleArrayLikeReference(ref);
+      return handleUnknownReference(ref);
+    },
+    TSParenthesizedType(paren: t.TSParenthesizedType) {
+      return mapFlat(paren.typeAnnotation);
+    },
+    TSUnionType(union: t.TSUnionType) {
+      return template.expression(`CT.CTOr(%%types%%)`)({
+        types: union.types.map(mapFlat),
+      });
+    },
+    TSFunctionType(type: t.TSFunctionType) {
+      return mapFunction({
+        domain: getParameterTypes(type.parameters),
+        range: type.typeAnnotation?.typeAnnotation || t.tsAnyKeyword(),
+      });
+    },
+    TSTypeOperator(type: t.TSTypeOperator) {
+      const base = mapFlat(type.typeAnnotation);
+      if (base.type !== "CallExpression") return makeAnyCt();
+      base.arguments.push(template.expression(`{ immutable: true }`)({}));
+      return base;
+    },
+    TSTypeLiteral(type: t.TSTypeLiteral) {
+      if (isLiteralObject(type))
+        return mapObject({
+          isRecursive: false,
+          types: makeObjectLiteral(type),
+        });
+      return makeAnyCt();
+    },
+  };
+
+  const mapFlat = (type: t.TSType): t.Expression => {
+    const fn = flatContractMap[type.type] || makeAnyCt;
+    return fn(type);
+  };
+
+  const makeRestParameter = (rest: t.TSType): t.Expression => {
+    if (rest.type !== "TSArrayType")
+      return template.expression(`{ contract: CT.anyCT, dotdotdot: true }`)({});
+    return template.expression(`{ contract: %%contract%%, dotdotdot: true }`)({
+      contract: mapFlat(rest.elementType),
     });
-  },
-  TSTypeOperator(type: t.TSTypeOperator) {
-    const base = mapFlat(type.typeAnnotation);
-    if (base.type !== "CallExpression") return makeAnyCt();
-    base.arguments.push(template.expression(`{ immutable: true }`)({}));
-    return base;
-  },
-  TSTypeLiteral(type: t.TSTypeLiteral) {
-    if (isLiteralObject(type))
-      return mapObject({ isRecursive: false, types: makeObjectLiteral(type) });
-    return makeAnyCt();
-  },
-};
+  };
 
-const mapFlat = (type: t.TSType): t.Expression => {
-  const fn = flatContractMap[type.type] || makeAnyCt;
-  return fn(type);
-};
+  const makeOptionalParameter = (optional: t.TSType): t.Expression => {
+    return template.expression(`{contract: %%contract%%, optional: true}`)({
+      contract: mapFlat(optional),
+    });
+  };
 
-const makeRestParameter = (rest: t.TSType): t.Expression => {
-  if (rest.type !== "TSArrayType")
-    return template.expression(`{ contract: CT.anyCT, dotdotdot: true }`)({});
-  return template.expression(`{ contract: %%contract%%, dotdotdot: true }`)({
-    contract: mapFlat(rest.elementType),
-  });
-};
+  const mapDomain = (
+    domain: FunctionParameter[]
+  ): t.Expression[] | t.Expression => {
+    return template.expression(`%%contracts%%`)({
+      contracts: t.arrayExpression(
+        domain.map((el) => {
+          if (el.isRestParameter) return makeRestParameter(el.type);
+          if (el.isOptional) return makeOptionalParameter(el.type);
+          return mapFlat(el.type);
+        })
+      ),
+    });
+  };
 
-const makeOptionalParameter = (optional: t.TSType): t.Expression => {
-  return template.expression(`{contract: %%contract%%, optional: true}`)({
-    contract: mapFlat(optional),
-  });
-};
-
-const mapDomain = (
-  domain: FunctionParameter[]
-): t.Expression[] | t.Expression => {
-  return template.expression(`%%contracts%%`)({
-    contracts: t.arrayExpression(
-      domain.map((el) => {
-        if (el.isRestParameter) return makeRestParameter(el.type);
-        if (el.isOptional) return makeOptionalParameter(el.type);
-        return mapFlat(el.type);
-      })
-    ),
-  });
-};
-
-const mapFunction = (stx: FunctionSyntax) => {
-  return template.expression(`CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`)(
-    {
+  const mapFunction = (stx: FunctionSyntax) => {
+    return template.expression(
+      `CT.CTFunction(CT.trueCT, %%domain%%, %%range%%)`
+    )({
       domain: mapDomain(stx.domain),
       range: mapFlat(stx.range),
-    }
-  );
-};
-
-const getObjectTemplate = (stx: ObjectSyntax) =>
-  `CT.CTObject({ ${Object.keys(stx.types)
-    .map((key) => `${key}: %%${key}%%`)
-    .join(", ")} })`;
-
-type ObjectContracts = Record<string, t.Expression>;
-
-type ChunkEntry = [name: string, type: ObjectChunk];
-
-const addOptionalType = (
-  acc: ObjectContracts,
-  [name, type]: ChunkEntry
-): ObjectContracts => {
-  return {
-    ...acc,
-    [name]: template.expression(`{ contract: %%contract%%, optional: true }`)({
-      contract: mapFlat(type.type),
-    }),
+    });
   };
-};
 
-const addIndexType = (
-  acc: ObjectContracts,
-  [name, type]: ChunkEntry
-): ObjectContracts => {
-  return {
-    ...acc,
-    [name]: template.expression(`{ contract: %%contract%%, index: "string" }`)({
-      contract: mapFlat(type.type),
-    }),
+  const getObjectTemplate = (stx: ObjectSyntax) =>
+    `CT.CTObject({ ${Object.keys(stx.types)
+      .map((key) => `${key}: %%${key}%%`)
+      .join(", ")} })`;
+
+  type ObjectContracts = Record<string, t.Expression>;
+
+  type ChunkEntry = [name: string, type: ObjectChunk];
+
+  const addOptionalType = (
+    acc: ObjectContracts,
+    [name, type]: ChunkEntry
+  ): ObjectContracts => {
+    return {
+      ...acc,
+      [name]: template.expression(`{ contract: %%contract%%, optional: true }`)(
+        {
+          contract: mapFlat(type.type),
+        }
+      ),
+    };
   };
+
+  const addIndexType = (
+    acc: ObjectContracts,
+    [name, type]: ChunkEntry
+  ): ObjectContracts => {
+    return {
+      ...acc,
+      [name]: template.expression(
+        `{ contract: %%contract%%, index: "string" }`
+      )({
+        contract: mapFlat(type.type),
+      }),
+    };
+  };
+
+  const getObjectContracts = (stx: ObjectSyntax): ObjectContracts => {
+    return Object.entries(stx.types).reduce((acc, chunkEntry) => {
+      const [name, type] = chunkEntry;
+      if (type.isOptional) return addOptionalType(acc, chunkEntry);
+      if (type.isIndex) return addIndexType(acc, chunkEntry);
+      return { ...acc, [name]: mapFlat(type.type) };
+    }, {});
+  };
+
+  const buildObjectContract = (stx: ObjectSyntax) => {
+    const templateString = getObjectTemplate(stx);
+    const templateObject = getObjectContracts(stx);
+    if (Object.keys(templateObject).length <= 0) return makeAnyCt();
+    return template.expression(templateString)(templateObject);
+  };
+
+  const mapObject = (stx: ObjectSyntax) => {
+    const objectContract = buildObjectContract(stx);
+    if (!stx.isRecursive) return objectContract;
+    return template.expression(`CT.CTRec(() => %%contract%%)`)({
+      contract: objectContract,
+    });
+  };
+
+  const mapType = (type: TypescriptType): t.Expression => {
+    if (type.hint === "flat") return mapFlat(type.syntax);
+    if (type.hint === "function") return mapFunction(type.syntax);
+    return mapObject(type.syntax);
+  };
+
+  const mapAndContract = (types: TypescriptType[]): t.Expression =>
+    template.expression(`CT.CTAnd(%%contracts%%)`)({
+      contracts: types.map(mapType),
+    });
+
+  const buildContract = (node: ContractNode): t.Expression => {
+    if (node.types.length === 0) return makeAnyCt();
+    if (node.types.length === 1) return mapType(node.types[0]);
+    return mapAndContract(node.types);
+  };
+
+  const reduceNode = (node: ContractNode): t.Statement =>
+    template.statement(`const %%name%% = %%contract%%`)({
+      name: getContractName(node.name),
+      contract: buildContract(node),
+    });
+
+  return reduceNode;
 };
-
-const getObjectContracts = (stx: ObjectSyntax): ObjectContracts => {
-  return Object.entries(stx.types).reduce((acc, chunkEntry) => {
-    const [name, type] = chunkEntry;
-    if (type.isOptional) return addOptionalType(acc, chunkEntry);
-    if (type.isIndex) return addIndexType(acc, chunkEntry);
-    return { ...acc, [name]: mapFlat(type.type) };
-  }, {});
-};
-
-const buildObjectContract = (stx: ObjectSyntax) => {
-  const templateString = getObjectTemplate(stx);
-  const templateObject = getObjectContracts(stx);
-  if (Object.keys(templateObject).length <= 0) return makeAnyCt();
-  return template.expression(templateString)(templateObject);
-};
-
-const mapObject = (stx: ObjectSyntax) => {
-  const objectContract = buildObjectContract(stx);
-  if (!stx.isRecursive) return objectContract;
-  return template.expression(`CT.CTRec(() => %%contract%%)`)({
-    contract: objectContract,
-  });
-};
-
-const mapType = (type: TypescriptType): t.Expression => {
-  if (type.hint === "flat") return mapFlat(type.syntax);
-  if (type.hint === "function") return mapFunction(type.syntax);
-  return mapObject(type.syntax);
-};
-
-const mapAndContract = (types: TypescriptType[]): t.Expression =>
-  template.expression(`CT.CTAnd(%%contracts%%)`)({
-    contracts: types.map(mapType),
-  });
-
-const buildContract = (node: ContractNode): t.Expression => {
-  if (node.types.length === 0) return makeAnyCt();
-  if (node.types.length === 1) return mapType(node.types[0]);
-  return mapAndContract(node.types);
-};
-
-const reduceNode = (node: ContractNode): t.Statement =>
-  template.statement(`const %%name%% = %%contract%%`)({
-    name: getContractName(node.name),
-    contract: buildContract(node),
-  });
 // }}}
 
-const compileTypes = (nodes: ContractNode[]): t.Statement[] => {
+const compileTypes = (
+  nodes: ContractNode[],
+  graph: ContractGraph
+): t.Statement[] => {
+  const reduceNode = makeReduceNode(graph);
   return nodes.map(reduceNode);
 };
 
@@ -761,7 +780,7 @@ const getContractAst = (graph: ContractGraph): t.File => {
   const statements = orderGraphNodes(graph) as ContractNode[];
   ast.program.body = [
     ...requireContractLibrary(),
-    ...compileTypes(statements),
+    ...compileTypes(statements, graph),
     ...exportContracts(statements),
   ];
   return ast;
