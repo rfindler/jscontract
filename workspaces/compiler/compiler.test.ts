@@ -126,6 +126,7 @@ describe("Our compiler", () => {
   test("Works on array types", () => {
     gotoFixture("array-generic");
     const code = compile();
+    expect(code).toMatch(`CT.numberCT, { immutable: true,`);
     expect(code).toMatch(
       `{ length: CT.numberCT, prop: { contract: CT.stringCT, index: "string"`
     );

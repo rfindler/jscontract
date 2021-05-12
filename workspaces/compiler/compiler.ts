@@ -616,6 +616,12 @@ const flatContractMap: FlatContractMap = {
       range: type.typeAnnotation?.typeAnnotation || t.tsAnyKeyword(),
     });
   },
+  TSTypeOperator(type: t.TSTypeOperator) {
+    const base = mapFlat(type.typeAnnotation);
+    if (base.type !== "CallExpression") return makeAnyCt();
+    base.arguments.push(template.expression(`{ immutable: true }`)({}));
+    return base;
+  },
   TSTypeLiteral(type: t.TSTypeLiteral) {
     if (isLiteralObject(type))
       return mapObject({ isRecursive: false, types: makeObjectLiteral(type) });
