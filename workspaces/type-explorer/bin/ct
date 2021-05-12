@@ -61,6 +61,12 @@ fail_missing_main() {
 # }}}
 
 # Helpers {{{
+disable_eslint() {
+  cat << EOF > "$PWD"/.eslintignore
+**/*.js
+EOF
+}
+
 clone_definitely_typed() {
   if [ ! -d "$TOPLEVEL_DIR/DefinitelyTyped" ]; then
     git clone https://github.com/DefinitelyTyped/DefinitelyTyped "$TOPLEVEL_DIR/DefinitelyTyped"
@@ -75,6 +81,7 @@ create_sandbox() {
   rm -rf "$TOPLEVEL_DIR"/sandbox/"${1:?}"
   mkdir -p "$TOPLEVEL_DIR"/sandbox/"${1:?}"
   cd "$TOPLEVEL_DIR"/sandbox/"${1:?}" || fail_sandbox;
+  disable_eslint;
 }
 
 download_package() {
