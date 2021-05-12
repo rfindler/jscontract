@@ -3,11 +3,13 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Thu Feb 20 20:41:32 2020 (serrano)                */
+/*    Last change :  Fri Apr 30 08:56:22 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
 /*=====================================================================*/
+"use strict";
+"use hopscript";
 
 /*---------------------------------------------------------------------*/
 /*    CT                                                               */
@@ -15,6 +17,16 @@
 class CT {
   constructor(firstOrder, wrapper) {
     this.cache = {};
+    /*       this.wrapper = ( info ) => {                                  */
+    /* 	 if( this.cache[ info ] ) {                                    */
+    /* 	    return this.cache[ info ];                                 */
+    /* 	 } else {                                                      */
+    /* 	    const nv = wrapper( info );                                */
+    /* 	    this.cache[ info ] = nv;                                   */
+    /* 	    console.log( "adding to cache ", info );                   */
+    /* 	    return nv;                                                 */
+    /* 	 }                                                             */
+    /*       }                                                             */
     this.firstOrder = firstOrder;
     if (wrapper.length != 1)
       throw new TypeError(
@@ -111,23 +123,23 @@ function CTFunction(self, domain, range) {
     throw new TypeError("Illegal domain: " + domain);
   }
 
-  const coerced_args = domain.map((p) => {
+  const coerced_args = domain.map((p, index) => {
     if (typeof p === "object" && "contract" in p) {
       minarity -= 1;
       if (p.dotdotdot) maxarity = Number.MIN_SAFE_INTEGER;
 
       return {
-        contract: CTCoerce(p.contract, "CTFunction"),
+        contract: CTCoerce(p.contract, "CTFunction, argument " + (index + 1)),
         dotdotdot: p.dotdotdot,
         optional: p.optional,
       };
     } else {
-      return { contract: CTCoerce(p, "CTFunction") };
+      return { contract: CTCoerce(p, "CTFunction, argument " + (index + 1)) };
     }
   });
 
-  const coerced_si = CTCoerce(self, "CTFunction");
-  const coerced_ri = CTCoerce(range, "CTFunction");
+  const coerced_si = CTCoerce(self, "CTFunction, self argument");
+  const coerced_ri = CTCoerce(range, "CTFunction, range");
 
   function map2fix(args, domain, key) {
     let len = args.length;
@@ -188,28 +200,28 @@ function CTFunction(self, domain, range) {
             switch (args.length) {
               case 0:
                 return ri_wrapper.ctor(
-                  target.call(si_wrapper.ctor(this), undefined)
+                  target.call(si_wrapper.ctor(self), undefined)
                 );
               case 1:
                 return ri_wrapper.ctor(
-                  target.call(si_wrapper.ctor(this), di0_wrapper.ctor(args[0]))
+                  target.call(si_wrapper.ctor(self), di0_wrapper.ctor(args[0]))
                 );
               case 2:
                 return ri_wrapper.ctor(
                   target.call(
-                    si_wrapper.ctor(this),
+                    si_wrapper.ctor(self),
                     di0_wrapper.ctor(args[0]),
                     di1_wrapper.ctor(args[1])
                   )
                 );
               default:
                 return ri_wrapper.ctor(
-                  target.apply(si_wrapper.ctor(this), map2fix(args, dis, disk))
+                  target.apply(si_wrapper.ctor(self), map2fix(args, dis, disk))
                 );
             }
           else if (args.length >= minarity && args.length <= maxarity) {
             return ri_wrapper.ctor(
-              target.apply(si_wrapper.ctor(this), map2opt(args, dis, disk))
+              target.apply(si_wrapper.ctor(self), map2opt(args, dis, disk))
             );
           } else if (
             args.length >= minarity &&
@@ -217,7 +229,7 @@ function CTFunction(self, domain, range) {
           ) {
             return ri_wrapper.ctor(
               target.apply(
-                si_wrapper.ctor(this),
+                si_wrapper.ctor(self),
                 map2dotdotdot(args, dis, disk)
               )
             );
@@ -275,9 +287,11 @@ function CTFunctionOpt(self, domain, range) {
   if (!(domain instanceof Array)) {
     throw new TypeError("Illegal domain: " + domain);
   } else {
-    const coerced_si = CTCoerce(self, "CTFunction");
-    const coerced_dis = domain.map((d) => CTCoerce(d, "CTFunction"));
-    const coerced_ri = CTCoerce(range, "CTFunction");
+    const coerced_si = CTCoerce(self, "CTFunction, self argument");
+    const coerced_dis = domain.map((d, index) =>
+      CTCoerce(d, "CTFunction, argument " + (index + 1))
+    );
+    const coerced_ri = CTCoerce(range, "CTFunction, range ");
 
     return new CT(firstOrder, function (infot, infof) {
       const si = coerced_si.wrapper(infot, infof);
@@ -301,7 +315,7 @@ function CTFunctionOpt(self, domain, range) {
               );
             } else {
               return ri_wrapper.ctor(
-                target.apply(si_wrapper.ctor(this), map2opt(args, dis, disk))
+                target.apply(si_wrapper.ctor(self), map2opt(args, dis, disk))
               );
             }
           },
@@ -354,9 +368,10 @@ function CTFunctionD(domain, range, info_indy) {
   const domain_ctcs = [];
   for (let i = 0; i < domain.length; i++) {
     const d = domain[i];
-    if (!d.dep) domain_ctcs[i] = CTCoerce(d.ctc, "CTFunctionD");
+    if (!d.dep)
+      domain_ctcs[i] = CTCoerce(d.ctc, "CTFunctionD, argument " + (i + 1));
   }
-  const range_ctc = CTCoerce(range, "CTFunctionD");
+  const range_ctc = CTCoerce(range, "CTFunctionD, range");
 
   return new CT(firstOrder, function (blame_object) {
     function mkWrapper(blame_object, rik, disk) {
@@ -418,7 +433,8 @@ function CTFunctionD(domain, range, info_indy) {
 
             // skiped the post-condition contract (for now); it would be something like
             // ri[ rik ].ctor(<<result>>)
-            return target.apply(this, wrapped_args);
+            // MS 30apr2021: I think it is incorrect not to apply any contract to self
+            return target.apply(self, wrapped_args);
           }
         },
       };
@@ -566,7 +582,12 @@ function CTAnd(...args) {
     argcs[i] = CTCoerce(args[i], "CTAnd");
   }
   return new CT(
-    (x) => lc.firstOrder(x) && rc.firstOrder(x),
+    (x) => {
+      for (let i = 0; i < argcs.length; ++i) {
+        if (!argcs[i].firstOrder(x)) return false;
+      }
+      return true;
+    },
     function (blame_object) {
       function mkWrapper(blame_object, kt) {
         const handler = {
@@ -577,6 +598,7 @@ function CTAnd(...args) {
               const ei = argcs[i].wrapper(blame_objects[i]);
               wrapped_target = ei[kt].ctor(wrapped_target);
             }
+            // MS 30apr2021: is it correct not to apply any contract to self?
             return wrapped_target.apply(self, target_args);
           },
         };
@@ -641,10 +663,12 @@ function CTOr(left, right) {
 /*---------------------------------------------------------------------*/
 /*    CTArray ...                                                      */
 /*---------------------------------------------------------------------*/
-function CTArray(element) {
+function CTArray(element, options) {
   function firstOrder(x) {
     return x instanceof Array;
   }
+
+  const immutable = typeof options == "object" && !!options.immutable;
 
   const element_ctc = CTCoerce(element, "CTArray");
 
@@ -661,6 +685,18 @@ function CTArray(element) {
           }
         },
         set: function (target, prop, newval) {
+          if (immutable) {
+            return signal_contract_violation(
+              // we're supposed to return true here
+              // after the mutation goes through,
+              // but we still reject the mutation
+              // becuase we return without updating the array.
+              // is this correct?
+              true,
+              blame_swap(blame_object),
+              "Cannot mutate immutable array"
+            );
+          }
           if (prop.match(/^[0-9]+$/)) {
             target[prop] = ei[kf].ctor(newval);
           } else {
@@ -860,6 +896,27 @@ function CTCoerce(obj, who) {
 }
 
 /*---------------------------------------------------------------------*/
+/*    CTPromise ...                                                    */
+/*---------------------------------------------------------------------*/
+function CTPromise(resolved, rejected) {
+  const this_promise_rec = CTRec(() => this_contract);
+  const then_arg1 = CTFunction(trueCT, [resolved], trueCT);
+  const then_arg2 = {
+    contract: CTFunction(trueCT, [rejected], trueCT),
+    optional: true,
+  };
+  const then_method = CTFunction(
+    trueCT,
+    [then_arg1, then_arg2],
+    this_promise_rec
+  );
+  const this_contract = CTObject({
+    then: then_method,
+  });
+  return this_contract;
+}
+
+/*---------------------------------------------------------------------*/
 /*    Blame Objects                                                    */
 /*---------------------------------------------------------------------*/
 
@@ -959,7 +1016,7 @@ function throw_contract_violation(pos, message) {
 /*    predicates ...                                                   */
 /*---------------------------------------------------------------------*/
 function isObject(o) {
-  return typeof o === "object" && o !== null;
+  return typeof o === "object";
 }
 function isFunction(o) {
   return typeof o === "function";
@@ -982,9 +1039,6 @@ function isError(o) {
 function True(o) {
   return true;
 }
-function isNull(o) {
-  return o === null;
-}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -992,9 +1046,7 @@ const objectCT = new CTFlat(isObject);
 const stringCT = new CTFlat(isString);
 const trueCT = new CTFlat((o) => true);
 const undefinedCT = new CTFlat(isUndefined);
-const nullCT = new CTFlat(isNull);
 const errorCT = new CTFlat(isError);
-const arrayBufferCT = new CTFlat((x) => x instanceof ArrayBuffer);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1007,9 +1059,6 @@ exports.stringCT = stringCT;
 exports.trueCT = trueCT;
 exports.undefinedCT = undefinedCT;
 exports.errorCT = errorCT;
-exports.numberCT = numberCT;
-exports.nullCT = nullCT;
-exports.arrayBufferCT = arrayBufferCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;
@@ -1019,6 +1068,7 @@ exports.CTRec = CTRec;
 exports.CTFunction = CTFunction;
 exports.CTFunctionOpt = CTFunctionOpt;
 exports.CTFunctionD = CTFunctionD;
+exports.CTPromise = CTPromise;
 exports.CTArray = CTArray;
 exports.CTFlat = CTFlat;
 

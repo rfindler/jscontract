@@ -4,11 +4,7 @@
   "description": "Contract library for jscontract.",
   "main": "contract.js",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
-  },
-  "devDependencies": {
-    "jest": "^26.6.3"
+    "test": "node contract.test.js"
   },
   "type": "commonjs"
 }
