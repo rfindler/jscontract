@@ -123,6 +123,13 @@ describe("Our compiler", () => {
     const code = compileContracts();
     expect(code).toMatch(`CT.arrayBufferCT`);
   });
+  test("Works on array types", () => {
+    gotoFixture("array-generic");
+    const code = compile();
+    expect(code).toMatch(
+      `{ length: CT.numberCT, prop: { contract: CT.stringCT, index: "string"`
+    );
+  });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();

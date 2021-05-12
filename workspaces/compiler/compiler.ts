@@ -541,6 +541,44 @@ const makeCtExpression = (name: string): t.Expression =>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FlatContractMap = Record<string, (type?: any) => t.Expression>;
 
+const handleUnknownReference = (ref: t.TSTypeReference) => {
+  return template.expression(`%%name%%`)({
+    name: getContractName(getTypeName(ref.typeName)),
+  });
+};
+
+const handleArrayReference = (ref: t.TSTypeReference) => {
+  const params = ref?.typeParameters?.params;
+  if (!Array.isArray(params)) {
+    throw new Error("Cannot compile array!");
+  }
+  return template.expression(`CT.CTArray(%%contract%%)`)({
+    contract: params.map((param) => mapFlat(param)),
+  });
+};
+
+const handleArrayLikeReference = (ref: t.TSTypeReference) => {
+  const params = ref?.typeParameters?.params;
+  if (!Array.isArray(params)) {
+    throw new Error("Cannot compile array like!");
+  }
+  return template.expression(
+    `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
+  )({
+    contract:
+      params.length === 1
+        ? mapFlat(params[0])
+        : template.expression(`CT.CTOr(%%ors%%)`)({
+            ors: params.map((param) => mapFlat(param)),
+          }),
+  });
+};
+
+const refIsA = (ref: t.TSTypeReference, name: string): boolean => {
+  if (ref?.typeName?.type !== "Identifier") return false;
+  return ref.typeName.name === name;
+};
+
 const flatContractMap: FlatContractMap = {
   TSNumberKeyword() {
     return makeCtExpression("CT.numberCT");
@@ -560,9 +598,9 @@ const flatContractMap: FlatContractMap = {
     });
   },
   TSTypeReference(ref: t.TSTypeReference) {
-    return template.expression(`%%name%%`)({
-      name: getContractName(getTypeName(ref.typeName)),
-    });
+    if (refIsA(ref, "Array")) return handleArrayReference(ref);
+    if (refIsA(ref, "ArrayLike")) return handleArrayLikeReference(ref);
+    return handleUnknownReference(ref);
   },
   TSParenthesizedType(paren: t.TSParenthesizedType) {
     return mapFlat(paren.typeAnnotation);
