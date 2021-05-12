@@ -1047,6 +1047,12 @@ assert.throws(() => {
   return x[0];
 });
 
+assert.ok(CT.arrayBufferCT.wrap(new ArrayBuffer(5)));
+
+assert.throws(() => {
+  CT.arrayBufferCT.wrap(5);
+});
+
 /*
  * Promise
  */
