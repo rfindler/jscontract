@@ -93,10 +93,12 @@ Mon May 10 11:26:40 AM CDT 2021
 Sun May 16 06:41:27 PM CDT 2021
 
 - Results after bumping the compiler to handle arrays/array-like things:
+  - After doing filtering, iterating is much faster
   - Similar classes of errors
-    - `array-unique`
-    - `concat-map`
-  - New kinds of bugs: `function.bind` to bind last argument? Types don't capture what the JS does at all...
-    - `field` package
-  - Shortcuts and other fun expressivity
-    - `getenv` package
+    - `array-unique` - JS looking for an error that the Contract finds
+    - `cliff` - the JavaScript accepts numbers, but the TypeScript types only want strings
+  - Interesting bug: Typescript types don't account for null
+    - `country-code-lookup`
+    - Contract lib error message?
+  - Interesting bug: Proxy objects are not arrays, which makes some of the tests fail
+    - combinations - `assert.deepEquals` fails in the test even though the contract is fine
