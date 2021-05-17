@@ -134,6 +134,13 @@ describe("Our compiler", () => {
       `{ length: CT.numberCT, prop: { contract: CT.stringCT, index: "string"`
     );
   });
+  test("Works with country code lookup", () => {
+    gotoFixture("country-code-lookup");
+    const code = compile();
+    expect(code).not.toMatch(
+      "module.exports.Country = CountryContract.wrap(originalModule.Country)"
+    );
+  });
   test("Succeeds with some constants", () => {
     gotoFixture("constants");
     const code = compileContracts();

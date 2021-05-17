@@ -89,3 +89,14 @@ Mon May 10 11:26:40 AM CDT 2021
 - Potentially useful idea:
   - Contract annotations on network and database calls? Add lib. as part of build process and get contracts for free?
   - Gradual typing + gradual contracts...
+
+Sun May 16 06:41:27 PM CDT 2021
+
+- Results after bumping the compiler to handle arrays/array-like things:
+  - Similar classes of errors
+    - `array-unique`
+    - `concat-map`
+  - New kinds of bugs: `function.bind` to bind last argument? Types don't capture what the JS does at all...
+    - `field` package
+  - Shortcuts and other fun expressivity
+    - `getenv` package

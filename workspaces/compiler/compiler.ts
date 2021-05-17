@@ -151,6 +151,7 @@ interface ContractToken {
   type: TypescriptType | null;
   isSubExport: boolean;
   isMainExport: boolean;
+  existsInJs: boolean;
 }
 
 type ParameterChild =
@@ -262,13 +263,22 @@ const tokenMap: Record<string, TokenHandler> = {
         type: getTypeToken(name, type),
         isSubExport: false,
         isMainExport: false,
+        existsInJs: false,
       },
     ];
   },
   TSExportAssignment(el: t.TSExportAssignment) {
     if (el.expression.type !== "Identifier") return [];
     const { name } = el.expression;
-    return [{ name, type: null, isSubExport: false, isMainExport: true }];
+    return [
+      {
+        name,
+        type: null,
+        isSubExport: false,
+        isMainExport: true,
+        existsInJs: true,
+      },
+    ];
   },
   TSModuleBlock(el: t.TSModuleBlock) {
     return reduceTokens(el.body);
@@ -292,6 +302,7 @@ const tokenMap: Record<string, TokenHandler> = {
         },
         isSubExport: false,
         isMainExport: false,
+        existsInJs: false,
       },
     ];
   },
@@ -309,6 +320,7 @@ const tokenMap: Record<string, TokenHandler> = {
         type: { hint: "function", syntax },
         isSubExport: false,
         isMainExport: false,
+        existsInJs: true,
       },
     ];
   },
@@ -318,7 +330,7 @@ const tokenMap: Record<string, TokenHandler> = {
     if (tokens.length === 0) return [];
     if (tokens.length > 1) return fail(tokens);
     const statement = tokens[0];
-    return [{ ...statement, isSubExport: true }];
+    return [{ ...statement, isSubExport: statement.existsInJs }];
   },
   VariableDeclaration(el: t.VariableDeclaration) {
     if (el.declarations.length !== 1) return fail(el);
@@ -339,6 +351,7 @@ const tokenMap: Record<string, TokenHandler> = {
         type: getTypeToken(name, syntax),
         isSubExport: false,
         isMainExport: false,
+        existsInJs: true,
       },
     ];
   },
