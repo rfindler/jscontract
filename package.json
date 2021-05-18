@@ -1,0 +1,26 @@
+{
+  "name": "@jscontract/root",
+  "version": "1.0.0",
+  "description": "Tools to help TypeScript programmers write type definitions.",
+  "workspaces": [
+    "workspaces/*"
+  ],
+  "scripts": {
+    "setup": "npm run build --workspace @jscontract/compiler",
+    "prepare": "husky install",
+    "pretty-quick": "pretty-quick --staged"
+  },
+  "devDependencies": {
+    "husky": "^6.0.0",
+    "prettier": "^2.2.1",
+    "pretty-quick": "^3.1.0"
+  },
+  "engines": {
+    "node": "16.1.0",
+    "npm": "7.11.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuahoeflich/jscontract.git"
+  }
+}
