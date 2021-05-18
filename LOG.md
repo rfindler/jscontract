@@ -101,4 +101,4 @@ Sun May 16 06:41:27 PM CDT 2021
     - `country-code-lookup`
     - Contract lib error message?
   - Interesting bug: Proxy objects are not arrays, which makes some of the tests fail
-    - combinations - `assert.deepEquals` fails in the test even though the contract is fine
+    - combinations - `assert.deepEquals` fails in the test even though the contract seems fine
