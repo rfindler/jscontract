@@ -1,8 +1,21 @@
-# JSContract
+# JSCONTRACT
 
-## Misc
+_30 Apr 2021_
 
-ccontract = <a value coercicle into a contract>
+This README file document the JavaScript implementation of higher-order
+contracts. The first goal is to apply them to TypeScript types to
+debug type annotations, for instance, those proposed at
+[https://definitelytyped.org/](definitively typed)
+
+# Testing the contracts implementation
+
+```shell
+nodejs ./test.js
+```
+
+# Contracts
+
+ccontract = <a value coercible into a contract>
 
 ## CTObject
 
@@ -24,17 +37,3 @@ ccontract
 | { contract: ccontract, optional: boolean }
 | { contract: ccontract, dotdotdot: boolean }
 // this alternative can appear at most once
-
-## Blame Objects
-
-blame_object =
-{ pos: name of potential blame party
-neg: name of potential blame party
-dead : (or/c false -- not involved in or/and contract
-{ dead : (or/c false -- still alive
-string) } ) -- dead with this error message
-pos_state: (or/c false -- no and/or in play
-blame_object) -- our sibling in the or/and
-neg_state: same as pos_state
-}
-INVARIANT: (dead != false) <=> (pos_state != false) or (neg_state != false)
