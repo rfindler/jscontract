@@ -1053,6 +1053,17 @@ assert.throws(() => {
   CT.arrayBufferCT.wrap(5);
 });
 
+assert.ok(
+  (() => {
+    const myWeirdArray = [];
+    const mySymbol = Symbol("a-symbol");
+    myWeirdArray[mySymbol] = 5;
+    const arrayContract = CT.CTArray(CT.anyCT).wrap(myWeirdArray);
+    arrayContract[mySymbol];
+    return true;
+  })()
+);
+
 /*
  * Promise
  */

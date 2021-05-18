@@ -678,7 +678,7 @@ function CTArray(element, options) {
 
       const handler = {
         get: function (target, prop) {
-          if (prop.match(/^[0-9]+$/)) {
+          if (typeof prop === "string" && prop.match(/^[0-9]+$/)) {
             return ei[kt].ctor(target[prop]);
           } else {
             return target[prop];
