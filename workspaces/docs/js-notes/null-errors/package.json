@@ -1,0 +1,11 @@
+{
+  "name": "null-checks",
+  "scripts": {
+    "start": "tsc --strictNullChecks index.ts && node index.js"
+  },
+  "dependencies": {
+    "@types/hex2dec": "^1.1.0",
+    "hex2dec": "^1.1.2",
+    "typescript": "^4.2.4"
+  }
+}
