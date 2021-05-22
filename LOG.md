@@ -102,3 +102,23 @@ Sun May 16 06:41:27 PM CDT 2021
     - Contract lib error message?
   - Interesting bug: Proxy objects are not arrays, which makes some of the tests fail
     - combinations - `assert.deepEquals` fails in the test even though the contract seems fine
+
+Sat May 22 04:22:49 PM CDT 2021
+
+- Results after exploring more packages:
+  - Packages working after fixing the `prop.match` bug:
+    - csvrow
+    - combinations
+    - align-text
+    - brace-expansion
+    - arr-diff
+    - center-align
+    - dependency-solver
+    - dir-walker-gen
+  - Submitted PR regarding the `hex2dec` package and null - PR merged! 🎉
+  - Detected incorrect types in the `bufferEqual` package
+    - If you give it incorrect types, it returns `undefined`, so the arguments should actually be anything (???)
+  - Extremely weird behavior regarding the `circle-to-polygon` package
+    - The last parameter of the function can either be a number, undefined, or _the explicit value null_? (???)
+  - Another strange package: `cwd`
+    - Contract system is finding a function _somewhere_, but the tests are feeding in strings...?
