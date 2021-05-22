@@ -1018,6 +1018,9 @@ function throw_contract_violation(pos, message) {
 function isObject(o) {
   return typeof o === "object" && o !== null;
 }
+function isNull(o) {
+  return o === null;
+}
 function isFunction(o) {
   return typeof o === "function";
 }
@@ -1051,6 +1054,7 @@ const trueCT = new CTFlat((o) => true);
 const arrayBufferCT = new CTFlat(isArrayBuffer);
 const undefinedCT = new CTFlat(isUndefined);
 const errorCT = new CTFlat(isError);
+const nullCT = new CTFlat(isNull);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1065,6 +1069,7 @@ exports.undefinedCT = undefinedCT;
 exports.errorCT = errorCT;
 exports.numberCT = numberCT;
 exports.arrayBufferCT = arrayBufferCT;
+exports.nullCT = nullCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

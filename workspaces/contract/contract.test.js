@@ -1064,6 +1064,17 @@ assert.ok(
   })()
 );
 
+assert.ok(
+  (() => {
+    CT.nullCT.wrap(null);
+    return true;
+  })()
+);
+
+assert.throws(() => {
+  CT.nullCT.wrap(3);
+});
+
 /*
  * Promise
  */
