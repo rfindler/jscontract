@@ -1045,6 +1045,9 @@ function True(o) {
 function isArrayBuffer(o) {
   return o instanceof ArrayBuffer;
 }
+function isBuffer(o) {
+  return o instanceof Buffer;
+}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -1055,6 +1058,7 @@ const arrayBufferCT = new CTFlat(isArrayBuffer);
 const undefinedCT = new CTFlat(isUndefined);
 const errorCT = new CTFlat(isError);
 const nullCT = new CTFlat(isNull);
+const bufferCT = new CTFlat(isBuffer);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1070,6 +1074,7 @@ exports.errorCT = errorCT;
 exports.numberCT = numberCT;
 exports.arrayBufferCT = arrayBufferCT;
 exports.nullCT = nullCT;
+exports.bufferCT = bufferCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

@@ -1075,6 +1075,17 @@ assert.throws(() => {
   CT.nullCT.wrap(3);
 });
 
+assert.ok(
+  (() => {
+    CT.bufferCT.wrap(Buffer.alloc(3));
+    return true;
+  })()
+);
+
+assert.throws(() => {
+  CT.bufferCT.wrap(null);
+});
+
 /*
  * Promise
  */
