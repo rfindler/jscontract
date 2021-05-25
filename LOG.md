@@ -115,10 +115,17 @@ Sat May 22 04:22:49 PM CDT 2021
     - center-align
     - dependency-solver
     - dir-walker-gen
-  - Submitted PR regarding the `hex2dec` package and null - PR merged! 🎉
-  - Detected incorrect types in the `bufferEqual` package
-    - If you give it incorrect types, it returns `undefined`, so the arguments should actually be anything (???)
-  - Extremely weird behavior regarding the `circle-to-polygon` package
-    - The last parameter of the function can either be a number, undefined, or _the explicit value null_? (???)
+  - Submitted PR regarding the `hex2dec` package and null - PR merged!
+  - Added docs and a `related-work` folder
   - Another strange package: `cwd`
     - Contract system is finding a function _somewhere_, but the tests are feeding in strings...?
+  - Detected incorrect types in the `bufferEqual` package
+    - If you give it incorrect types, it returns `undefined`, so the arguments should actually be anything (???)
+    - Interesting problems submitting a fix to `DefinitelyTyped`
+  - Extremely weird behavior regarding the `circle-to-polygon` package
+    - The last parameter of the function can either be a number, undefined, or _the explicit value null_? (???)
+
+// TODO:
+
+- Submit pull requests to see what they think of semantics
+- Try to get numbers on of "valid" packages, how many error, how many pass, which are bugs/not bugs
