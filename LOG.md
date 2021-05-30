@@ -125,7 +125,18 @@ Sat May 22 04:22:49 PM CDT 2021
   - Extremely weird behavior regarding the `circle-to-polygon` package
     - The last parameter of the function can either be a number, undefined, or _the explicit value null_? (???)
 
-// TODO:
+Thu May 27 08:33:27 CDT 2021
 
-- Submit pull requests to see what they think of semantics
-- Try to get numbers on of "valid" packages, how many error, how many pass, which are bugs/not bugs
+- Filtered 2221 packages out of 7467 that are actually testable
+  - Of those 2221, 687 passed with no issues
+  - 841 failed because of contract violations
+  - 639 failed due to problems actually setting up the tests
+- Key sources of error from inspection:
+  - Function arity (passing wrong number of things in)
+  - Semantics of `null` and `undefined`
+  - Putting more keys on an interface type than the type expects
+  - JavaScript usually more loosey-goosey than the TypeScript expects
+  - Interesting takeaway: It's possible to detect mismatches, but much more difficult to tell whether the mismatches are _desirable_ or not
+  - Semantic shifts over time
+- Submitted pull request to DefinitelyTyped for `buffer-equal`
+  - Waiting on feedback from maintainers - goal is to either start a conversation about TypeScript semantics or see if changes are merged into project
