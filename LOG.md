@@ -136,7 +136,13 @@ Thu May 27 08:33:27 CDT 2021
   - Semantics of `null` and `undefined`
   - Putting more keys on an interface type than the type expects
   - JavaScript usually more loosey-goosey than the TypeScript expects
-  - Interesting takeaway: It's possible to detect mismatches, but much more difficult to tell whether the mismatches are _desirable_ or not
-  - Semantic shifts over time
+  - It's possible to detect mismatches, but much more difficult to tell whether the mismatches are _desirable_ or not
+  - Idea: When there's a `null` or `undefined` based exception, what is the test checking for?
+    - An exception with a specific message? Probably not a bug - let the type error stand
+    - `null` or `undefined`? OK, we _do_ have a type error in that case
+  - Interesting packages:
+    - `sbd` - the JavaScript _specifically_ wants to let you pass nothing into the package
+    - `seededshuffle` - another intriguing case (issue with CT.Or or compiler? not sure)
+    - `freshy`, `rewire` rare packages that actually _inspects the files_ in order to do what it does, we'd need to compile the contracts directly to make this work
 - Submitted pull request to DefinitelyTyped for `buffer-equal`
   - Waiting on feedback from maintainers - goal is to either start a conversation about TypeScript semantics or see if changes are merged into project
