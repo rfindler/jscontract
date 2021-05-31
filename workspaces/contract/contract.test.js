@@ -1,9 +1,9 @@
 /*=====================================================================*/
-/*    serrano/prgm/project/jscontract/test.js                          */
+/*    .../project/jscontract/workspaces/contract/contract.test.js      */
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
-/*    Last change :  Fri Apr 30 08:58:30 2021 (serrano)                */
+/*    Last change :  Mon May 31 16:22:59 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
@@ -959,7 +959,6 @@ assert.throws(
   /Predicate `isBoolean' not satisfied for value `2'.*\n.*blaming: neg/,
   "ctand.6"
 );
-
 assert.ok(
   (() => {
     function even(x) {
@@ -994,6 +993,38 @@ assert.ok(
     return 22 == f(22);
   })(),
   "ctand.7"
+);
+assert.throws( 
+   () => {
+      const c1 = CT.CTFunction(true, [CT.CTArray(CT.isString)], CT.isString);
+      const c2 = CT.CTFunction(true, [CT.isString], CT.isString);
+      const c3 = CT.CTAnd(c1, c2);
+
+      function f() {
+   	 return "foo bar";
+      }
+      
+      const ctf = c3.wrap(f);
+      return typeof ctf() === "string";
+   },
+   "No function matches",
+   "ctand.8"
+);
+assert.throws( 
+   () => {
+      const c1 = CT.CTFunction(true, [CT.CTArray(CT.isString)], CT.isString);
+      const c2 = CT.CTFunction(true, [{ contract: CT.isString, dotdotdot: true }]], CT.isString);
+      const c3 = CT.CTAnd(c1, c2);
+
+      function f() {
+   	 return "foo bar";
+      }
+      
+      const ctf = c3.wrap(f);
+      return typeof ctf() === "string";
+   },
+   "Function 2 matches",
+   "ctand.9"
 );
 
 /*

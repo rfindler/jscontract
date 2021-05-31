@@ -1,9 +1,9 @@
 /*=====================================================================*/
-/*    serrano/prgm/project/jscontract/contract.js                      */
+/*    .../prgm/project/jscontract/workspaces/contract/contract.js      */
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Fri Apr 30 08:56:22 2021 (serrano)                */
+/*    Last change :  Mon May 31 15:47:34 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -15,7 +15,7 @@
 /*    CT                                                               */
 /*---------------------------------------------------------------------*/
 class CT {
-  constructor(firstOrder, wrapper) {
+   constructor(name, firstOrder, wrapper) {
     this.cache = {};
     /*       this.wrapper = ( info ) => {                                  */
     /* 	 if( this.cache[ info ] ) {                                    */
@@ -27,6 +27,7 @@ class CT {
     /* 	    return nv;                                                 */
     /* 	 }                                                             */
     /*       }                                                             */
+    this.name = name;
     this.firstOrder = firstOrder;
     if (wrapper.length != 1)
       throw new TypeError(
@@ -76,7 +77,7 @@ function CTFlat(pred) {
         }
       });
     }
-    return new CT(pred, function (blame_object) {
+    return new CT(pred.toString(), pred, function (blame_object) {
       return {
         t: mkWrapper(blame_object),
         f: mkWrapper(blame_swap(blame_object)),
@@ -185,7 +186,7 @@ function CTFunction(self, domain, range) {
     return typeof x === "function";
   }
 
-  return new CT(firstOrder, function (blame_object) {
+  return new CT("CTFunction", firstOrder, function (blame_object) {
     function mkWrapper(blame_object, swap_blame_object, sik, rik, disk) {
       const si = coerced_si.wrapper(blame_object);
       const dis = coerced_args.map((d) => d.contract.wrapper(blame_object));
@@ -293,7 +294,7 @@ function CTFunctionOpt(self, domain, range) {
     );
     const coerced_ri = CTCoerce(range, "CTFunction, range ");
 
-    return new CT(firstOrder, function (infot, infof) {
+    return new CT("CTFunctionOpt", firstOrder, function (infot, infof) {
       const si = coerced_si.wrapper(infot, infof);
       const dis = coerced_dis.map((d) => d.wrapper(infot, infof));
       const ri = coerced_ri.wrapper(infot, infof);
@@ -373,7 +374,7 @@ function CTFunctionD(domain, range, info_indy) {
   }
   const range_ctc = CTCoerce(range, "CTFunctionD, range");
 
-  return new CT(firstOrder, function (blame_object) {
+  return new CT("CTFunctionD", firstOrder, function (blame_object) {
     function mkWrapper(blame_object, rik, disk) {
       const normal_dis = [];
       const dep_dis = [];
@@ -558,7 +559,7 @@ function CTRec(thunk) {
     return mthunk().firstOrder(x);
   }
 
-  return new CT(firstOrder, function (blame_object) {
+  return new CT("CTRec", firstOrder, function (blame_object) {
     let ei = false;
     function mkWrapper(blame_object, kt) {
       return new CTWrapper(function (value) {
@@ -577,11 +578,8 @@ function CTRec(thunk) {
 /*    CTAnd ....                                                       */
 /*---------------------------------------------------------------------*/
 function CTAnd(...args) {
-  const argcs = [];
-  for (let i = 0; i < args.length; ++i) {
-    argcs[i] = CTCoerce(args[i], "CTAnd");
-  }
-  return new CT(
+  const argcs = args.map(a => CTCoerce(a, "CTAnd"));
+  return new CT("CTAnd",
     (x) => {
       for (let i = 0; i < argcs.length; ++i) {
         if (!argcs[i].firstOrder(x)) return false;
@@ -599,7 +597,8 @@ function CTAnd(...args) {
               wrapped_target = ei[kt].ctor(wrapped_target);
             }
             // MS 30apr2021: is it correct not to apply any contract to self?
-            return wrapped_target.apply(self, target_args);
+            const r = wrapped_target.apply(self, target_args);
+	    return r;
           },
         };
         return new CTWrapper(function (value) {
@@ -627,7 +626,7 @@ function CTAnd(...args) {
 /*    CTOr ...                                                         */
 /*---------------------------------------------------------------------*/
 function CTOrExplicitChoice(lchoose, left, rchoose, right) {
-  return new CT(
+   return new CT("CTOr",
     (x) => lchoose(x) || rchoose(x),
     function (blame_object) {
       function mkWrapper(blame_object, kt) {
@@ -672,7 +671,7 @@ function CTArray(element, options) {
 
   const element_ctc = CTCoerce(element, "CTArray");
 
-  return new CT(firstOrder, function (blame_object) {
+  return new CT("CTArray", firstOrder, function (blame_object) {
     function mkWrapper(blame_object, kt, kf) {
       const ei = element_ctc.wrapper(blame_object);
 
@@ -794,7 +793,7 @@ function CTObject(ctfields) {
     }
   }
 
-  return new CT(firstOrder, function (blame_object) {
+  return new CT("CTObject", firstOrder, function (blame_object) {
     function mkWrapper(blame_object, kt, kf) {
       const ei = {};
       const eis =
