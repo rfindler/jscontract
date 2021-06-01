@@ -146,3 +146,10 @@ Thu May 27 08:33:27 CDT 2021
     - `freshy`, `rewire` rare packages that actually _inspects the files_ in order to do what it does, we'd need to compile the contracts directly to make this work
 - Submitted pull request to DefinitelyTyped for `buffer-equal`
   - Waiting on feedback from maintainers - goal is to either start a conversation about TypeScript semantics or see if changes are merged into project
+
+Tue Jun 1 09:24:44 CDT 2021
+
+- Intersection of 152 and negation of 153:
+  - List of packages where the tests pass without contracts but they fail with real contracts
+  - List of packages where the tests pass without contracts but they fail with fake contracts (e.g, everything is true)
+- Checking out separate branch to make exploring the gap possible
