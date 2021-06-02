@@ -604,7 +604,7 @@ function CTAnd(...args) {
         return new CTWrapper(function (value) {
           for (let i = 0; i < argcs.length; ++i) {
             if (!argcs[i].firstOrder(value)) {
-              return signal_contract_violation(
+              signal_contract_violation(
                 value,
                 blame_object,
                 "CTAnd argument " + i + " didn't apply: " + value
