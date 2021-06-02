@@ -13,25 +13,24 @@ const CT = require("./contract.js");
  */
 // NB: this test case fails because we do not yet understand how to
 // add contracts to promises, so leave it at the end of the file
-// console.log("\nstarting failing test\n");
-// assert.ok( (() => {
-//    function open( string ) {
-//       return new Promise( function( res, rej ) {
-// 	 if( string.length > 0 ) {
-// 	    res( string );
-// 	 } else {
-// 	    rej( string );
-// 	 }
-//       } );
-//    }
+assert.ok( (() => {
+   function open( string ) {
+      return new Promise( function( res, rej ) {
+	 if( string.length > 0 ) {
+	    res( string );
+	 } else {
+	    rej( string );
+	 }
+      } );
+   }
 
-//    const openCT = CT.CTFunction( CT.trueCT, [ CT.isString ],
-//       CT.CTPromise( CT.isString, CT.isNumber ) );
-//    const ctopen = openCT.wrap( open );
+   const openCT = CT.CTFunction( CT.trueCT, [ CT.isString ],
+      CT.CTPromise( CT.isString, CT.isNumber ) );
+   const ctopen = openCT.wrap( open );
 
-//    const x = ctopen( "foo" );
-//    console.log("hi " + x);
-//    x.then( v => console.log( "res=", v ) ); // ok
+   const x = ctopen( "foo" );
+   console.log("hi " + x);
+   x.then( v => console.log( "res=", v ) ); // ok
 
-//    ctopen( "" ).then( v => 0, v => console.log( "rej=", v ) ); // wrong
-// })(), "promise.1" )
+   ctopen( "" ).then( v => 0, v => console.log( "rej=", v ) ); // wrong
+})(), "promise.1" )
