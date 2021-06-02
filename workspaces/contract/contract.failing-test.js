@@ -7,25 +7,7 @@
 const assert = require("assert");
 const CT = require("./contract.js");
 
-assert.throws( 
-   () => {
-      const c1 = CT.CTFunction(true, [CT.CTArray(CT.isString)], CT.isString);
-      const c2 = CT.CTFunction(true, [CT.isString], CT.isString);
-      const c3 = CT.CTAnd(c1, c2);
-
-      function f() {
-   	 return "foo bar";
-      }
-      
-      const ctf = c3.wrap(f);
-      ctf();
-   },
-   /No function matches/,
-   "ctand.8"
-);
-
-
-assert.throws( 
+assert.throws(
    () => {
       const c1 = CT.CTFunction(true, [CT.CTArray(CT.isString)], CT.isString);
       const c2 = CT.CTFunction(true, [{ contract: CT.isString, dotdotdot: true }], CT.isString);

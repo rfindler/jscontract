@@ -994,6 +994,23 @@ assert.ok(
   })(),
   "ctand.7"
 );
+assert.throws(
+   () => {
+      const c1 = CT.CTFunction(true, [CT.CTArray(CT.isString)], CT.isString);
+      const c2 = CT.CTFunction(true, [CT.isString], CT.isString);
+      const c3 = CT.CTAnd(c1, c2);
+
+      function f() {
+        return "foo bar";
+      }
+
+      const ctf = c3.wrap(f);
+      ctf();
+   },
+    /Wrong argument count[^]*Wrong argument count/,
+   "ctand.8"
+);
+
 
 /*
  * Minor bugfixes

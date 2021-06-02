@@ -239,7 +239,7 @@ function CTFunction(self, domain, range) {
               target,
               swap_blame_object,
               "Wrong argument count " + args.length + "/" + domain.length
-            );
+            ).apply(self,args);
           }
         },
       };
