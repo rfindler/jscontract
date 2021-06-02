@@ -1011,6 +1011,21 @@ assert.throws(
    "ctand.8"
 );
 
+assert.ok(
+  (() => {
+      const c1 = CT.CTFunction(true, [CT.CTArray(CT.isString)], CT.isString);
+      const c2 = CT.CTFunction(true, [{ contract: CT.isString, dotdotdot: true }], CT.isString);
+      const c3 = CT.CTAnd(c1, c2);
+
+      function f() {
+        return "foo bar";
+      }
+
+      const ctf = c3.wrap(f);
+      return typeof ctf() === "string";
+  })(),
+   "ctand.9"
+);
 
 /*
  * Minor bugfixes
