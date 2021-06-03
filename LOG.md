@@ -160,3 +160,11 @@ Tue Jun 1 09:24:44 CDT 2021
 In the future:
 
 - Build a website that automatically updates when things break
+
+Thu Jun 3 15:30:12 CDT 2021
+
+- NOTES ON STATIC READING
+  - Tool called TSCheck (pseudo-static analysis)
+  - Only reported on 10 different declaration files
+  - Key idea: Let's get the initial state of the JavaScript code, serialize its object graph, run what we find through a simplified type system, and check for mismatches between that analysis and TypeScript.
+  - Useful takeaway - categorizing the different types of bugs that we find (high-impact errors, low-impact errors)
