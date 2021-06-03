@@ -152,4 +152,11 @@ Tue Jun 1 09:24:44 CDT 2021
 - Intersection of 152 and negation of 153:
   - List of packages where the tests pass without contracts but they fail with real contracts
   - List of packages where the tests pass without contracts but they fail with fake contracts (e.g, everything is true)
+- Rough estimate of how many actual type errors we have encountered/finding even more
+- Time the script to check how long it takes to actually go through everything
 - Checking out separate branch to make exploring the gap possible
+- Which of the 841 are real bugs?
+
+In the future:
+
+- Build a website that automatically updates when things break

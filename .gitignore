@@ -1,3 +1,6 @@
+### mac os ###
+.DS_Store
+
 ### custom ###
 workspaces/type-explorer/DefinitelyTyped/
 workspaces/type-explorer/results/
