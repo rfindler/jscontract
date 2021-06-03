@@ -5,7 +5,7 @@
 workspaces/type-explorer/DefinitelyTyped/
 workspaces/type-explorer/results/
 workspaces/type-explorer/sandbox/
-
+*~
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,typescript,direnv
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,typescript,direnv
