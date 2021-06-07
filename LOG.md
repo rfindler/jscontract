@@ -165,10 +165,11 @@ Thu Jun 3 15:30:12 CDT 2021
 
 - NOTES ON STATIC READING
   - Tool called TSCheck (pseudo-static analysis)
-  - Only reported on 10 different declaration files
-  - Key idea: Let's get the initial state of the JavaScript code, serialize its object graph, run what we find through a simplified type system, and check for mismatches between that analysis and TypeScript.
-  - Useful takeaway - categorizing the different types of bugs that we find (high-impact errors, low-impact errors)
+  - Only reported on 10 different declaration files (!)
+  - Key idea: Let's get the initial state of the JavaScript code, serialize its object graph, run what we find through a simplified type system, and check for mismatches between that analysis and TypeScript
+  - Useful idea - categorizing the different types of bugs that we find (high-impact errors, low-impact errors)
 - RESULTS OF SCRIPT
   - ~356 bugs found automatically right now
-    - Number may go up as we fix bugs in contract system
-- Still waiting on DefinitelyTyped for that pull request...
+    - Number may go up as we fix bugs in compiler and contract system
+  - Still waiting on DefinitelyTyped for that pull request...
+  - Time required to run script: 5:58:45 (~6 hours)
