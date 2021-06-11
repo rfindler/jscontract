@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
-/*    Last change :  Mon May 31 16:22:59 2021 (serrano)                */
+/*    Last change :  Thu Jun 10 13:57:46 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
@@ -1116,4 +1116,48 @@ assert.ok(
 assert.throws(() => {
   CT.bufferCT.wrap(null);
 });
+
+/*---------------------------------------------------------------------*/
+/*    Promise                                                          */
+/*---------------------------------------------------------------------*/
+const cthdl = CT.CTFunction(true, [CT.isNumber], CT.isString);
+
+function makePromise(x) {
+   return new Promise((res, rej) => x ? res(10) : rej("foo"));
+}
+
+const ctpromt = CT.CTPromise(cthdl).wrap(makePromise(true));
+const ctpromf = CT.CTPromise(cthdl).wrap(makePromise(false));
+
+assert.ok( 
+   (() => {
+      ctpromt.then(x => "x="+x).then(x => x);
+      return true;
+   })());
+
+assert.ok( 
+   (async () => {
+      const x = await ctpromt;
+      return x;
+   })());
+
+assert.ok( 
+   (async () => {
+      try {
+      	 const x = await ctpromf;
+	 throw "Exception not raised";
+      	 return x;
+      } catch(e) {
+	 return true;
+      }
+   })());
+
+ctpromt.then(x => x+1)
+   .then(x => { throw "Exception not raised" }, e => true);
+
+
+
+
+
+
 

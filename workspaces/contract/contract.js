@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Mon May 31 15:47:34 2021 (serrano)                */
+/*    Last change :  Thu Jun 10 13:51:29 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -897,22 +897,34 @@ function CTCoerce(obj, who) {
 /*---------------------------------------------------------------------*/
 /*    CTPromise ...                                                    */
 /*---------------------------------------------------------------------*/
-function CTPromise(resolved, rejected) {
-  const this_promise_rec = CTRec(() => this_contract);
-  const then_arg1 = CTFunction(trueCT, [resolved], trueCT);
-  const then_arg2 = {
-    contract: CTFunction(trueCT, [rejected], trueCT),
-    optional: true,
-  };
-  const then_method = CTFunction(
-    trueCT,
-    [then_arg1, then_arg2],
-    this_promise_rec
-  );
-  const this_contract = CTObject({
-    then: then_method,
-  });
-  return this_contract;
+function CTPromise(res, rej) {
+   
+   function firstOrder(x) {
+      return x instanceof Promise && x.__proto__ === Promise.prototype;
+   }
+   
+   return new CT("CTPromise", firstOrder, function (blame_object) {
+      function mkWrapper(blame_object,kt, kf) {
+      	 return new CTWrapper(function (value) {
+	    if (firstOrder(value)) {
+	       const proto = Object.create(Promise.prototype);
+	       proto.then = (t,f) => Promise.prototype.then.call(value, res.wrap(t), rej ? rej.wrap(f) : f);
+	       value.__proto__ = proto;
+	       return value;
+	    } else {
+               return signal_contract_violation(
+            	  value,
+            	  blame_object,
+            	  "Not a promise `" + value + "': "
+          	  );
+            }
+	 });
+      }
+      return {
+	 t: mkWrapper(blame_object, "t", "f"),
+	 f: mkWrapper(blame_swap(blame_object), "f", "t")
+      };
+   });
 }
 
 /*---------------------------------------------------------------------*/
