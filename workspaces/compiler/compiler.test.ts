@@ -166,7 +166,7 @@ describe("Our compiler", () => {
       `module.exports.bool = boolContract.wrap(originalModule.bool)`
     );
   });
-  test.only("Succeeds with string and String", () => {
+  test("Succeeds with string and String", () => {
     gotoFixture("string-String");
     const code = compile();
     expect(code).toMatch(`CT.StringCCT`);
