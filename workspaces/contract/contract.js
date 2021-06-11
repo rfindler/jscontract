@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Thu Jun 10 13:51:29 2021 (serrano)                */
+/*    Last change :  Fri Jun 11 09:00:07 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -907,10 +907,16 @@ function CTPromise(res, rej) {
       function mkWrapper(blame_object,kt, kf) {
       	 return new CTWrapper(function (value) {
 	    if (firstOrder(value)) {
+	       // Interpose a new Promise.prototype that will wrap
+	       // the promise handler
 	       const proto = Object.create(Promise.prototype);
 	       proto.then = (t,f) => Promise.prototype.then.call(value, res.wrap(t), rej ? rej.wrap(f) : f);
-	       value.__proto__ = proto;
-	       return value;
+	       
+	       // Create the wrapped promise by merely
+	       // duplicating the initial promise. 
+	       const prom = value.then(x => x, x => x);
+	       prom.__proto__ = proto;
+	       return prom;
 	    } else {
                return signal_contract_violation(
             	  value,

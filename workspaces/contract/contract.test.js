@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:29:10 2020                          */
-/*    Last change :  Thu Jun 10 13:57:46 2021 (serrano)                */
+/*    Last change :  Fri Jun 11 11:23:43 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Test suite for JS contracts                                      */
@@ -1131,17 +1131,17 @@ const ctpromf = CT.CTPromise(cthdl).wrap(makePromise(false));
 
 assert.ok( 
    (() => {
-      ctpromt.then(x => "x="+x).then(x => x);
+      ctpromt.then(x => "x="+x).then(x => x, e => console.log(e));
       return true;
    })());
 
-assert.ok( 
+assert.ok(
    (async () => {
       const x = await ctpromt;
       return x;
    })());
 
-assert.ok( 
+assert.ok(
    (async () => {
       try {
       	 const x = await ctpromf;
