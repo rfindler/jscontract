@@ -168,8 +168,19 @@ Thu Jun 3 15:30:12 CDT 2021
   - Only reported on 10 different declaration files (!)
   - Key idea: Let's get the initial state of the JavaScript code, serialize its object graph, run what we find through a simplified type system, and check for mismatches between that analysis and TypeScript
   - Useful idea - categorizing the different types of bugs that we find (high-impact errors, low-impact errors)
+    - Would this cause the JavaScript to abort?
 - RESULTS OF SCRIPT
+
   - ~356 bugs found automatically right now
     - Number may go up as we fix bugs in compiler and contract system
   - Still waiting on DefinitelyTyped for that pull request...
   - Time required to run script: 5:58:45 (~6 hours)
+
+- Error classification?
+  - Not errors - JavaScript is expecting a particular error message, but the contract system throws a different one
+  - Minor errors - TypeScript doesn't reflect the JavaScript (e.g., they're trying to do gradual typing)
+  - Major errors - There's valid code which the types aren't permitting
+- Zoom with Robby for random generation
+  - TODO: Add the random generation/testing to the system
+  - Connecting the diagram into the website
+- InfoVis (Hullman) - class to take

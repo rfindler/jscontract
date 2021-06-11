@@ -592,6 +592,10 @@ const makeReduceNode = (env: ContractGraph) => {
     });
   };
 
+  const handleStringCReference = (ref: t.TSTypeReference) => {
+    return template.expression(`CT.StringCCT`)({ CT: t.identifier("CT") });
+  };
+
   const refIsA = (ref: t.TSTypeReference, name: string): boolean => {
     if (ref?.typeName?.type !== "Identifier") return false;
     return ref.typeName.name === name;
@@ -618,6 +622,7 @@ const makeReduceNode = (env: ContractGraph) => {
     TSTypeReference(ref: t.TSTypeReference) {
       if (refIsA(ref, "Array")) return handleArrayReference(ref);
       if (refIsA(ref, "ArrayLike")) return handleArrayLikeReference(ref);
+      if (refIsA(ref, "String")) return handleStringCReference(ref);
       return handleUnknownReference(ref);
     },
     TSParenthesizedType(paren: t.TSParenthesizedType) {
