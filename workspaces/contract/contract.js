@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Fri Jun 11 09:00:07 2021 (serrano)                */
+/*    Last change :  Fri Jun 11 11:30:43 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -916,6 +916,7 @@ function CTPromise(res, rej) {
 	       // duplicating the initial promise. 
 	       const prom = value.then(x => x, x => x);
 	       prom.__proto__ = proto;
+	       
 	       return prom;
 	    } else {
                return signal_contract_violation(
