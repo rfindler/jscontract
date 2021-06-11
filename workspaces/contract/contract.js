@@ -15,7 +15,7 @@
 /*    CT                                                               */
 /*---------------------------------------------------------------------*/
 class CT {
-   constructor(name, firstOrder, wrapper) {
+  constructor(name, firstOrder, wrapper) {
     this.cache = {};
     /*       this.wrapper = ( info ) => {                                  */
     /* 	 if( this.cache[ info ] ) {                                    */
@@ -239,7 +239,7 @@ function CTFunction(self, domain, range) {
               target,
               swap_blame_object,
               "Wrong argument count " + args.length + "/" + domain.length
-            ).apply(self,args);
+            ).apply(self, args);
           }
         },
       };
@@ -578,8 +578,9 @@ function CTRec(thunk) {
 /*    CTAnd ....                                                       */
 /*---------------------------------------------------------------------*/
 function CTAnd(...args) {
-  const argcs = args.map(a => CTCoerce(a, "CTAnd"));
-  return new CT("CTAnd",
+  const argcs = args.map((a) => CTCoerce(a, "CTAnd"));
+  return new CT(
+    "CTAnd",
     (x) => {
       for (let i = 0; i < argcs.length; ++i) {
         if (!argcs[i].firstOrder(x)) return false;
@@ -598,7 +599,7 @@ function CTAnd(...args) {
             }
             // MS 30apr2021: is it correct not to apply any contract to self?
             const r = wrapped_target.apply(self, target_args);
-	    return r;
+            return r;
           },
         };
         return new CTWrapper(function (value) {
@@ -626,7 +627,8 @@ function CTAnd(...args) {
 /*    CTOr ...                                                         */
 /*---------------------------------------------------------------------*/
 function CTOrExplicitChoice(lchoose, left, rchoose, right) {
-   return new CT("CTOr",
+  return new CT(
+    "CTOr",
     (x) => lchoose(x) || rchoose(x),
     function (blame_object) {
       function mkWrapper(blame_object, kt) {
@@ -1047,6 +1049,9 @@ function isArrayBuffer(o) {
 function isBuffer(o) {
   return o instanceof Buffer;
 }
+function isStringC(o) {
+  return o instanceof String;
+}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -1058,6 +1063,7 @@ const undefinedCT = new CTFlat(isUndefined);
 const errorCT = new CTFlat(isError);
 const nullCT = new CTFlat(isNull);
 const bufferCT = new CTFlat(isBuffer);
+const stringCCT = new CTFlat(isStringC);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1074,6 +1080,7 @@ exports.numberCT = numberCT;
 exports.arrayBufferCT = arrayBufferCT;
 exports.nullCT = nullCT;
 exports.bufferCT = bufferCT;
+exports.stringCCT = stringCCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;
