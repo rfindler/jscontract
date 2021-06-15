@@ -593,14 +593,26 @@ const makeReduceNode = (env: ContractGraph) => {
         `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
       );
     },
-    String(_) {
-      return template.expression(`CT.StringCT`)({ CT: t.identifier("CT") });
-    },
     Promise(ref) {
       return unwrapTypeParams(
         ref,
         "CT.CTPromise(CT.CTFunction(true, [%%contract%%], CT.anyCT))"
       );
+    },
+    String(_) {
+      return template.expression(`CT.StringCT`)({ CT: t.identifier("CT") });
+    },
+    Number(_) {
+      return template.expression(`CT.NumberCT`)({ CT: t.identifier("CT") });
+    },
+    Boolean(_) {
+      return template.expression(`CT.BooleanCT`)({ CT: t.identifier("CT") });
+    },
+    Object(_) {
+      return template.expression(`CT.ObjectCT`)({ CT: t.identifier("CT") });
+    },
+    Symbol(_) {
+      return template.expression(`CT.SymbolCT`)({ CT: t.identifier("CT") });
     },
   };
 

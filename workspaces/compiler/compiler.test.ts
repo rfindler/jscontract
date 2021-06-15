@@ -173,9 +173,13 @@ describe("Our compiler", () => {
       `CT.CTPromise(CT.CTFunction(true, [CT.stringCT], CT.anyCT))`
     );
   });
-  test("Succeeds with string and String", () => {
-    gotoFixture("string-String");
+  test("Succeeds with our primtive constructors", () => {
+    gotoFixture("primitive-constructors");
     const code = compile();
     expect(code).toMatch(`CT.StringCT`);
+    expect(code).toMatch(`CT.NumberCT`);
+    expect(code).toMatch(`CT.BooleanCT`);
+    expect(code).toMatch(`CT.ObjectCT`);
+    expect(code).toMatch(`CT.SymbolCT`);
   });
 });
