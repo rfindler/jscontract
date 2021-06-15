@@ -1121,18 +1121,6 @@ assert.throws(() => {
   CT.bufferCT.wrap(null);
 });
 
-assert.ok(
-  (() => {
-    const badStr = new String("never do this");
-    const newStr = CT.StringCT.wrap(badStr);
-    return newStr;
-  })()
-);
-
-assert.throws(() => {
-  CT.StringCT.wrap("This is probably an error.");
-});
-
 /*---------------------------------------------------------------------*/
 /*    Promise                                                          */
 /*---------------------------------------------------------------------*/
@@ -1184,3 +1172,59 @@ ctpromt
     },
     (e) => true
   );
+
+/*
+ * Primitive Constructors
+ */
+assert.ok(
+  (() => {
+    const badStr = new String("never do this");
+    const newStr = CT.StringCT.wrap(badStr);
+    return newStr;
+  })()
+);
+
+assert.throws(() => {
+  CT.StringCT.wrap("This is probably an error.");
+});
+
+assert.ok(
+  (() => {
+    return CT.NumberCT.wrap(new Number(5));
+  })()
+);
+
+assert.throws(() => {
+  return CT.NumberCT.wrap(5);
+});
+
+assert.ok(
+  (() => {
+    return CT.BooleanCT.wrap(new Boolean(false));
+  })()
+);
+
+assert.throws(() => {
+  return CT.BooleanCT.wrap(true);
+});
+
+assert.ok(
+  (() => {
+    const x = Symbol("hi");
+    return CT.SymbolCT.wrap(x);
+  })()
+);
+
+assert.throws(() => {
+  return CT.SymbolCT.wrap(false);
+});
+
+assert.ok(
+  (() => {
+    return CT.ObjectCT.wrap(new Object("hello"));
+  })()
+);
+
+assert.throws(() => {
+  return CT.ObjectCT.wrap(5);
+});

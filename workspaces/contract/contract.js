@@ -1078,6 +1078,18 @@ function isBuffer(o) {
 function isStringC(o) {
   return o instanceof String;
 }
+function isNumberC(o) {
+  return o instanceof Number;
+}
+function isBooleanC(o) {
+  return o instanceof Boolean;
+}
+function isSymbolC(o) {
+  return typeof o === "symbol";
+}
+function isObjectC(o) {
+  return o instanceof Object;
+}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -1090,6 +1102,10 @@ const errorCT = new CTFlat(isError);
 const nullCT = new CTFlat(isNull);
 const bufferCT = new CTFlat(isBuffer);
 const StringCT = new CTFlat(isStringC);
+const NumberCT = new CTFlat(isNumberC);
+const BooleanCT = new CTFlat(isBooleanC);
+const SymbolCT = new CTFlat(isSymbolC);
+const ObjectCT = new CTFlat(isObjectC);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1107,6 +1123,10 @@ exports.arrayBufferCT = arrayBufferCT;
 exports.nullCT = nullCT;
 exports.bufferCT = bufferCT;
 exports.StringCT = StringCT;
+exports.NumberCT = NumberCT;
+exports.BooleanCT = BooleanCT;
+exports.SymbolCT = SymbolCT;
+exports.ObjectCT = ObjectCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;
