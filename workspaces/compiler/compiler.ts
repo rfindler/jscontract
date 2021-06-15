@@ -565,24 +565,15 @@ const makeReduceNode = (env: ContractGraph) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type FlatContractMap = Record<string, (type?: any) => t.Expression>;
 
-  const handleArrayReference = (ref: t.TSTypeReference) => {
+  const unwrapTypeParams = (
+    ref: t.TSTypeReference,
+    expr: string
+  ): t.Expression => {
     const params = ref?.typeParameters?.params;
     if (!Array.isArray(params)) {
-      throw new Error("Cannot compile array!");
+      throw new Error(`Could not unwrap parameters on ${ref}!`);
     }
-    return template.expression(`CT.CTArray(%%contract%%)`)({
-      contract: params.map((param) => mapFlat(param)),
-    });
-  };
-
-  const handleArrayLikeReference = (ref: t.TSTypeReference) => {
-    const params = ref?.typeParameters?.params;
-    if (!Array.isArray(params)) {
-      throw new Error("Cannot compile array like!");
-    }
-    return template.expression(
-      `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
-    )({
+    return template.expression(expr)({
       contract:
         params.length === 1
           ? mapFlat(params[0])
@@ -592,13 +583,25 @@ const makeReduceNode = (env: ContractGraph) => {
     });
   };
 
-  const handleStringCReference = (ref: t.TSTypeReference) => {
-    return template.expression(`CT.StringCCT`)({ CT: t.identifier("CT") });
-  };
-
-  const refIsA = (ref: t.TSTypeReference, name: string): boolean => {
-    if (ref?.typeName?.type !== "Identifier") return false;
-    return ref.typeName.name === name;
+  const typeRefMap: Record<string, (ref: t.TSTypeReference) => t.Expression> = {
+    Array(ref) {
+      return unwrapTypeParams(ref, "CT.CTArray(%%contract%%)");
+    },
+    ArrayLike(ref) {
+      return unwrapTypeParams(
+        ref,
+        `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
+      );
+    },
+    String(_) {
+      return template.expression(`CT.StringCT`)({ CT: t.identifier("CT") });
+    },
+    Promise(ref) {
+      return unwrapTypeParams(
+        ref,
+        "CT.CTPromise(CT.CTFunction(true, [%%contract%%], CT.anyCT))"
+      );
+    },
   };
 
   const flatContractMap: FlatContractMap = {
@@ -620,10 +623,11 @@ const makeReduceNode = (env: ContractGraph) => {
       });
     },
     TSTypeReference(ref: t.TSTypeReference) {
-      if (refIsA(ref, "Array")) return handleArrayReference(ref);
-      if (refIsA(ref, "ArrayLike")) return handleArrayLikeReference(ref);
-      if (refIsA(ref, "String")) return handleStringCReference(ref);
-      return handleUnknownReference(ref);
+      if (ref?.typeName?.type !== "Identifier")
+        return handleUnknownReference(ref);
+      const { name } = ref.typeName;
+      const refFn = typeRefMap[name] || handleUnknownReference;
+      return refFn(ref);
     },
     TSParenthesizedType(paren: t.TSParenthesizedType) {
       return mapFlat(paren.typeAnnotation);

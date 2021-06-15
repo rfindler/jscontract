@@ -169,11 +169,13 @@ describe("Our compiler", () => {
   test("Succeeds with our promise library", () => {
     gotoFixture("promise-example");
     const code = compile();
-    console.log(code);
+    expect(code).toMatch(
+      `CT.CTPromise(CT.CTFunction(true, [CT.stringCT], CT.anyCT))`
+    );
   });
   test("Succeeds with string and String", () => {
     gotoFixture("string-String");
     const code = compile();
-    expect(code).toMatch(`CT.StringCCT`);
+    expect(code).toMatch(`CT.StringCT`);
   });
 });
