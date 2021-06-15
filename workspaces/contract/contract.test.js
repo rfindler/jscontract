@@ -1124,13 +1124,13 @@ assert.throws(() => {
 assert.ok(
   (() => {
     const badStr = new String("never do this");
-    const newStr = CT.stringCCT.wrap(badStr);
+    const newStr = CT.StringCT.wrap(badStr);
     return newStr;
   })()
 );
 
 assert.throws(() => {
-  CT.stringCCT.wrap("This is probably an error.");
+  CT.StringCT.wrap("This is probably an error.");
 });
 
 /*---------------------------------------------------------------------*/

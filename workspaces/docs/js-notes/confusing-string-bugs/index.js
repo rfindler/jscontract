@@ -1,7 +1,11 @@
 "use strict";
 const onlyTakesStringObjects = (aString) => {
+  console.log(typeof aString);
   if (!(aString instanceof String)) {
     throw new Error(`The value \`${aString}\` is not a String object!`);
   }
 };
-onlyTakesStringObjects("this is a string literal");
+const x = { __proto__: String.prototype };
+const y = { ...String.prototype };
+// onlyTakesStringObjects(x);
+onlyTakesStringObjects(y);

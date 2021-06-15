@@ -1089,7 +1089,7 @@ const undefinedCT = new CTFlat(isUndefined);
 const errorCT = new CTFlat(isError);
 const nullCT = new CTFlat(isNull);
 const bufferCT = new CTFlat(isBuffer);
-const stringCCT = new CTFlat(isStringC);
+const StringCT = new CTFlat(isStringC);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1106,7 +1106,7 @@ exports.numberCT = numberCT;
 exports.arrayBufferCT = arrayBufferCT;
 exports.nullCT = nullCT;
 exports.bufferCT = bufferCT;
-exports.stringCCT = stringCCT;
+exports.StringCT = StringCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

@@ -166,6 +166,11 @@ describe("Our compiler", () => {
       `module.exports.bool = boolContract.wrap(originalModule.bool)`
     );
   });
+  test("Succeeds with our promise library", () => {
+    gotoFixture("promise-example");
+    const code = compile();
+    console.log(code);
+  });
   test("Succeeds with string and String", () => {
     gotoFixture("string-String");
     const code = compile();
