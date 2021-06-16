@@ -29,31 +29,26 @@ const fail = (el: any) => {
 interface GraphNode {
   name: string;
   dependencies: string[];
+  isRecursive: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [otherProperty: string]: any;
 }
 
 type Graph = Record<string, GraphNode>;
 
-const getNextIndex = (values: GraphNode[], output: GraphNode[]): number => {
-  const index = values.findIndex((node) =>
-    node.dependencies.every((dependency) =>
-      output.some((val) => val.name === dependency)
-    )
-  );
-  if (index >= 0) return index;
-  throw new Error("ERROR: CYCLE IN TYPES DETECTED");
-};
+const isBackwardsReference = (nodes: GraphNode[], node: GraphNode) =>
+  node.dependencies.some((dep) => !nodes.find((aNode) => aNode.name === dep));
 
-export const orderGraphNodes = (graph: Graph): GraphNode[] => {
-  const output: GraphNode[] = [];
-  const values = Object.values(graph);
-  while (values.length > 0) {
-    const [element] = values.splice(getNextIndex(values, output), 1);
-    output.push(element);
-  }
-  return output;
-};
+export const markGraphNodes = (graph: Graph): GraphNode[] =>
+  Object.values(graph).reduce(
+    (nodes: GraphNode[], node) =>
+      nodes.concat(
+        isBackwardsReference(nodes, node)
+          ? { ...node, isRecursive: true }
+          : node
+      ),
+    []
+  );
 
 const getTypeName = (curType: t.TSEntityName | t.Identifier): string => {
   if (curType.type === "Identifier") return curType.name;
@@ -374,6 +369,7 @@ interface ContractNode {
   name: string;
   dependencies: string[];
   types: TypescriptType[];
+  isRecursive: boolean;
   isSubExport: boolean;
   isMainExport: boolean;
 }
@@ -456,6 +452,7 @@ const buildNode = (nodeName: string, tokens: ContractToken[]): ContractNode => {
     name: nodeName,
     isSubExport,
     isMainExport,
+    isRecursive: false,
     types: filterRedundantTypes(nodeName, types),
     dependencies: getDependencies(types),
   };
@@ -766,12 +763,14 @@ const makeReduceNode = (env: ContractGraph) => {
     return template.expression(templateString)(templateObject);
   };
 
+  const wrapRecursive = (expr: t.Expression): t.Expression =>
+    template.expression(`CT.CTRec(() => %%contract%%)`)({
+      contract: expr,
+    });
+
   const mapObject = (stx: ObjectSyntax) => {
     const objectContract = buildObjectContract(stx);
-    if (!stx.isRecursive) return objectContract;
-    return template.expression(`CT.CTRec(() => %%contract%%)`)({
-      contract: objectContract,
-    });
+    return stx.isRecursive ? wrapRecursive(objectContract) : objectContract;
   };
 
   const mapType = (type: TypescriptType): t.Expression => {
@@ -785,10 +784,15 @@ const makeReduceNode = (env: ContractGraph) => {
       contracts: types.map(mapType),
     });
 
-  const buildContract = (node: ContractNode): t.Expression => {
+  const mapNodeTypes = (node: ContractNode): t.Expression => {
     if (node.types.length === 0) return makeAnyCt();
     if (node.types.length === 1) return mapType(node.types[0]);
     return mapAndContract(node.types);
+  };
+
+  const buildContract = (node: ContractNode): t.Expression => {
+    const contract = mapNodeTypes(node);
+    return node.isRecursive ? wrapRecursive(contract) : contract;
   };
 
   const reduceNode = (node: ContractNode): t.Statement =>
@@ -811,7 +815,7 @@ const compileTypes = (
 
 const getContractAst = (graph: ContractGraph): t.File => {
   const ast = parse("");
-  const statements = orderGraphNodes(graph) as ContractNode[];
+  const statements = markGraphNodes(graph) as ContractNode[];
   ast.program.body = [
     ...requireContractLibrary(),
     ...compileTypes(statements, graph),

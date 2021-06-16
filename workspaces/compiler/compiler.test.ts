@@ -1,5 +1,5 @@
 import path from "path";
-import compileContracts, { orderGraphNodes } from "./compiler";
+import compileContracts, { markGraphNodes } from "./compiler";
 
 const gotoFixture = (fixture: string) =>
   process.chdir(path.join(__dirname, "fixtures", fixture));
@@ -7,72 +7,81 @@ const gotoFixture = (fixture: string) =>
 const compile = () =>
   compileContracts().replace(/\n/gm, "").replace(/\s\s+/g, " ");
 
-describe("Our graph ordering algorithm", () => {
+describe("Our mark recursive algorithm", () => {
   test("Works on a degenerate case", () => {
-    expect(orderGraphNodes({})).toEqual([]);
+    expect(markGraphNodes({})).toEqual([]);
   });
   test("Works when the nodes have no dependencies", () => {
     expect(
-      orderGraphNodes({
-        a: { name: "a", dependencies: [] },
-        b: { name: "b", dependencies: [] },
-        c: { name: "c", dependencies: [] },
+      markGraphNodes({
+        a: { name: "a", dependencies: [], isRecursive: false },
+        b: { name: "b", dependencies: [], isRecursive: false },
+        c: { name: "c", dependencies: [], isRecursive: false },
       })
     ).toEqual([
-      { name: "a", dependencies: [] },
-      { name: "b", dependencies: [] },
-      { name: "c", dependencies: [] },
+      { name: "a", dependencies: [], isRecursive: false },
+      { name: "b", dependencies: [], isRecursive: false },
+      { name: "c", dependencies: [], isRecursive: false },
     ]);
   });
   test("Works when the nodes have dependencies", () => {
     expect(
-      orderGraphNodes({
-        a: { name: "a", dependencies: ["b", "c"] },
-        b: { name: "b", dependencies: [] },
-        c: { name: "c", dependencies: ["b"] },
+      markGraphNodes({
+        a: { name: "a", dependencies: ["b", "c"], isRecursive: false },
+        b: { name: "b", dependencies: [], isRecursive: false },
+        c: { name: "c", dependencies: ["b"], isRecursive: false },
       })
     ).toEqual([
-      { name: "b", dependencies: [] },
-      { name: "c", dependencies: ["b"] },
-      { name: "a", dependencies: ["b", "c"] },
+      { name: "a", dependencies: ["b", "c"], isRecursive: true },
+      { name: "b", dependencies: [], isRecursive: false },
+      { name: "c", dependencies: ["b"], isRecursive: false },
     ]);
   });
-  test("Throws an exception in the presence of cycles", () => {
-    expect(() => {
-      orderGraphNodes({
-        a: { name: "a", dependencies: ["b"] },
-        b: { name: "b", dependencies: ["a"] },
-      });
-    }).toThrow();
+  test("Handles cycles correctly", () => {
+    expect(
+      markGraphNodes({
+        a: { name: "a", dependencies: ["b"], isRecursive: false },
+        b: { name: "b", dependencies: ["a"], isRecursive: false },
+      })
+    ).toEqual([
+      { name: "a", dependencies: ["b"], isRecursive: true },
+      { name: "b", dependencies: ["a"], isRecursive: false },
+    ]);
   });
   test("Works with more realistic code", () => {
     expect(
-      orderGraphNodes({
+      markGraphNodes({
         "checksum.ChecksumOptions": {
           name: "checksum.ChecksumOptions",
           dependencies: [],
+          isRecursive: false,
         },
         "checksum.file": {
           name: "checksum.file",
           dependencies: ["checksum.ChecksumOptions"],
+          isRecursive: false,
         },
         checksum: {
           name: "checksum",
           dependencies: ["checksum.ChecksumOptions"],
+          isRecursive: false,
         },
       })
     ).toEqual([
       {
         name: "checksum.ChecksumOptions",
         dependencies: [],
+        isRecursive: false,
       },
       {
         name: "checksum.file",
         dependencies: ["checksum.ChecksumOptions"],
+        isRecursive: false,
       },
       {
         name: "checksum",
         dependencies: ["checksum.ChecksumOptions"],
+        isRecursive: false,
       },
     ]);
   });
@@ -114,9 +123,7 @@ describe("Our compiler", () => {
   test("Works on the 7zip-min package", () => {
     gotoFixture("7zip-min");
     const code = compileContracts();
-    const resultPosition = code.indexOf("ResultContract");
-    const listPosition = code.indexOf("listContract");
-    expect(resultPosition).toBeLessThan(listPosition);
+    expect(code).toMatch("const listContract = CT.CTRec");
   });
   test("Works on the base64-arraybuffer", () => {
     gotoFixture("base64-arraybuffer");
@@ -181,5 +188,10 @@ describe("Our compiler", () => {
     expect(code).toMatch(`CT.BooleanCT`);
     expect(code).toMatch(`CT.ObjectCT`);
     expect(code).toMatch(`CT.SymbolCT`);
+  });
+  test("Works with mutually recursive types", () => {
+    gotoFixture("recursive-types");
+    const code = compile();
+    expect(code).toMatch("const PingContract = CT.CTRec");
   });
 });
