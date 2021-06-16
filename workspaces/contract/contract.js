@@ -1090,6 +1090,9 @@ function isSymbolC(o) {
 function isObjectC(o) {
   return o instanceof Object;
 }
+function isBigInt(o) {
+  return typeof o === "bigint";
+}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -1106,6 +1109,7 @@ const NumberCT = new CTFlat(isNumberC);
 const BooleanCT = new CTFlat(isBooleanC);
 const SymbolCT = new CTFlat(isSymbolC);
 const ObjectCT = new CTFlat(isObjectC);
+const BigIntCT = new CTFlat(isBigInt);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1127,6 +1131,7 @@ exports.NumberCT = NumberCT;
 exports.BooleanCT = BooleanCT;
 exports.SymbolCT = SymbolCT;
 exports.ObjectCT = ObjectCT;
+exports.BigIntCT = BigIntCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

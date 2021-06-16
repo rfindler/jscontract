@@ -1228,3 +1228,13 @@ assert.ok(
 assert.throws(() => {
   return CT.ObjectCT.wrap(5);
 });
+
+assert.ok(
+  (() => {
+    return CT.BigIntCT.wrap(BigInt(5));
+  })()
+);
+
+assert.throws(() => {
+  return CT.BigIntCT.wrap(5);
+});
