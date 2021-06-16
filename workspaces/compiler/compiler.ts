@@ -497,13 +497,8 @@ const getFinalName = (name: string): string =>
     ? name.substring(name.lastIndexOf(".") + 1, name.length)
     : name;
 
-const SpecialContractNames: Record<string, string> = {
-  Error: "CT.errorCT",
-  ArrayBuffer: "CT.arrayBufferCT",
-};
-
 const getContractName = (name: string): string =>
-  SpecialContractNames[name] || `${getFinalName(name)}Contract`;
+  `${getFinalName(name)}Contract`;
 
 export const ORIGINAL_MODULE_FILE = "./__ORIGINAL_UNTYPED_MODULE__.js";
 
@@ -545,7 +540,7 @@ const makeReduceNode = (env: ContractGraph) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleUnknownReference = (ref: t.TSTypeReference) => {
     const typeName = getTypeName(ref.typeName);
-    return env[typeName] || SpecialContractNames[typeName]
+    return env[typeName]
       ? template.expression(`%%name%%`)({
           name: getContractName(typeName),
         })
@@ -590,6 +585,11 @@ const makeReduceNode = (env: ContractGraph) => {
         `CT.CTObject({ length: CT.numberCT, prop: { contract: %%contract%%, index: "string" } })`
       );
     },
+    ArrayBuffer(_) {
+      return template.expression(`CT.arrayBufferCT`)({
+        CT: t.identifier("CT"),
+      });
+    },
     Promise(ref) {
       return unwrapTypeParams(
         ref,
@@ -597,25 +597,28 @@ const makeReduceNode = (env: ContractGraph) => {
       );
     },
     String(_) {
-      return template.expression(`CT.StringCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.StringCT");
     },
     Number(_) {
-      return template.expression(`CT.NumberCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.NumberCT");
     },
     Boolean(_) {
-      return template.expression(`CT.BooleanCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.BooleanCT");
     },
     Object(_) {
-      return template.expression(`CT.ObjectCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.ObjectCT");
     },
     Symbol(_) {
-      return template.expression(`CT.SymbolCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.SymbolCT");
     },
     BigInt(_) {
-      return template.expression(`CT.BigIntCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.BigIntCT");
     },
     RegExp(_) {
-      return template.expression(`CT.RegExpCT`)({ CT: t.identifier("CT") });
+      return makeCtExpression("CT.RegExpCT");
+    },
+    Error(_) {
+      return makeCtExpression("CT.errorCT");
     },
   };
 
