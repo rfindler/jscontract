@@ -1238,3 +1238,13 @@ assert.ok(
 assert.throws(() => {
   return CT.BigIntCT.wrap(5);
 });
+
+assert.ok(
+  (() => {
+    return CT.RegExpCT.wrap(RegExp("hi"));
+  })()
+);
+
+assert.throws(() => {
+  return CT.RegExpCT.wrap("hi");
+});

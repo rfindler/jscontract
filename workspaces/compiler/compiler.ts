@@ -611,6 +611,12 @@ const makeReduceNode = (env: ContractGraph) => {
     Symbol(_) {
       return template.expression(`CT.SymbolCT`)({ CT: t.identifier("CT") });
     },
+    BigInt(_) {
+      return template.expression(`CT.BigIntCT`)({ CT: t.identifier("CT") });
+    },
+    RegExp(_) {
+      return template.expression(`CT.RegExpCT`)({ CT: t.identifier("CT") });
+    },
   };
 
   const flatContractMap: FlatContractMap = {

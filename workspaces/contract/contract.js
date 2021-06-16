@@ -1093,6 +1093,9 @@ function isObjectC(o) {
 function isBigInt(o) {
   return typeof o === "bigint";
 }
+function isRegExp(o) {
+  return o instanceof RegExp;
+}
 
 const booleanCT = new CTFlat(isBoolean);
 const numberCT = new CTFlat(isNumber);
@@ -1110,6 +1113,7 @@ const BooleanCT = new CTFlat(isBooleanC);
 const SymbolCT = new CTFlat(isSymbolC);
 const ObjectCT = new CTFlat(isObjectC);
 const BigIntCT = new CTFlat(isBigInt);
+const RegExpCT = new CTFlat(isRegExp);
 
 /*---------------------------------------------------------------------*/
 /*    exports                                                          */
@@ -1132,6 +1136,7 @@ exports.BooleanCT = BooleanCT;
 exports.SymbolCT = SymbolCT;
 exports.ObjectCT = ObjectCT;
 exports.BigIntCT = BigIntCT;
+exports.RegExpCT = RegExpCT;
 
 exports.CTObject = CTObject;
 exports.CTInterface = CTObject;

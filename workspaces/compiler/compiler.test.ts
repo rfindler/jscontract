@@ -188,6 +188,8 @@ describe("Our compiler", () => {
     expect(code).toMatch(`CT.BooleanCT`);
     expect(code).toMatch(`CT.ObjectCT`);
     expect(code).toMatch(`CT.SymbolCT`);
+    expect(code).toMatch(`CT.BigIntCT`);
+    expect(code).toMatch(`CT.RegExpCT`);
   });
   test("Works with mutually recursive types", () => {
     gotoFixture("recursive-types");
