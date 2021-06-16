@@ -635,6 +635,9 @@ const makeReduceNode = (env: ContractGraph) => {
     TSNullKeyword() {
       return makeCtExpression("CT.nullCT");
     },
+    TSVoidKeyword() {
+      return makeCtExpression("CT.undefinedCT");
+    },
     TSArrayType(arr: t.TSArrayType) {
       return template.expression(`CT.CTArray(%%contract%%)`)({
         contract: mapFlat(arr.elementType),
