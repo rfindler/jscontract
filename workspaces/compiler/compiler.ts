@@ -492,10 +492,11 @@ const getContractGraph = (tokens: ContractToken[]): ContractGraph => {
 // Transform the Environment into an AST {{{
 
 // Boundary Management - Exports, Requires {{{
-const getFinalName = (name: string): string =>
-  name.includes(".")
+const getFinalName = (name: string): string => {
+  return name.includes(".")
     ? name.substring(name.lastIndexOf(".") + 1, name.length)
     : name;
+};
 
 const getContractName = (name: string): string =>
   `${getFinalName(name)}Contract`;
@@ -536,35 +537,62 @@ const exportContracts = (nodes: ContractNode[]): t.Statement[] => {
 // }}}
 
 // Map Node to Contract {{{
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const makeAnyCt = (_?: t.TSType) =>
+  template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
+
+const makeCtExpression = (name: string): t.Expression =>
+  template.expression(name)({ CT: t.identifier("CT") });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FlatContractMap = Record<string, (type?: any) => t.Expression>;
+
+const wrapRecursive = (expr: t.Expression): t.Expression =>
+  template.expression(`CT.CTRec(() => %%contract%%)`)({
+    contract: expr,
+  });
+
+const nameReference = (refName: string): t.Expression => {
+  return template.expression(`%%name%%`)({
+    name: getContractName(refName),
+  });
+};
+
+const extractRefParams = (ref: t.TSTypeReference): t.TSType[] => {
+  const params = ref?.typeParameters?.params;
+  if (!Array.isArray(params)) {
+    throw new Error(`Could not unwrap parameters on ${ref}!`);
+  }
+  return params;
+};
+
 const makeReduceNode = (env: ContractGraph) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleUnknownReference = (ref: t.TSTypeReference) => {
-    const typeName = getTypeName(ref.typeName);
-    return env[typeName]
-      ? template.expression(`%%name%%`)({
-          name: getContractName(typeName),
-        })
-      : makeAnyCt();
+  const typeIsInEnvironment = (typeName: string): boolean => {
+    if (env[typeName]) return true;
+    return Object.keys(env).some((key) => key.match(`.${typeName}`));
+  };
+
+  const giveUpOnReference = (ref: t.TSTypeReference): t.Expression => {
+    console.log(
+      `We gave up on this type: `,
+      prettier.format(JSON.stringify(ref), { parser: "json" })
+    );
+    return makeAnyCt();
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const makeAnyCt = (_?: t.TSType) =>
-    template.expression(`CT.anyCT`)({ CT: t.identifier("CT") });
-
-  const makeCtExpression = (name: string): t.Expression =>
-    template.expression(name)({ CT: t.identifier("CT") });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type FlatContractMap = Record<string, (type?: any) => t.Expression>;
+  const handleUnknownReference = (ref: t.TSTypeReference) => {
+    const typeName = getTypeName(ref.typeName);
+    if (typeIsInEnvironment(typeName)) return nameReference(typeName);
+    return giveUpOnReference(ref);
+  };
 
   const unwrapTypeParams = (
     ref: t.TSTypeReference,
     expr: string
   ): t.Expression => {
-    const params = ref?.typeParameters?.params;
-    if (!Array.isArray(params)) {
-      throw new Error(`Could not unwrap parameters on ${ref}!`);
-    }
+    const params = extractRefParams(ref);
     return template.expression(expr)({
       contract:
         params.length === 1
@@ -775,11 +803,6 @@ const makeReduceNode = (env: ContractGraph) => {
     return template.expression(templateString)(templateObject);
   };
 
-  const wrapRecursive = (expr: t.Expression): t.Expression =>
-    template.expression(`CT.CTRec(() => %%contract%%)`)({
-      contract: expr,
-    });
-
   const mapObject = (stx: ObjectSyntax) => {
     const objectContract = buildObjectContract(stx);
     return stx.isRecursive ? wrapRecursive(objectContract) : objectContract;
@@ -850,5 +873,5 @@ const compileContracts = (): string => compile(readTypesFromFile());
 export default compileContracts;
 
 if (require.main === module) {
-  console.log(compileContracts());
+  fs.writeFileSync("./__COMPILATION_RESULT__.js", compileContracts());
 }
