@@ -24,7 +24,7 @@
     "args": []
   },
   {
-    "extra": "class UserDefinedType { method() { return this instanceof Proxy; } };",
+    "extra": "class UserDefinedType { method() { return 3; } };",
     "constructor": "UserDefinedType",
     "instance": "new UserDefinedType();",
     "method": "method",

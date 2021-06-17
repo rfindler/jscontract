@@ -27,23 +27,12 @@ SUCCESS FOR Function
   
 SUCCESS FOR Error
 
-  class UserDefinedType { method() { return this instanceof Proxy; } };
+  class UserDefinedType { method() { return 3; } };
   const el = new UserDefinedType();
   const proxy = new Proxy(el, {});
   UserDefinedType.prototype.method.call(proxy, )
   
-TypeError: Function has non-object prototype 'undefined' in instanceof check
-    at Function.[Symbol.hasInstance] (<anonymous>)
-    at Proxy.method (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:2:50)
-    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:36)
-    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
-    at Array.forEach (<anonymous>)
-    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
-    at Module._compile (internal/modules/cjs/loader.js:1068:30)
-    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
-    at Module.load (internal/modules/cjs/loader.js:933:32)
-    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
-FAILURE FOR UserDefinedType
+SUCCESS FOR UserDefinedType
 
   
   const el = new String('hello');
