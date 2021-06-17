@@ -107,7 +107,7 @@ TypeError: this is not a Date object.
 FAILURE FOR Date
 
   
-  const el = new RegExp("hello");
+  const el = new RegExp('hello');
   const proxy = new Proxy(el, {});
   RegExp.prototype.exec.call(proxy, hello)
   

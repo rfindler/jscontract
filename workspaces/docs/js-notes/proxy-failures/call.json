@@ -56,7 +56,7 @@
   },
   {
     "constructor": "RegExp",
-    "instance": "new RegExp(\"hello\");",
+    "instance": "new RegExp('hello');",
     "method": "exec",
     "args": ["hello"]
   },
