@@ -1,0 +1,532 @@
+
+  
+  const el = [];
+  const proxy = new Proxy(el, {});
+  Array.prototype.push.call(proxy, 5)
+  
+SUCCESS FOR Array
+
+  
+  const el = {foo: 3};
+  const proxy = new Proxy(el, {});
+  Object.prototype.hasOwnProperty.call(proxy, 5)
+  
+SUCCESS FOR Object
+
+  
+  const el = new Function()
+  const proxy = new Proxy(el, {});
+  Function.prototype.call.call(proxy, 1)
+  
+SUCCESS FOR Function
+
+  
+  const el = new Error('hello');
+  const proxy = new Proxy(el, {});
+  Error.prototype.toString.call(proxy, )
+  
+SUCCESS FOR Error
+
+  class UserDefinedType { method() { return this instanceof Proxy; } };
+  const el = new UserDefinedType();
+  const proxy = new Proxy(el, {});
+  UserDefinedType.prototype.method.call(proxy, )
+  
+TypeError: Function has non-object prototype 'undefined' in instanceof check
+    at Function.[Symbol.hasInstance] (<anonymous>)
+    at Proxy.method (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:2:50)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:36)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+FAILURE FOR UserDefinedType
+
+  
+  const el = new String('hello');
+  const proxy = new Proxy(el, {});
+  String.prototype.charCodeAt.call(proxy, 0)
+  
+TypeError: String.prototype.toString requires that 'this' be a String
+    at Proxy.toString (<anonymous>)
+    at Proxy.charCodeAt (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:31)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+FAILURE FOR String
+
+  
+  const el = new Boolean(true);
+  const proxy = new Proxy(el, {});
+  Boolean.prototype.valueOf.call(proxy, )
+  
+TypeError: Boolean.prototype.valueOf requires that 'this' be a Boolean
+    at Proxy.valueOf (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:29)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Boolean
+
+  
+  const el = new Number(7);
+  const proxy = new Proxy(el, {});
+  Number.prototype.toFixed.call(proxy, 2)
+  
+TypeError: Number.prototype.toFixed requires that 'this' be a Number
+    at Proxy.toFixed (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:28)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Number
+
+  
+  const el = new Date();
+  const proxy = new Proxy(el, {});
+  Date.prototype.getTime.call(proxy, )
+  
+TypeError: this is not a Date object.
+    at Proxy.getTime (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:26)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Date
+
+  
+  const el = new RegExp("hello");
+  const proxy = new Proxy(el, {});
+  RegExp.prototype.exec.call(proxy, hello)
+  
+ReferenceError: hello is not defined
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:37)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+    at internal/main/run_main_module.js:17:47
+FAILURE FOR RegExp
+
+  
+  const el = new Promise((res) => res(3));
+  const proxy = new Proxy(el, {});
+  Promise.prototype.then.call(proxy, )
+  
+TypeError: Method Promise.prototype.then called on incompatible receiver [object Object]
+    at Proxy.then (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:26)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Promise
+
+  
+  const el = new Map();
+  const proxy = new Proxy(el, {});
+  Map.prototype.set.call(proxy, 3, 7)
+  
+TypeError: Method Map.prototype.set called on incompatible receiver [object Object]
+    at Proxy.set (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:21)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Map
+
+  
+  const el = new WeakMap();
+  const proxy = new Proxy(el, {});
+  WeakMap.prototype.set.call(proxy, {}, 7)
+  
+TypeError: Method WeakMap.prototype.set called on incompatible receiver [object Object]
+    at Proxy.set (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:25)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR WeakMap
+
+  
+  const el = new Set();
+  const proxy = new Proxy(el, {});
+  Set.prototype.has.call(proxy, 3)
+  
+TypeError: Method Set.prototype.has called on incompatible receiver [object Object]
+    at Proxy.has (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:21)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Set
+
+  
+  const el = new WeakSet();
+  const proxy = new Proxy(el, {});
+  WeakSet.prototype.add.call(proxy, {})
+  
+TypeError: Method WeakSet.prototype.add called on incompatible receiver [object Object]
+    at Proxy.add (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:25)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR WeakSet
+
+  
+  const el = (function*(){ yield 1; yield 2; })()
+  const proxy = new Proxy(el, {});
+  ({ prototype: (function*(){})() }).prototype.next.call(proxy, )
+  
+TypeError: Method [Generator].prototype.next called on incompatible receiver [object Object]
+    at Proxy.next (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:53)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR ({ prototype: (function*(){})() })
+
+  
+  const el = new DataView(new ArrayBuffer(2));
+  const proxy = new Proxy(el, {});
+  DataView.prototype.getInt8.call(proxy, )
+  
+TypeError: Method DataView.prototype.getInt8 called on incompatible receiver undefined
+    at Proxy.getInt8 (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:30)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR DataView
+
+  
+  const el = new ArrayBuffer(5);
+  const proxy = new Proxy(el, {});
+  ArrayBuffer.prototype.slice.call(proxy, )
+  
+TypeError: Method ArrayBuffer.prototype.slice called on incompatible receiver [object Object]
+    at Proxy.slice (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:31)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR ArrayBuffer
+
+  
+  const el = new SharedArrayBuffer(5);
+  const proxy = new Proxy(el, {});
+  SharedArrayBuffer.prototype.slice.call(proxy, 0, 3)
+  
+TypeError: Method SharedArrayBuffer.prototype.slice called on incompatible receiver [object Object]
+    at Proxy.slice (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:37)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR SharedArrayBuffer
+
+  
+  const el = new SharedArrayBuffer(5);
+  const proxy = new Proxy(el, {});
+  SharedArrayBuffer.prototype.slice.call(proxy, 0, 3)
+  
+TypeError: Method SharedArrayBuffer.prototype.slice called on incompatible receiver [object Object]
+    at Proxy.slice (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:37)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR SharedArrayBuffer
+
+  
+  const el = new Int8Array(3);
+  const proxy = new Proxy(el, {});
+  Int8Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:34)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Int8Array
+
+  
+  const el = new Uint8Array(3);
+  const proxy = new Proxy(el, {});
+  Uint8Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:35)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Uint8Array
+
+  
+  const el = new Uint8Array(3);
+  const proxy = new Proxy(el, {});
+  Uint8Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:35)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Uint8Array
+
+  
+  const el = new Uint8ClampedArray(3);
+  const proxy = new Proxy(el, {});
+  Uint8ClampedArray.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:42)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Uint8ClampedArray
+
+  
+  const el = new Int16Array(3);
+  const proxy = new Proxy(el, {});
+  Int16Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:35)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Int16Array
+
+  
+  const el = new Uint16Array(3);
+  const proxy = new Proxy(el, {});
+  Uint16Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:36)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Uint16Array
+
+  
+  const el = new Int32Array(3);
+  const proxy = new Proxy(el, {});
+  Int32Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:35)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Int32Array
+
+  
+  const el = new Uint32Array(3);
+  const proxy = new Proxy(el, {});
+  Uint32Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:36)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Uint32Array
+
+  
+  const el = new Float32Array(3);
+  const proxy = new Proxy(el, {});
+  Float32Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:37)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Float32Array
+
+  
+  const el = new Float64Array(3);
+  const proxy = new Proxy(el, {});
+  Float64Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:37)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR Float64Array
+
+  
+  const el = new BigInt64Array(3);
+  const proxy = new Proxy(el, {});
+  BigInt64Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:38)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR BigInt64Array
+
+  
+  const el = new BigUint64Array(3);
+  const proxy = new Proxy(el, {});
+  BigUint64Array.prototype.copyWithin.call(proxy, )
+  
+TypeError: this is not a typed array.
+    at Proxy.copyWithin (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:39)
+    at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
+    at Module._compile (internal/modules/cjs/loader.js:1068:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1097:10)
+    at Module.load (internal/modules/cjs/loader.js:933:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:774:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
+FAILURE FOR BigUint64Array

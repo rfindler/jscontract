@@ -1,32 +1,62 @@
 [
   {
     "constructor": "Array",
-    "instance": "[]",
+    "instance": "[];",
     "method": "push",
     "args": [5]
   },
   {
     "constructor": "Object",
-    "instance": "{foo: 3}",
+    "instance": "{foo: 3};",
     "method": "hasOwnProperty",
     "args": [5]
   },
   {
-    "extra": "class UserDefinedType { method() { return 3; } };",
+    "constructor": "Function",
+    "instance": "new Function()",
+    "method": "call",
+    "args": [1]
+  },
+  {
+    "constructor": "Error",
+    "instance": "new Error('hello');",
+    "method": "toString",
+    "args": []
+  },
+  {
+    "extra": "class UserDefinedType { method() { return this instanceof Proxy; } };",
     "constructor": "UserDefinedType",
     "instance": "new UserDefinedType();",
     "method": "method",
     "args": []
   },
   {
+    "constructor": "String",
+    "instance": "new String('hello');",
+    "method": "charCodeAt",
+    "args": [0]
+  },
+  {
+    "constructor": "Boolean",
+    "instance": "new Boolean(true);",
+    "method": "valueOf",
+    "args": []
+  },
+  {
+    "constructor": "Number",
+    "instance": "new Number(7);",
+    "method": "toFixed",
+    "args": [2]
+  },
+  {
     "constructor": "Date",
-    "instance": "new Date()",
+    "instance": "new Date();",
     "method": "getTime",
     "args": []
   },
   {
     "constructor": "RegExp",
-    "instance": "new RegExp(\"hello\")",
+    "instance": "new RegExp(\"hello\");",
     "method": "exec",
     "args": ["hello"]
   },
@@ -34,6 +64,132 @@
     "constructor": "Promise",
     "instance": "new Promise((res) => res(3));",
     "method": "then",
+    "args": []
+  },
+  {
+    "constructor": "Map",
+    "instance": "new Map();",
+    "method": "set",
+    "args": [3, 7]
+  },
+  {
+    "constructor": "WeakMap",
+    "instance": "new WeakMap();",
+    "method": "set",
+    "args": ["{}", 7]
+  },
+  {
+    "constructor": "Set",
+    "instance": "new Set();",
+    "method": "has",
+    "args": [3]
+  },
+  {
+    "constructor": "WeakSet",
+    "instance": "new WeakSet();",
+    "method": "add",
+    "args": ["{}"]
+  },
+  {
+    "constructor": "({ prototype: (function*(){})() })",
+    "instance": "(function*(){ yield 1; yield 2; })()",
+    "method": "next",
+    "args": []
+  },
+  {
+    "constructor": "DataView",
+    "instance": "new DataView(new ArrayBuffer(2));",
+    "method": "getInt8",
+    "args": []
+  },
+  {
+    "constructor": "ArrayBuffer",
+    "instance": "new ArrayBuffer(5);",
+    "method": "slice",
+    "args": []
+  },
+  {
+    "constructor": "SharedArrayBuffer",
+    "instance": "new SharedArrayBuffer(5);",
+    "method": "slice",
+    "args": [0, 3]
+  },
+  {
+    "constructor": "SharedArrayBuffer",
+    "instance": "new SharedArrayBuffer(5);",
+    "method": "slice",
+    "args": [0, 3]
+  },
+  {
+    "constructor": "Int8Array",
+    "instance": "new Int8Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Uint8Array",
+    "instance": "new Uint8Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Uint8Array",
+    "instance": "new Uint8Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Uint8ClampedArray",
+    "instance": "new Uint8ClampedArray(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Int16Array",
+    "instance": "new Int16Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Uint16Array",
+    "instance": "new Uint16Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Int32Array",
+    "instance": "new Int32Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Uint32Array",
+    "instance": "new Uint32Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Float32Array",
+    "instance": "new Float32Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "Float64Array",
+    "instance": "new Float64Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "BigInt64Array",
+    "instance": "new BigInt64Array(3);",
+    "method": "copyWithin",
+    "args": []
+  },
+  {
+    "constructor": "BigUint64Array",
+    "instance": "new BigUint64Array(3);",
+    "method": "copyWithin",
     "args": []
   }
 ]
