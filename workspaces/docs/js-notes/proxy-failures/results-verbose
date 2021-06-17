@@ -109,10 +109,11 @@ FAILURE FOR Date
   
   const el = new RegExp('hello');
   const proxy = new Proxy(el, {});
-  RegExp.prototype.exec.call(proxy, hello)
+  RegExp.prototype.exec.call(proxy, 'hello')
   
-ReferenceError: hello is not defined
-    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:37)
+TypeError: Method RegExp.prototype.exec called on incompatible receiver [object Object]
+    at Proxy.exec (<anonymous>)
+    at eval (eval at <anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5), <anonymous>:5:25)
     at /Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:27:5
     at Array.forEach (<anonymous>)
     at Object.<anonymous> (/Users/joshua/code/github/manuel-serrano/jscontract/workspaces/docs/js-notes/proxy-failures/index.js:21:12)
@@ -121,7 +122,6 @@ ReferenceError: hello is not defined
     at Module.load (internal/modules/cjs/loader.js:933:32)
     at Function.Module._load (internal/modules/cjs/loader.js:774:14)
     at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:72:12)
-    at internal/main/run_main_module.js:17:47
 FAILURE FOR RegExp
 
   

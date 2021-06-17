@@ -58,7 +58,7 @@
     "constructor": "RegExp",
     "instance": "new RegExp('hello');",
     "method": "exec",
-    "args": ["hello"]
+    "args": ["'hello'"]
   },
   {
     "constructor": "Promise",
