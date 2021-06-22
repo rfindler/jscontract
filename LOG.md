@@ -184,3 +184,23 @@ Thu Jun 3 15:30:12 CDT 2021
   - TODO: Add the random generation/testing to the system
   - Connecting the diagram into the website
 - InfoVis (Hullman) - class to take
+
+Mon Jun 21 07:56:45 CDT 2021
+
+- RESULTS OF RUNNING THE SCRIPT
+  - Caught bugs in some packages that are using promises!
+    - `child-process-promise` - the Promise resolves to code that has more keys on the object than expected
+    - Also reported errors in `promise-retry`, `promise-defer`, other similar packages
+  - When does our compiler give up?
+    - Unusual exports (see the `logg.js` package) - legacy syntax from older editions of TypeScript
+    - Generics
+    - Nested type relationships (relatively easy to fix as it happens, just need examples of code to root it out)
+- NEXT PLANS
+  - Start trying to listen to the webhook?
+    - We have enough of the infrastructure that I think the engineering investment is worthwhile
+  - Work on getting the website running?
+- What happened last week:
+  - Extending contract system with more flat types
+  - Fixed compiler bugs
+  - Running script more
+  - Investigation of Proxy semantics
