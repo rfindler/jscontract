@@ -54,6 +54,13 @@ These errors occur TypeScript expects one kind of primitive type, like `string`,
 - stack-trace
 - throng
 - to-px
+- trim (this one is caused by `String` vs. `string`)
+- tsscmp
+- wcwidth
+- whatwg-encoding
+- wrench
+- xml-escape
+- zipcodes
 
 This section is the largest and could perhaps be split into subcategories respecting whether or not the type mismatch is "intentional" or not. Some of these cases seem like situations where the TypeScript developers are putting a layer of safety to prevent the JavaScript from behaving strangely, but other mistakes in the types seem like more innocent oversights.
 
@@ -92,6 +99,8 @@ These errors occur when the TypeScript specifies an object interface with specif
 - nodemailer-mailgun-transport
 - provinces
 - through2-map
+- x509.js
+- yesql
 
 ## Arity Mismatch
 
@@ -140,10 +149,13 @@ TypeScript wants to make sure each function takes the arguments it expects. Howe
 - shuffle-seed
 - static-eval
 - get-times
+- url-params
+- xml
 
 Undesired Errors
 
-Message Mismatch
+## Message Mismatch
+
 JavaScript's error handling system relies on strings: An error object in the language contains a "message" string that can be inspected at runtime. As such, JavaScript tests often work by creating functions that throw an exception and then checking that the message in the exception contains the error. An example of such a test might look like the following:
 
 ```js
@@ -180,6 +192,8 @@ Packages that fall into this category include:
 - strip-comments
 - swagger-express-mw
 - tcp-port-used
+- url-join
+- warning
 
 ## Runtime Type Changes
 
@@ -198,6 +212,137 @@ Some packages provide convenience wrappers around this sort of prototype modific
 ## Interference
 
 Sometimes, our contract system interferes with the semantics of the code it alters beyond just wrapping it. Here are some packages where that happens:
+
+- 7zip-min
+- args
+- asciichart
+- audio-play
+- axios-token-interceptor
+- b-spline
+- bash-glob
+- browser-pack
+- browser-resolve
+- chloride
+- cli-box
+- color-namer
+- colornames
+- concurrently
+- connect-history-api-fallback
+- connect-livereload
+- connect-slashes
+- country-list-js
+- create-error
+- css-mediaquery
+- cssbeautify
+- cwise
+- cwise-parser
+- d20
+- damerau-levenshtein
+- deasync
+- defer-promise
+- deindent
+- dependency-solver
+- dir-walker-gen
+- du
+- easy-soap-request
+- empty-dir
+- ent
+- envhandlebars
+- express-fileupload
+- express-form-data
+- express-handlebars
+- express-sslify
+- express-unless
+- ffprobe
+- fibers
+- field
+- file-size
+- freeport
+- freshy
+- furigana-markdown-it
+- get-ssl-certificate
+- gettext-parser
+- glob-to-regexp
+- gulp-inject
+- gulp-protractor
+- he
+- honeybadger
+- html5-history
+- humps
+- iban
+- ical
+- ini
+- inline-css
+- intersperse
+- is-glob
+- jalaali-js
+- jjv
+- jsontoxml
+- kind-of
+- koa-cors
+- koa-proxy
+- koa-xml-body
+- kompression
+- langs
+- linkify-markdown
+- md5
+- metaget
+- minimist
+- mock-req-res
+- msgpack
+- multisort
+- muri
+- mv
+- nprogress
+- parse-author
+- parse-color
+- parse-filepath
+- parse-prefer-header
+- password-hash
+- pem-jwk
+- perfy
+- pidusage
+- platform
+- promised-temp
+- pwd-strength
+- radix64
+- random-useragent
+- rc
+- reconnect-core
+- requestretry
+- require-directory
+- restify-cookies
+- rimraf
+- rollup-plugin-auto-external
+- runmd
+- safe-json-stringify
+- sax-stream
+- saywhen
+- scss-parser
+- seed-random
+- semaphore
+- set-value
+- sha256-file
+- shell-quote
+- simple-diff
+- simple-query-string
+- std-mocks
+- stream-json
+- style-search
+- swagger-express-validator
+- swagger-hapi
+- swagger-restify-mw
+- swagger-sails-hook
+- text-table
+- through
+- to-absolute-glob
+- unzip-stream
+- urlparser
+- voucher-code-generator
+- wait-on
+- winston-syslog
+- write
+- xml-flow
 
 # To Do...
 
