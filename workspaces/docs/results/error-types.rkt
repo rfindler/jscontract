@@ -20,7 +20,7 @@
 @subsection{Type Mismatch}
 These errors occur TypeScript expects one kind of primitive type, like @code{string}, but the JavaScript passes in something completely different. Examples of packages that fall into this category include:
 
-@itemlist{
+@itemlist[
  @item{branca}
  @item{buffer-equal}
  @item{circle-to-polygon}
@@ -49,7 +49,17 @@ These errors occur TypeScript expects one kind of primitive type, like @code{str
  @item{parse-unit}
  @item{parsecurrency}
  @item{pascalcase}
-}
+ @item{pretty-time} 
+ @item{ps-tree}
+ @item{quick-format-unescaped}
+ @item{recase}
+ @item{rtl-detect}
+ @item{safe-compare}
+ @item{save-pixels}
+ @item{sbd}
+ @item{secure-random-string}
+ @item{stack-trace}
+ ]
 
 My personal favorite example among these is @code{filesize-parser}, which blatantly passes numbers and strings even though the Typescript does not reflect them.
 
@@ -60,7 +70,7 @@ Interesting note: JavaScript libraries disagree wildly about what to do when the
 @subsection{Interface Key Mismatch}
 These errors occur when the TypeScript specifies an object interface with specific keys and values but the JavaScript includes more or less keys than expected. Examples of packages that fall into this category include:
 
-@itemlist{
+@itemlist[
  @item{bytewise}
  @item{checksum}
  @item{child-process-promise}
@@ -84,7 +94,8 @@ These errors occur when the TypeScript specifies an object interface with specif
  @item{koa-cache-control}
  @item{koa-ejs}
  @item{nodemailer-mailgun-transport}
-}
+ @item{provinces}
+]
 
 @subsection{Arity Mismatch}
 JavaScript ordinarily lets you pass as many arguments as you would like into a function:
@@ -96,7 +107,7 @@ JavaScript ordinarily lets you pass as many arguments as you would like into a f
 
 TypeScript wants to make sure each function takes the arguments it expects. However, sometimes, TypeScript developers miss all of the arguments that a JavaScript function can take. We've detected arity mismatch problems in the following packages:
 
-@itemlist{
+@itemlist[
  @item{concat-map}
  @item{concat-stream}
  @item{delete-empty}
@@ -120,7 +131,18 @@ TypeScript wants to make sure each function takes the arguments it expects. Howe
  @item{object-map}
  @item{object.omit}
  @item{pad-left}
-}
+ @item{pick-deep}
+ @item{pipes-and-filters}
+ @item{pkcs7-padding}
+ @item{point-in-polygon}
+ @item{progress-stream}
+ @item{promise-retry}
+ @item{read}
+ @item{read-package-tree}
+ @item{repeat-string}
+ @item{serialize-javascript}
+ @item{shuffle-seed}
+]
 
 @section{Undesired Errors}
 
@@ -138,6 +160,7 @@ JavaScript's error handling system relies on strings: An error object in the lan
 These tests present problems because our contract library throws errors related to blame that often do not match the string the test expects. As such, while these tests fail, they do not necessarily present a type error of the sort we desire—TypeScript is designed to guard against these cases.
 
 Packages that fall into this category include:
+
 @itemlist[
  @item{array-inital}
  @item{array-unique}
@@ -155,6 +178,8 @@ Packages that fall into this category include:
  @item{is-odd}
  @item{last-element}
  @item{parse-password}
+ @item{promise-sequential}
+ @item{randomatic}
  ]
 
 @subsection{Runtime Type Changes}
@@ -187,9 +212,11 @@ Sometimes, our contract system interferes with the semantics of the code it alte
 Further thoughts:
 
 @itemlist[
+ @item{The @code{quotesy} package caused our contract library to go into an infinite loop}
  @item{Notably, the @code{he} package is an example of the interference other researchers have found.}
  @item{The @code{parse-author} package presents an error that we could maybe fix in the future?}
+ @item{The @code{password-hash} package seems to have the optional keys interfering... }
+ @item{the @code{random-useragent} seems to have the same issue}
  @item{What about the @code{7zip-min} package?}
  @item{The @code{parse-color} package is an example of one that our approach would miss...}
  ]
-
