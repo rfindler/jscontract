@@ -59,7 +59,11 @@ These errors occur TypeScript expects one kind of primitive type, like @code{str
  @item{sbd}
  @item{secure-random-string}
  @item{stack-trace}
+ @item{throng}
+ @item{to-px}
  ]
+
+This section is the largest and could perhaps be split into subcategories respecting whether or not the type mismatch is "intentional" or not. Some of these cases seem like situations where the TypeScript developers are putting a layer of safety to prevent the JavaScript from behaving strangely, but other mistakes in the types seem like more innocent oversights.
 
 My personal favorite example among these is @code{filesize-parser}, which blatantly passes numbers and strings even though the Typescript does not reflect them.
 
@@ -95,7 +99,8 @@ These errors occur when the TypeScript specifies an object interface with specif
  @item{koa-ejs}
  @item{nodemailer-mailgun-transport}
  @item{provinces}
-]
+ @item{through2-map}
+ ]
 
 @subsection{Arity Mismatch}
 JavaScript ordinarily lets you pass as many arguments as you would like into a function:
@@ -142,7 +147,9 @@ TypeScript wants to make sure each function takes the arguments it expects. Howe
  @item{repeat-string}
  @item{serialize-javascript}
  @item{shuffle-seed}
-]
+ @item{static-eval}
+ @item{get-times}
+ ]
 
 @section{Undesired Errors}
 
@@ -180,6 +187,10 @@ Packages that fall into this category include:
  @item{parse-password}
  @item{promise-sequential}
  @item{randomatic}
+ @item{string-simliarity}
+ @item{strip-comments}
+ @item{swagger-express-mw}
+ @item{tcp-port-used}
  ]
 
 @subsection{Runtime Type Changes}
