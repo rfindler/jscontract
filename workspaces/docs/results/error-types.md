@@ -127,7 +127,6 @@ TypeScript wants to make sure each function takes the arguments it expects. Howe
 - hex-rgba
 - human-date
 - is-empty
-- is-even
 - is-function
 - is-valid-glob
 - main-bower-files
@@ -184,6 +183,7 @@ Packages that fall into this category include:
 - html-tableify
 - is-negated-glob
 - is-odd
+- is-even
 - last-element
 - parse-password
 - promise-sequential
