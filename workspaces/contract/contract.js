@@ -3,7 +3,7 @@
 /*    -------------------------------------------------------------    */
 /*    Author      :  manuel serrano                                    */
 /*    Creation    :  Tue Feb 18 17:19:39 2020                          */
-/*    Last change :  Fri Jun 11 11:30:43 2021 (serrano)                */
+/*    Last change :  Tue Jun 29 17:36:35 2021 (serrano)                */
 /*    Copyright   :  2020-21 manuel serrano                            */
 /*    -------------------------------------------------------------    */
 /*    Basic contract implementation                                    */
@@ -761,16 +761,14 @@ function CTObject(ctfields) {
       }
 
       for (let n in x) {
-        if (n !== "__private") {
-          if (!(n in fields)) {
+	 if (!(n in fields)) {
             if (typeof n === "string" && !stringIndexContract) {
-              return false;
+               return false;
             }
             if (typeof n === "number" && !numberIndexContract) {
-              return false;
+               return false;
             }
-          }
-        }
+	 }
       }
 
       return true;
@@ -808,47 +806,45 @@ function CTObject(ctfields) {
 
         ei[k] = ctc.wrapper(blame_object);
       }
-      var handler = {
-        get: function (target, prop) {
-          const ct =
-            ei[prop] ||
-            (typeof prop === "string" && eis) ||
-            (typeof prop === "number" && ein);
+      function makehandler( priv ) {
+	 return {
+	    get: function (target, prop) {
+	       const ct =
+		  ei[prop] ||
+		  (typeof prop === "string" && eis) ||
+		  (typeof prop === "number" && ein);
 
-          const priv = target.__private;
-          const cache = priv[prop];
+		  const cache = priv[prop];
 
-          if (ct) {
-            if (cache) {
-              return cache;
-            } else {
-              const cv = ct[kt].ctor(target[prop]);
-              priv[prop] = cv;
-              return cv;
-            }
-          } else {
-            return target[prop];
-          }
-        },
-        set: function (target, prop, newval) {
-          const priv = target.__private;
-          const ct = ei[prop];
+		  if (ct) {
+		     if (cache) {
+			return cache;
+		     } else {
+			const cv = ct[kt].ctor(target[prop]);
+			priv[prop] = cv;
+			return cv;
+		     }
+		  } else {
+		     return target[prop];
+		  }
+	    },
+	    set: function (target, prop, newval) {
+	       const ct = ei[prop];
 
-          if (ct) {
-            priv[prop] = false;
-            target[prop] = ct[kf].ctor(newval);
-          } else {
-            target[prop] = newval;
-          }
-          return true;
-        },
+	       if (ct) {
+		  priv[prop] = false;
+		  target[prop] = ct[kf].ctor(newval);
+	       } else {
+		  target[prop] = newval;
+	       }
+	       return true;
+	    },
+	 };
       };
 
       return new CTWrapper(function (value) {
-        value.__private = {};
-
         if (firstOrder(value)) {
-          return new Proxy(value, handler);
+           return new Proxy(value, makeHandler({}));
         } else {
           // TODO: this error message is not always accurate
           return signal_contract_violation(
