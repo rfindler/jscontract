@@ -761,14 +761,14 @@ function CTObject(ctfields) {
       }
 
       for (let n in x) {
-	 if (!(n in fields)) {
-            if (typeof n === "string" && !stringIndexContract) {
-               return false;
-            }
-            if (typeof n === "number" && !numberIndexContract) {
-               return false;
-            }
-	 }
+        if (!(n in fields)) {
+          if (typeof n === "string" && !stringIndexContract) {
+            return false;
+          }
+          if (typeof n === "number" && !numberIndexContract) {
+            return false;
+          }
+        }
       }
 
       return true;
@@ -806,45 +806,45 @@ function CTObject(ctfields) {
 
         ei[k] = ctc.wrapper(blame_object);
       }
-      function makehandler( priv ) {
-	 return {
-	    get: function (target, prop) {
-	       const ct =
-		  ei[prop] ||
-		  (typeof prop === "string" && eis) ||
-		  (typeof prop === "number" && ein);
+      function makeHandler(priv) {
+        return {
+          get: function (target, prop) {
+            const ct =
+              ei[prop] ||
+              (typeof prop === "string" && eis) ||
+              (typeof prop === "number" && ein);
 
-		  const cache = priv[prop];
+            const cache = priv[prop];
 
-		  if (ct) {
-		     if (cache) {
-			return cache;
-		     } else {
-			const cv = ct[kt].ctor(target[prop]);
-			priv[prop] = cv;
-			return cv;
-		     }
-		  } else {
-		     return target[prop];
-		  }
-	    },
-	    set: function (target, prop, newval) {
-	       const ct = ei[prop];
+            if (ct) {
+              if (cache) {
+                return cache;
+              } else {
+                const cv = ct[kt].ctor(target[prop]);
+                priv[prop] = cv;
+                return cv;
+              }
+            } else {
+              return target[prop];
+            }
+          },
+          set: function (target, prop, newval) {
+            const ct = ei[prop];
 
-	       if (ct) {
-		  priv[prop] = false;
-		  target[prop] = ct[kf].ctor(newval);
-	       } else {
-		  target[prop] = newval;
-	       }
-	       return true;
-	    },
-	 };
-      };
+            if (ct) {
+              priv[prop] = false;
+              target[prop] = ct[kf].ctor(newval);
+            } else {
+              target[prop] = newval;
+            }
+            return true;
+          },
+        };
+      }
 
       return new CTWrapper(function (value) {
         if (firstOrder(value)) {
-           return new Proxy(value, makeHandler({}));
+          return new Proxy(value, makeHandler({}));
         } else {
           // TODO: this error message is not always accurate
           return signal_contract_violation(
