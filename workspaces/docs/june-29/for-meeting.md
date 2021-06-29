@@ -25,3 +25,13 @@
   - `pad-left`
 - Challenge: I've been waiting for a month for one of my existing pull requests...
 - Reducing false-positive rate
+  - Interference from `__private`
+  - Surprising syntax:
+
+```js
+const object = {
+  method() {
+    return false;
+  },
+};
+```
