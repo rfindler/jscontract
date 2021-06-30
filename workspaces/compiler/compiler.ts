@@ -177,18 +177,52 @@ type InterfaceChild =
   | t.TSConstructSignatureDeclaration
   | t.TSMethodSignature;
 
+const accumulateType = (
+  acc: ObjectRecord,
+  el: t.TSPropertySignature | t.TSMethodSignature,
+  type?: t.TSType
+): ObjectRecord => {
+  if (!type || el?.key?.type !== "Identifier") return acc;
+  const { name } = el.key;
+  return {
+    ...acc,
+    [name]: { type, isIndex: false, isOptional: Boolean(el.optional) },
+  };
+};
+
+const coerceMethodSignature = (el: t.TSMethodSignature): t.TSFunctionType => ({
+  type: "TSFunctionType",
+  typeAnnotation: el.typeAnnotation,
+  parameters: el.parameters,
+  leadingComments: null,
+  innerComments: null,
+  trailingComments: null,
+  loc: null,
+  start: null,
+  end: null,
+});
+
+type InterfaceChildMapper = Record<
+  string,
+  (acc: ObjectRecord, el: any) => ObjectRecord
+>;
+
+const childMappers: InterfaceChildMapper = {
+  TSPropertySignature(acc, el: t.TSPropertySignature) {
+    const type = el?.typeAnnotation?.typeAnnotation;
+    return accumulateType(acc, el, type);
+  },
+  TSMethodSignature(acc, el: t.TSMethodSignature) {
+    return accumulateType(acc, el, coerceMethodSignature(el));
+  },
+};
+
+const returnObjectRecord = (acc: ObjectRecord, _: any) => acc;
+
 const getObjectTypes = (els: InterfaceChild[]): ObjectRecord => {
   return els.reduce((acc: ObjectRecord, el) => {
-    if (el.type === "TSPropertySignature" && el.key.type === "Identifier") {
-      const name = el.key.name;
-      const type = el?.typeAnnotation?.typeAnnotation;
-      if (!type) return acc;
-      return {
-        ...acc,
-        [name]: { type, isIndex: false, isOptional: Boolean(el.optional) },
-      };
-    }
-    return acc;
+    const fn = childMappers[el.type] || returnObjectRecord;
+    return fn(acc, el);
   }, {});
 };
 

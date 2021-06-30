@@ -36,3 +36,9 @@ const object = {
   },
 };
 ```
+
+## TODO
+
+- Pull request: First the ones that are clear bugs
+- Run the scripts again
+- Then the ones that are more philosophical

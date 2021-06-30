@@ -192,6 +192,18 @@ describe("Our compiler", () => {
     expect(code).toMatch(`CT.BigIntCT`);
     expect(code).toMatch(`CT.RegExpCT`);
   });
+  test("Works with objects that have functions on them", () => {
+    gotoFixture("object-function");
+    const code = compile();
+    expect(code).toMatch(
+      `CT.CTObject({ myMethod: CT.CTFunction( CT.trueCT, [CT.stringCT], CT.CTOr(CT.stringCT, CT.numberCT) )`
+    );
+  });
+  test("Works even if the method has no return type", () => {
+    gotoFixture("object-function-no-return");
+    const code = compile();
+    expect(code).toMatch(`CT.CTFunction(CT.trueCT, [CT.stringCT], CT.anyCT)`);
+  });
   test("Works with mutually recursive types", () => {
     gotoFixture("recursive-types");
     const code = compile();
