@@ -10,8 +10,13 @@ Open pull requests:
 - `file-exists`
 - `ms`
 - `buffer-equal`
+- `http-codes`
 
-Packages to go through:
+--
+
+- Found more packages to go through because of _network errors_ last time
+
+Contract system questions:
 
 - `7zip-min` types
 - `to-absolute-glob` types

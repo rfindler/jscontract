@@ -6,11 +6,8 @@
 
 # What are other kinds of bugs our system has found?
 
-- TypeScript types haven't been updated to reflect changes in library/language (`file-exists`)
-- TypeScript doesn't capture types the JS works with (`natural-compare`)
 - TypeScript doesn't capture the right function arity (`hex-rgba`)
 - TypeScript tries to export a function that doesn't exist (`http-codes`)
-- TypeScript doesn't respect keys on object (`checksum`)
 
 # Interesting Failures
 
