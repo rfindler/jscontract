@@ -21,5 +21,7 @@ Open pull requests:
 
 Contract system questions:
 
+- What should we do with JavaScript that explicitly expects `String` objects? (`trim` and `fined`)
+- What should we do in the case of `doge-seed` where the _test_ uses the function incorrectly? Interesting edge case...
 - `7zip-min` types
 - `to-absolute-glob` types
