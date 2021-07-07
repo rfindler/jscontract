@@ -23,5 +23,7 @@ Contract system questions:
 
 - What should we do with JavaScript that explicitly expects `String` objects? (`trim` and `fined`)
 - What should we do in the case of `doge-seed` where the _test_ uses the function incorrectly? Interesting edge case...
+- What should we do about pseudo-private properties that aren't reflected in the types? (E.g., `_almost_private` keys on objects)
+- What about cases where
 - `7zip-min` types
 - `to-absolute-glob` types
