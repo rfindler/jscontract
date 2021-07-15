@@ -1,5 +1,9 @@
 # NOTES
 
+- Bug in the linter - DefinitelyTyped would not accept the correct type definition
+- Collect places where `map`/`for-each` fail because of arity errors
+- Put in prototype hack for arrays?
+
 Pull requests accepted so far:
 
 - pad-left
