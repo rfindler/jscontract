@@ -32,8 +32,8 @@ Waiting on the following pull requests:
 Contract system questions:
 
 - `to-absolute-glob` types - optional keys?
+- `sha256-file` - `and` contract success!
 - `falafel` - JavaScript relies on an API that pretends to be a string but really isn't (the documentation calls it `string-like`, but it's not a `String`)
-- `sha256-file` - `and` contract
 - What's going on with `w3c-xmlserializer`? (`true` is the empty object?)
 - How should we handle dependencies (`circle-to-polygon`)?
 - What should we do about pseudo-private properties that aren't reflected in the types? (E.g., `_almost_private` keys on objects) (`properties-reader` and `socketty`)
