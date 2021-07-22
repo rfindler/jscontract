@@ -760,6 +760,27 @@ assert.throws(
   "ctojbect.tostring"
 );
 
+// check function and object
+assert.ok(
+  (() => {
+    const fn = ({ name }) => name || "Bob";
+    const fnContract = CT.CTFunction(
+      CT.trueCT,
+      [
+        CT.CTObject({
+          name: {
+            contract: CT.stringCT,
+            optional: true,
+          },
+        }),
+      ],
+      CT.stringCT
+    );
+    const fnWithCt = fnContract.wrap(fn);
+    return fnWithCt({ name: "hello" }) === "hello";
+  })()
+);
+
 /*
  * CTRec
  */
