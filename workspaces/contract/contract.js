@@ -12,25 +12,20 @@
 "use hopscript";
 
 /*---------------------------------------------------------------------*/
+/*    ContractError                                                               */
+/*---------------------------------------------------------------------*/
+class ContractError extends TypeError {}
+
+/*---------------------------------------------------------------------*/
 /*    CT                                                               */
 /*---------------------------------------------------------------------*/
 class CT {
   constructor(name, firstOrder, wrapper) {
     this.cache = {};
-    /*       this.wrapper = ( info ) => {                                  */
-    /* 	 if( this.cache[ info ] ) {                                    */
-    /* 	    return this.cache[ info ];                                 */
-    /* 	 } else {                                                      */
-    /* 	    const nv = wrapper( info );                                */
-    /* 	    this.cache[ info ] = nv;                                   */
-    /* 	    console.log( "adding to cache ", info );                   */
-    /* 	    return nv;                                                 */
-    /* 	 }                                                             */
-    /*       }                                                             */
     this.name = name;
     this.firstOrder = firstOrder;
     if (wrapper.length != 1)
-      throw new TypeError(
+      throw new ContractError(
         " CT's wrapper argument should accept only one argument: " + wrapper
       );
     this.wrapper = wrapper;
@@ -58,7 +53,7 @@ class CTWrapper {
 /*---------------------------------------------------------------------*/
 function CTFlat(pred) {
   if (typeof pred !== "function") {
-    throw new TypeError("Illegal predicate: " + pred);
+    throw new ContractError("Illegal predicate: " + pred);
   } else {
     function mkWrapper(blame_object) {
       return new CTWrapper(function (value) {
@@ -121,7 +116,7 @@ function CTFunction(self, domain, range) {
     maxarity = arity;
 
   if (!(domain instanceof Array)) {
-    throw new TypeError("Illegal domain: " + domain);
+    throw new ContractError("Illegal domain: " + domain);
   }
 
   const coerced_args = domain.map((p, index) => {
@@ -286,7 +281,7 @@ function CTFunctionOpt(self, domain, range) {
   }
 
   if (!(domain instanceof Array)) {
-    throw new TypeError("Illegal domain: " + domain);
+    throw new ContractError("Illegal domain: " + domain);
   } else {
     const coerced_si = CTCoerce(self, "CTFunction, self argument");
     const coerced_dis = domain.map((d, index) =>
@@ -306,7 +301,7 @@ function CTFunctionOpt(self, domain, range) {
         const handler = {
           apply: function (target, self, args) {
             if (args.length < domain.length) {
-              throw new TypeError(
+              throw new ContractError(
                 "Wrong number of argument " +
                   args.length +
                   "/" +
@@ -325,7 +320,7 @@ function CTFunctionOpt(self, domain, range) {
           if (firstOrder(value)) {
             return new Proxy(value, handler);
           } else {
-            throw new TypeError("Not a function `" + value + "': " + info);
+            throw new ContractError("Not a function `" + value + "': " + info);
           }
         });
       }
@@ -347,19 +342,19 @@ function CTFunctionD(domain, range, info_indy) {
   }
 
   if (!(domain instanceof Array)) {
-    throw new TypeError("Illegal domain: " + domain);
+    throw new ContractError("Illegal domain: " + domain);
   }
   for (let i = 0; i < domain.length; i++) {
     if (!domain[i])
-      throw new TypeError(
+      throw new ContractError(
         "Illegal domain entry at index " + i + ": " + domain[i]
       );
     if (!domain[i].ctc)
-      throw new TypeError(
+      throw new ContractError(
         "Illegal domain entry at index " + i + ", no ctc field: " + domain[i]
       );
     if (!domain[i].name)
-      throw new TypeError(
+      throw new ContractError(
         "Illegal domain entry at index " + i + ", no name field: " + domain[i]
       );
   }
@@ -885,7 +880,7 @@ function CTCoerce(obj, who) {
     if (obj instanceof CT) {
       return obj;
     } else {
-      throw new TypeError(
+      throw new ContractError(
         (who ? who + ": " : "") + "not a contract `" + obj + "'"
       );
     }
@@ -1000,14 +995,14 @@ function neg_choice(blame_object, howmany) {
 function signal_contract_violation(value, blame_object, message) {
   if (typeof blame_object.dead === "boolean") {
     // regular contract violation, no and/or here
-    throw_contract_violation(blame_object.pos, message);
+    throw_contract_violation(blame_object.pos, message, value);
   } else if (blame_object.dead.dead) {
     // we're already dead (but some siblings aren't)
     return value;
   } else if (typeof blame_object.pos_state === "boolean") {
     // we're in an and/or contract, but this is not the side with
     // the choice, so signal a violation
-    throw_contract_violation(blame_object.pos, message);
+    throw_contract_violation(blame_object.pos, message, value);
   } else {
     // we're newly dead
     blame_object.dead.dead = message;
@@ -1023,7 +1018,7 @@ function signal_contract_violation(value, blame_object, message) {
         complete_message += i === 0 ? "" : "\n     also: ";
         complete_message += siblings[i].dead.dead;
       }
-      throw_contract_violation(blame_object.pos, complete_message);
+      throw_contract_violation(blame_object.pos, complete_message, value);
     } else {
       // sibling isn't dead yet, so keep going
       return value;
@@ -1031,14 +1026,14 @@ function signal_contract_violation(value, blame_object, message) {
   }
 }
 
-/**
- * TODO: Remove all the calls to `toString` while generating the messages
- * and instead stick in one consistent `toString` here.
- * TODO: Change the message from TypeError to ContractError?
- * TODO: Clean up the names of numberCT to CNumber
- */
-function throw_contract_violation(pos, message) {
-  throw new TypeError(message + "\n   blaming: " + pos);
+function throw_contract_violation(pos, message, value) {
+  const valueKeys = Object.keys(value || {});
+  const keyMessage =
+    valueKeys.length > 0 ? `\n    keys: {${valueKeys.join(", ")}}` : "";
+  const errorMessage = `${message}
+    blaming: ${pos}
+    value type: ${typeof value}`;
+  throw new ContractError(`${errorMessage}${keyMessage}`);
 }
 
 /*---------------------------------------------------------------------*/

@@ -1337,3 +1337,45 @@ assert.ok(
 assert.throws(() => {
   return CT.RegExpCT.wrap("hi");
 });
+
+/*
+ * Error messages
+ */
+assert.ok(
+  (() => {
+    let message = null;
+    try {
+      const stringLike = {
+        toString() {
+          return "This is actually an object!";
+        },
+      };
+      CT.stringCT.wrap(stringLike);
+    } catch (err) {
+      message = err.message;
+    }
+    return (
+      message.includes("keys: {toString}") &&
+      message.includes(`value type: object`)
+    );
+  })()
+);
+
+assert.ok(
+  (() => {
+    let message = null;
+    try {
+      const stringLike = {
+        anotherKey: 5,
+      };
+      CT.numberCT.wrap(stringLike);
+    } catch (err) {
+      message = err.message;
+    }
+    console.log(message);
+    return (
+      message.includes("keys: {anotherKey}") &&
+      message.includes(`value type: object`)
+    );
+  })()
+);
