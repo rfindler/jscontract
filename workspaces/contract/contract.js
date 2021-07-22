@@ -1031,6 +1031,12 @@ function signal_contract_violation(value, blame_object, message) {
   }
 }
 
+/**
+ * TODO: Remove all the calls to `toString` while generating the messages
+ * and instead stick in one consistent `toString` here.
+ * TODO: Change the message from TypeError to ContractError?
+ * TODO: Clean up the names of numberCT to CNumber
+ */
 function throw_contract_violation(pos, message) {
   throw new TypeError(message + "\n   blaming: " + pos);
 }

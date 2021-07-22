@@ -675,6 +675,74 @@ assert.throws(
   "ctobject.index.2"
 );
 
+assert.ok(
+  (() => {
+    const example = CT.CTObject({
+      id: {
+        contract: CT.numberCT,
+        optional: true,
+      },
+      name: {
+        contract: CT.stringCT,
+        optional: true,
+      },
+    });
+    const exampleContract = example.wrap({});
+    return Object.keys(exampleContract).length === 0;
+  })()
+);
+
+assert.ok(
+  (() => {
+    const example = CT.CTObject({
+      id: {
+        contract: CT.numberCT,
+        optional: true,
+      },
+      name: {
+        contract: CT.stringCT,
+        optional: true,
+      },
+    });
+    const exampleContract = example.wrap({ id: 3 });
+    return exampleContract.id === 3;
+  })()
+);
+
+assert.ok(
+  (() => {
+    const example = CT.CTObject({
+      id: {
+        contract: CT.numberCT,
+        optional: true,
+      },
+      name: {
+        contract: CT.stringCT,
+        optional: true,
+      },
+    });
+    const exampleContract = example.wrap({ name: "hi" });
+    return exampleContract.name === "hi";
+  })()
+);
+
+assert.ok(
+  (() => {
+    const example = CT.CTObject({
+      id: {
+        contract: CT.numberCT,
+        optional: true,
+      },
+      name: {
+        contract: CT.stringCT,
+        optional: true,
+      },
+    });
+    const exampleContract = example.wrap({ id: 3, name: "hi" });
+    return exampleContract.name === "hi" && exampleContract.id === 3;
+  })()
+);
+
 // check errors happen at the right time
 assert.throws(
   () => {
