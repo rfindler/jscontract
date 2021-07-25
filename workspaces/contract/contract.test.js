@@ -1398,3 +1398,7 @@ assert.ok(
   let res = CT.__toString(undefined);
   assert.ok(res === "undefined");
 }
+{
+  let res = CT.__toString(true);
+  assert.ok(res === "true");
+}

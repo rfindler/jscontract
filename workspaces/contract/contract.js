@@ -43,7 +43,7 @@ class CT {
 /*    toString ...                                                     */
 /*---------------------------------------------------------------------*/
 function toString(fields) {
-  if (!fields) return `${fields}`;
+  if (!fields || typeof fields !== "object") return `${fields}`;
   let res = "";
   let sep = "{";
 
