@@ -1390,3 +1390,11 @@ assert.ok(
     return message.includes(`value type: object`) && message.includes(`null`);
   })()
 );
+{
+  let res = CT.__toString(null);
+  assert.ok(res === "null");
+}
+{
+  let res = CT.__toString(undefined);
+  assert.ok(res === "undefined");
+}

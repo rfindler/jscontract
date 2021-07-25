@@ -40,6 +40,26 @@ class CT {
 }
 
 /*---------------------------------------------------------------------*/
+/*    toString ...                                                     */
+/*---------------------------------------------------------------------*/
+function toString(fields) {
+  if (!fields) return `${fields}`;
+  let res = "";
+  let sep = "{";
+
+  for (let n in fields) {
+    res += sep + n;
+    sep = ", ";
+  }
+
+  if (sep === "{") {
+    return "{}";
+  } else {
+    return res + "}";
+  }
+}
+
+/*---------------------------------------------------------------------*/
 /*    CTwrapper ...                                                    */
 /*---------------------------------------------------------------------*/
 class CTWrapper {
@@ -772,22 +792,6 @@ function CTObject(ctfields) {
     }
   }
 
-  function toString(fields) {
-    let res = "";
-    let sep = "{";
-
-    for (let n in fields) {
-      res += sep + n;
-      sep = ", ";
-    }
-
-    if (sep === "{") {
-      return "{}";
-    } else {
-      return res + "}";
-    }
-  }
-
   return new CT("CTObject", firstOrder, function (blame_object) {
     function mkWrapper(blame_object, kt, kf) {
       const ei = {};
@@ -1161,6 +1165,7 @@ exports.True = True;
 // exported for the test suite only
 exports.__topsort = topsort;
 exports.__find_depended_on = find_depended_on;
+exports.__toString = toString;
 
 exports.CTexports = function (ctc, val, locationt) {
   return (locationf) =>
