@@ -1030,10 +1030,14 @@ function throw_contract_violation(pos, message, value) {
   const valueKeys = Object.keys(value || {});
   const keyMessage =
     valueKeys.length > 0 ? `\n    keys: {${valueKeys.join(", ")}}` : "";
+  const nullMessage =
+    value === null
+      ? `\n    NOTE: value is null (since typeof null === object)`
+      : "";
   const errorMessage = `${message}
     blaming: ${pos}
     value type: ${typeof value}`;
-  throw new ContractError(`${errorMessage}${keyMessage}`);
+  throw new ContractError(`${errorMessage}${nullMessage}${keyMessage}`);
 }
 
 /*---------------------------------------------------------------------*/

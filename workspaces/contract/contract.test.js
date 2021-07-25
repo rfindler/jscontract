@@ -1372,10 +1372,21 @@ assert.ok(
     } catch (err) {
       message = err.message;
     }
-    console.log(message);
     return (
       message.includes("keys: {anotherKey}") &&
       message.includes(`value type: object`)
     );
+  })()
+);
+
+assert.ok(
+  (() => {
+    let message = null;
+    try {
+      CT.numberCT.wrap(null);
+    } catch (err) {
+      message = err.message;
+    }
+    return message.includes(`value type: object`) && message.includes(`null`);
   })()
 );
