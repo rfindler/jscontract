@@ -19,9 +19,10 @@ Pull requests accepted so far:
 
 Waiting on the following pull requests:
 
+- ical.js
+- style-search
 - suncalc
 - parse-color
-- radix64
 - falafel
 - filesize-parser
 - node-cleanup
@@ -39,7 +40,9 @@ Waiting on the following pull requests:
 
 Contract system questions:
 
-- What's going on with `parsecurrency`?
-- What's going on with `base64-async`? (`Promise` is not a promise?)
+- Bumped error messages, added test cases
+- Optional keys _in functions_ (interaction between the two)?
+- How should we handle `style-search` (completely undocumented key we picked up in our tests?)
+- How should we handle `xml-w3cserializer` (one test case passes true; bug in the JS?)
 - How should we handle dependencies (`circle-to-polygon`)?
 - What should we do about pseudo-private properties that aren't reflected in the types? (E.g., `_almost_private` keys on objects) (`properties-reader` and `socketty`)
