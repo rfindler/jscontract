@@ -819,7 +819,11 @@ function CTObject(ctfields) {
               if (cache) {
                 return cache;
               } else {
-                const cv = ct[kt].ctor(target[prop]);
+                const targetProp = target[prop];
+                if (fields[prop]?.optional && targetProp === undefined) {
+                  return targetProp;
+                }
+                const cv = ct[kt].ctor(targetProp);
                 priv[prop] = cv;
                 return cv;
               }

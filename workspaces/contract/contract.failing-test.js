@@ -8,58 +8,6 @@ const assert = require("assert");
 const CT = require("./contract.js");
 
 /*
- * I think we've narrowed down the bug to the interplay between
- * object contracts and function contracts; both work fine in
- * isolation, but these test cases fail because we're trying to
- * use both features at the same time.
- */
-assert.ok(
-  (() => {
-    const fn = ({ name }) => name || "Bob";
-    const fnContract = CT.CTFunction(
-      CT.trueCT,
-      [
-        CT.CTObject({
-          name: {
-            contract: CT.stringCT,
-            optional: true,
-          },
-        }),
-      ],
-      CT.stringCT
-    );
-    const fnWithCt = fnContract.wrap(fn);
-    // Is this a problem?
-    return fnWithCt({}) === "hello";
-  })()
-);
-
-assert.ok(
-  (() => {
-    const fn = ({ name, nickName }) => name || nickName || "neither";
-    const fnContract = CT.CTFunction(
-      CT.trueCT,
-      [
-        CT.CTObject({
-          name: {
-            contract: CT.stringCT,
-            optional: true,
-          },
-          nickName: {
-            contract: CT.stringCT,
-            optional: true,
-          },
-        }),
-      ],
-      CT.stringCT
-    );
-    const fnWithCt = fnContract.wrap(fn);
-    // I think this should work...
-    return fnWithCt({ name: "hello" }) === "hello";
-  })()
-);
-
-/*
  * Promise
  */
 // NB: this test case fails because we do not yet understand how to

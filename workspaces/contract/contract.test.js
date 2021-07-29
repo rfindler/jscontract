@@ -687,8 +687,88 @@ assert.ok(
         optional: true,
       },
     });
-    const exampleContract = example.wrap({});
-    return Object.keys(exampleContract).length === 0;
+    const exampleWrapped = example.wrap({});
+    return Object.keys(exampleWrapped).length === 0;
+  })()
+);
+
+assert.ok(
+  (() => {
+    const fn = (obj) => {
+      obj.name;
+      return true;
+    };
+    const fnContract = CT.CTFunction(
+      CT.trueCT,
+      [
+        CT.CTObject({
+          name: {
+            contract: CT.stringCT,
+            optional: true,
+          },
+        }),
+      ],
+      CT.booleanCT
+    );
+    const fnWithCt = fnContract.wrap(fn);
+    return fnWithCt({});
+  })()
+);
+
+{
+  const example = CT.CTObject({
+    id: {
+      contract: CT.numberCT,
+      optional: true,
+    },
+    name: {
+      contract: CT.stringCT,
+      optional: true,
+    },
+  });
+  const exampleWrapped = example.wrap({});
+  assert.ok(exampleWrapped.id === undefined);
+}
+
+assert.ok(
+  (() => {
+    const fn = ({ name, nickName }) => name || nickName || "neither";
+    const fnContract = CT.CTFunction(
+      CT.trueCT,
+      [
+        CT.CTObject({
+          name: {
+            contract: CT.stringCT,
+            optional: true,
+          },
+          nickName: {
+            contract: CT.stringCT,
+            optional: true,
+          },
+        }),
+      ],
+      CT.stringCT
+    );
+    const fnWithCt = fnContract.wrap(fn);
+    // I think this should work...
+    return fnWithCt({ name: "hello" }) === "hello";
+  })()
+);
+
+assert.ok(
+  (() => {
+    const example = CT.CTObject({
+      id: {
+        contract: CT.numberCT,
+        optional: true,
+      },
+      name: {
+        contract: CT.stringCT,
+        optional: true,
+      },
+    });
+    const exampleWrapped = example.wrap({});
+    return exampleWrapped.id === undefined;
   })()
 );
 
