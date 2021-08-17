@@ -1,39 +1,17 @@
 # JSCONTRACT
 
-_30 Apr 2021_
+## Getting Started
 
-This README file document the JavaScript implementation of higher-order
-contracts. The first goal is to apply them to TypeScript types to
-debug type annotations, for instance, those proposed at
-[https://definitelytyped.org/](definitively typed)
+You will need to have `node` version 14+, `npm` version 7+, and `git` installed onto your computer. From there, clone this repository and run:
 
-# Testing the contracts implementation
-
-```shell
-nodejs ./test.js
+```sh
+npm install
 ```
 
-# Contracts
+From there, you can run the tool by doing:
 
-ccontract = <a value coercible into a contract>
+```sh
+./workspaces/type-explorer/bin/ct $PACKAGE_NAME
+```
 
-## CTObject
-
-CTObject: { [string: fieldct]\* } => contract
-
-fieldct ::=
-ccontract
-| { contract: ccontract }
-| { contract: ccontract, optional: boolean }
-| { contract: ccontract, index: "string" | "number" }
-// this alternative can appear at most once
-
-## CTFunction
-
-CTFunction: { ccontract, [ argct\* ], ccontract } => contract
-argct ::=
-ccontract
-| { contract: ccontract }
-| { contract: ccontract, optional: boolean }
-| { contract: ccontract, dotdotdot: boolean }
-// this alternative can appear at most once
+Where `$PACKAGE_NAME` is the name of a JavaScript package that you would like to test.
