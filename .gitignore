@@ -102,7 +102,6 @@ typings/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Storybook build outputs
 .out
@@ -110,7 +109,6 @@ dist
 storybook-static
 
 # rollup.js default build output
-dist/
 
 # Gatsby files
 .cache/
@@ -140,6 +138,4 @@ dist/
 tmp/
 temp/
 
-#!! ERROR: typescript is undefined. Use list command to see defined gitignore types !!#
-
-# End of https://www.toptal.com/developers/gitignore/api/node,typescript,direnv
+# End of https://www.toptal.com/developers/gitignore/api/node,direnv
