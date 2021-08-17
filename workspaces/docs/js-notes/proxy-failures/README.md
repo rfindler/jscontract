@@ -1,6 +1,6 @@
 # Proxy Semantics
 
-This script lets us explore when Proxies fail mysteriously and when they don't. You can try it by running:
+This script lets us explore when Proxies fail and when they don't. You can try it by running:
 
 ```js
 node index.js
