@@ -26,7 +26,7 @@ Depending on which paper we choose to write, we could talk about this scenario v
 There are related projects to tackle as well:
 
 - We might need a Redex model to explain how `CTOr` and `CTAnd` work.
-- We might need random contract testing to exercise the contracts in packages without bugs
+- We might need random contract testing to exercise the contracts in packages without bugs.
 - We might need a graph of changes in DefinitelyTyped over time.
 - We might need to come up with a way to classify the different bugs we've found.
-- We might need to document how to run our tool on various packages (and potentially create a GitHub action)
+- We might need to document how to run our tool on various packages (and potentially create a GitHub action).
