@@ -1199,7 +1199,27 @@ assert.ok(
   })(),
   "ctand.9"
 );
-
+assert.ok(
+  (() => {
+    function even(x) {
+      return x % 2 == 0;
+    }
+    function pos(x) {
+      return x > 0;
+    }
+    function odd(x) {
+      return x % 2 != 0;
+    }
+    function neg(x) {
+      return x < 0;
+    }
+    const even_pos = CT.CTAnd(even, pos);
+    const odd_neg = CT.CTAnd(odd, neg);
+    return 22 == even_pos.wrap(22) &&
+           -3 == odd_neg.wrap(-3);
+  })(),
+  "ctand.10"
+)
 /*
  * Minor bugfixes
  */

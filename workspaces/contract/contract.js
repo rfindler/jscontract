@@ -627,7 +627,9 @@ function CTAnd(...args) {
               );
             }
           }
-          return new Proxy(value, handler);
+          if (value instanceof Object)
+              return new Proxy(value, handler);
+          return value;
         });
       }
       return {
