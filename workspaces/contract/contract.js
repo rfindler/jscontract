@@ -627,7 +627,7 @@ function CTAnd(...args) {
               );
             }
           }
-          if (value instanceof Object)
+          if (value && typeof value === "object" || typeof value === "function")
               return new Proxy(value, handler);
           return value;
         });
@@ -712,7 +712,7 @@ function CTOr(...args)  {
                             "CTOr no arguments applied: " + value
                         );
                     }
-                    if (value instanceof Object)
+                    if (value && typeof value === "object" || typeof value === "function")
                         return new Proxy(value, handler);
                     return value;
                 });
